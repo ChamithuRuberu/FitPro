@@ -51,26 +51,20 @@ export async function destroySession() {
   }
 }
 
-export async function initializeRegistration(formData: FormData) {
+export async function initializeRegistration(formData: {
+  nic: string;
+  mobile: string;
+  email: string;
+  role_type: string;
+  trainer_id?: number;
+}) {
   try {
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const fullName = formData.get('fullName') as string;
-    const role = formData.get('role') as string;
-    const trainerId = formData.get('trainerId') as string;
-
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        email,
-        password,
-        fullName,
-        role,
-        trainerId: role === 'trainer' ? trainerId : undefined,
-      }),
+      body: JSON.stringify(formData),
     });
 
     const data = await response.json();

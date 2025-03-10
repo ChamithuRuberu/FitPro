@@ -714,8 +714,8 @@ export default function ClientDashboard() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {getGreeting()}, {userData?.fullName}
+            <h1 className="text-2xl font-semibold text-gray-800">
+              FIT PRO
             </h1>
             <div className="flex items-center space-x-6">
               <button

@@ -710,17 +710,23 @@ export default function ClientDashboard() {
     <div className="min-h-screen bg-gray-50">
       <Toaster position="top-right" />
 
-      {/* Dashboard Header */}
-      <header className="bg-white shadow">
+      {/* Modern Header with Gradient */}
+      <header className="bg-gradient-to-r from-blue-600 to-blue-800 shadow-lg">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-semibold text-gray-800">
-              FIT PRO
-            </h1>
-            <div className="flex items-center space-x-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+            <div className="flex items-center space-x-4">
+              <div className="bg-white p-2 rounded-lg">
+                <FiActivity className="w-6 h-6 text-blue-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">
+                FIT PRO
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+             
               <button
                 onClick={handleLogout}
-                className="flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                className="flex items-center px-4 py-2 text-sm font-medium text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
               >
                 <FiLogOut className="w-4 h-4 mr-2" />
                 Logout
@@ -728,77 +734,93 @@ export default function ClientDashboard() {
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex justify-between items-center mt-6">
-            <div className="flex space-x-4 overflow-x-auto pb-2">
-              {['overview', 'schedule', 'supplements', 'workouts', 'progress', 'mealplan'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab as any)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-                    activeTab === tab
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Status:</span>
-              <span className="px-3 py-1 bg-green-100 text-green-600 rounded-md text-sm font-medium">
-                {userData?.status}
-              </span>
+          {/* Enhanced Tab Navigation */}
+          <div className="mt-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+              <div className="flex space-x-2 overflow-x-auto pb-2 w-full md:w-auto">
+                {['overview', 'schedule', 'supplements', 'workouts', 'progress', 'mealplan'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab as any)}
+                    className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                      activeTab === tab
+                        ? 'bg-white text-blue-600 shadow-md'
+                        : 'text-white hover:bg-white hover:bg-opacity-20'
+                    }`}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center space-x-3 bg-white bg-opacity-20 px-4 py-2 rounded-full">
+                <span className="text-white text-sm"> <div className="flex items-center space-x-2  bg-opacity-20 px-4 py-2 rounded-full">
+                <FiUser className="w-5 h-5 text-white" />
+                <span className="text-white font-medium">{userData?.fullName}</span>
+              </div></span>
+                <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium">
+                  {userData?.status}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content with Enhanced Spacing and Layout */}
       <main className="container mx-auto px-4 py-8">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                <div>
-                  <h1 className="text-2xl font-bold mb-2">{getGreeting()}, {userData?.fullName}</h1>
-                  <p className="text-blue-100">Track your fitness journey and stay on top of your goals</p>
+          <div className="space-y-8">
+            {/* Welcome Section with Enhanced Design */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="relative h-48 bg-gradient-to-r from-blue-500 to-blue-600">
+                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div className="relative p-8 text-white">
+                  <h1 className="text-3xl font-bold mb-2">{getGreeting()}, {userData?.fullName}</h1>
+                  <p className="text-lg text-blue-100">Track your fitness journey and stay on top of your goals</p>
                 </div>
-                <div className="mt-4 md:mt-0">
-                  <span className="inline-flex items-center px-4 py-2 bg-white bg-opacity-20 rounded-full">
-                    <FiActivity className="w-5 h-5 mr-2" />
-                    Active Member
-                  </span>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <FiActivity className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <span className="text-gray-600">Active Member</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="p-2 bg-green-100 rounded-full">
+                      <FiTrendingUp className="w-5 h-5 text-green-600" />
+                    </div>
+                    <span className="text-gray-600">On Track</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Quick Stats */}
+            {/* Quick Stats with Enhanced Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Monthly Attendance</p>
                     <div className="flex items-baseline mt-1">
-                      <p className="text-2xl font-bold text-gray-900">{progressData?.attendanceRate}%</p>
+                      <p className="text-3xl font-bold text-gray-900">{progressData?.attendanceRate}%</p>
                       <p className="ml-2 text-sm text-green-600">↑ 5% from last month</p>
                     </div>
                   </div>
-                  <div className="p-3 bg-blue-50 rounded-full">
+                  <div className="p-3 bg-blue-100 rounded-full">
                     <FiCalendar className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
                 <div className="mt-4">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full" 
+                      className="bg-blue-600 h-3 rounded-full transition-all duration-500" 
                       style={{ width: `${progressData?.attendanceRate}%` }}
                     ></div>
                   </div>
@@ -809,24 +831,24 @@ export default function ClientDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Weight Progress</p>
                     <div className="flex items-baseline mt-1">
-                      <p className="text-2xl font-bold text-gray-900">{sampleBodyMetrics[0].weight} kg</p>
+                      <p className="text-3xl font-bold text-gray-900">{sampleBodyMetrics[0].weight} kg</p>
                       <p className="ml-2 text-sm text-green-600">↓ 2.5 kg this month</p>
                     </div>
                   </div>
-                  <div className="p-3 bg-green-50 rounded-full">
+                  <div className="p-3 bg-green-100 rounded-full">
                     <FiTrendingUp className="w-6 h-6 text-green-600" />
                   </div>
                 </div>
                 <div className="mt-4">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
-                      className="bg-green-600 h-2 rounded-full" 
+                      className="bg-green-600 h-3 rounded-full transition-all duration-500" 
                       style={{ width: `${(sampleBodyMetrics[0].weight / sampleBodyMetrics[sampleBodyMetrics.length - 1].weight) * 100}%` }}
                     ></div>
                   </div>
@@ -837,71 +859,72 @@ export default function ClientDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Next Payment</p>
                     <div className="flex items-baseline mt-1">
-                      <p className="text-2xl font-bold text-gray-900">$150</p>
+                      <p className="text-3xl font-bold text-gray-900">$150</p>
                       <p className="ml-2 text-sm text-gray-600">Due in 5 days</p>
                     </div>
                   </div>
-                  <div className="p-3 bg-purple-50 rounded-full">
+                  <div className="p-3 bg-purple-100 rounded-full">
                     <FiDollarSign className="w-6 h-6 text-purple-600" />
                   </div>
                 </div>
                 <div className="mt-4">
-                  <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors">
+                  <button className="w-full bg-purple-600 text-white py-3 px-4 rounded-xl hover:bg-purple-700 transition-colors font-medium">
                     Pay Now
                   </button>
                 </div>
               </motion.div>
             </div>
 
-            {/* Trainer Details */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            {/* Trainer Details with Enhanced Design */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Your Trainer</h2>
-                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <h2 className="text-xl font-semibold text-gray-900">Your Trainer</h2>
+                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
                     View Profile
+                    <FiPlus className="w-4 h-4 ml-1" />
                   </button>
                 </div>
               </div>
               <div className="p-6">
-                <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
-                  <div className="relative w-32 h-32 rounded-full overflow-hidden ring-4 ring-blue-50">
-                    <img
-                      src={sampleTrainerData.image}
-                      alt={sampleTrainerData.name}
-                      className="w-full h-full object-cover"
-                    />
+                <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-8">
+                  <div className="relative">
+                    <div className="w-40 h-40 rounded-full overflow-hidden ring-4 ring-blue-100">
+                      <img
+                        src={sampleTrainerData.image}
+                        alt={sampleTrainerData.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="absolute bottom-0 right-0 bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                      Available
+                    </div>
                   </div>
                   <div className="flex-1 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start space-x-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{sampleTrainerData.name}</h3>
-                      <span className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">
-                        Available
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{sampleTrainerData.specialization}</p>
-                    <div className="flex items-center justify-center md:justify-start mt-2">
+                    <div className="flex items-center justify-center md:justify-start space-x-3">
+                      <h3 className="text-2xl font-semibold text-gray-900">{sampleTrainerData.name}</h3>
                       <div className="flex">
                         {[...Array(5)].map((_, i) => (
-                          <span key={i} className={`text-lg ${i < Math.floor(sampleTrainerData.rating) ? 'text-yellow-400' : 'text-gray-300'}`}>
+                          <span key={i} className={`text-xl ${i < Math.floor(sampleTrainerData.rating) ? 'text-yellow-400' : 'text-gray-300'}`}>
                             ★
                           </span>
                         ))}
                       </div>
-                      <span className="ml-2 text-sm text-gray-600">({sampleTrainerData.rating})</span>
+                      <span className="text-sm text-gray-600">({sampleTrainerData.rating})</span>
                     </div>
-                    <p className="mt-2 text-sm text-gray-600">{sampleTrainerData.bio}</p>
-                    <div className="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
-                      <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm">
+                    <p className="text-lg text-gray-600 mt-2">{sampleTrainerData.specialization}</p>
+                    <p className="mt-4 text-gray-600">{sampleTrainerData.bio}</p>
+                    <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
+                      <span className="px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
                         {sampleTrainerData.experience} Experience
                       </span>
-                      <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-sm">
+                      <span className="px-4 py-2 bg-green-50 text-green-600 rounded-full text-sm font-medium">
                         Certified Trainer
                       </span>
                     </div>
@@ -910,25 +933,25 @@ export default function ClientDashboard() {
               </div>
             </div>
 
-            {/* Body Metrics Progress */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            {/* Body Metrics Progress with Enhanced Charts */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Body Metrics Progress</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Body Metrics Progress</h2>
                   <div className="flex space-x-2">
-                    <button className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
+                    <button className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors">
                       Weekly
                     </button>
-                    <button className="px-3 py-1 text-sm bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100">
+                    <button className="px-4 py-2 text-sm bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-colors">
                       Monthly
                     </button>
                   </div>
                 </div>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-gray-600 mb-4">Weight Progress</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Weight Progress</h3>
                     <div className="flex items-center justify-center">
                       <Chart
                         type="line"
@@ -954,19 +977,19 @@ export default function ClientDashboard() {
                         }}
                       />
                     </div>
-                    <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                      <div className="bg-white p-3 rounded-lg">
+                    <div className="mt-6 grid grid-cols-2 gap-4">
+                      <div className="bg-white p-4 rounded-xl shadow-sm">
                         <p className="text-sm text-gray-600">Starting Weight</p>
-                        <p className="text-lg font-semibold text-gray-900">{sampleBodyMetrics[sampleBodyMetrics.length - 1].weight} kg</p>
+                        <p className="text-2xl font-bold text-gray-900">{sampleBodyMetrics[sampleBodyMetrics.length - 1].weight} kg</p>
                       </div>
-                      <div className="bg-white p-3 rounded-lg">
+                      <div className="bg-white p-4 rounded-xl shadow-sm">
                         <p className="text-sm text-gray-600">Current Weight</p>
-                        <p className="text-lg font-semibold text-gray-900">{sampleBodyMetrics[0].weight} kg</p>
+                        <p className="text-2xl font-bold text-gray-900">{sampleBodyMetrics[0].weight} kg</p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-gray-600 mb-4">BMI Progress</h3>
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">BMI Progress</h3>
                     <div className="flex items-center justify-center">
                       <Chart
                         type="line"
@@ -992,14 +1015,14 @@ export default function ClientDashboard() {
                         }}
                       />
                     </div>
-                    <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                      <div className="bg-white p-3 rounded-lg">
+                    <div className="mt-6 grid grid-cols-2 gap-4">
+                      <div className="bg-white p-4 rounded-xl shadow-sm">
                         <p className="text-sm text-gray-600">Starting BMI</p>
-                        <p className="text-lg font-semibold text-gray-900">{sampleBodyMetrics[sampleBodyMetrics.length - 1].bmi}</p>
+                        <p className="text-2xl font-bold text-gray-900">{sampleBodyMetrics[sampleBodyMetrics.length - 1].bmi}</p>
                       </div>
-                      <div className="bg-white p-3 rounded-lg">
+                      <div className="bg-white p-4 rounded-xl shadow-sm">
                         <p className="text-sm text-gray-600">Current BMI</p>
-                        <p className="text-lg font-semibold text-gray-900">{sampleBodyMetrics[0].bmi}</p>
+                        <p className="text-2xl font-bold text-gray-900">{sampleBodyMetrics[0].bmi}</p>
                       </div>
                     </div>
                   </div>
@@ -1007,27 +1030,28 @@ export default function ClientDashboard() {
               </div>
             </div>
 
-            {/* Payment History */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            {/* Payment History with Enhanced Design */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Payment History</h2>
-                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <h2 className="text-xl font-semibold text-gray-900">Payment History</h2>
+                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
                     View All
+                    <FiPlus className="w-4 h-4 ml-1" />
                   </button>
                 </div>
               </div>
               <div className="p-6">
                 <div className="space-y-4">
                   {samplePaymentHistory.map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                       <div>
                         <p className="font-medium text-gray-900">{payment.description}</p>
                         <p className="text-sm text-gray-600">{new Date(payment.date).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-gray-900">${payment.amount}</p>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                           payment.status === 'paid' ? 'bg-green-100 text-green-800' :
                           payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
@@ -1045,94 +1069,184 @@ export default function ClientDashboard() {
 
         {/* Schedule Tab */}
         {activeTab === 'schedule' && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Weekly Schedule</h2>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {schedule.length > 0 ? (
-                schedule.map((day) => (
-                  <div key={day.id} className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">{day.day}</h3>
-                    <div className="space-y-4">
-                      {day.workouts.map((workout, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <div className={`p-2 rounded-full ${workout.completed ? 'bg-green-100' : 'bg-gray-100'}`}>
-                              {workout.completed ? (
-                                <FiCheck className="w-5 h-5 text-green-600" />
-                              ) : (
-                                <FiClock className="w-5 h-5 text-gray-600" />
-                              )}
+          <div className="space-y-8">
+            {/* Weekly Overview Card */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">Weekly Schedule</h2>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Week of:</span>
+                    <span className="text-sm font-medium text-blue-600">Feb 12 - Feb 18</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {schedule.map((day) => (
+                    <div key={day.id} className="bg-gray-50 rounded-xl p-6 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">{day.day}</h3>
+                        <span className="text-sm text-gray-600">{day.workouts.length} workouts</span>
+                      </div>
+                      <div className="space-y-4">
+                        {day.workouts.map((workout, index) => (
+                          <div key={index} className="bg-white rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-3">
+                                <div className={`p-2 rounded-full ${workout.completed ? 'bg-green-100' : 'bg-blue-100'}`}>
+                                  {workout.completed ? (
+                                    <FiCheck className="w-5 h-5 text-green-600" />
+                                  ) : (
+                                    <FiClock className="w-5 h-5 text-blue-600" />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900">{workout.type}</p>
+                                  <p className="text-sm text-gray-600">{workout.time}</p>
+                                </div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-900">{workout.duration}</span>
                             </div>
-                            <div>
-                              <p className="font-medium">{workout.type}</p>
-                              <p className="text-sm text-gray-600">{workout.time}</p>
+                            <div className="flex items-center justify-between">
+                              <span className={`text-sm px-3 py-1 rounded-full ${
+                                workout.completed 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {workout.completed ? 'Completed' : 'Upcoming'}
+                              </span>
+                              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                                View Details
+                              </button>
                             </div>
                           </div>
-                          <span className="text-sm text-gray-600">{workout.duration}</span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-6 text-center text-gray-500">
-                  No schedule available yet
+                  ))}
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* Monthly Calendar View */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">Monthly Calendar</h2>
+                  <div className="flex items-center space-x-4">
+                    <button className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors">
+                      Previous Month
+                    </button>
+                    <button className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors">
+                      Next Month
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                {/* Calendar grid would go here */}
+                <div className="text-center text-gray-500 py-8">
+                  Calendar view coming soon
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {/* Supplements Tab */}
         {activeTab === 'supplements' && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Recommended Supplements</h2>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6 p-6">
-              {supplements.length > 0 ? (
-                supplements.map((supplement) => (
-                  <div key={supplement.id} className="bg-white border rounded-xl p-6 hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">{supplement.name}</h3>
-                      {supplement.recommended && (
-                        <span className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">
-                          Recommended
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm text-gray-600">Timing</p>
-                        <p className="font-medium">{supplement.timing}</p>
+          <div className="space-y-8">
+            {/* Supplement Overview */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">Recommended Supplements</h2>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Total:</span>
+                    <span className="text-sm font-medium text-blue-600">{supplements.length}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {supplements.map((supplement) => (
+                    <motion.div
+                      key={supplement.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">{supplement.name}</h3>
+                        {supplement.recommended && (
+                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                            Recommended
+                          </span>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Dosage</p>
-                        <p className="font-medium">{supplement.dosage}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Benefits</p>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {supplement.benefits.map((benefit, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full"
-                            >
-                              {benefit}
-                            </span>
-                          ))}
+                      <div className="space-y-4">
+                        <div className="bg-gray-50 rounded-xl p-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <FiClock className="w-5 h-5 text-blue-600" />
+                            <span className="font-medium text-gray-900">Timing</span>
+                          </div>
+                          <p className="text-gray-600">{supplement.timing}</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <FiPackage className="w-5 h-5 text-purple-600" />
+                            <span className="font-medium text-gray-900">Dosage</span>
+                          </div>
+                          <p className="text-gray-600">{supplement.dosage}</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-4">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <FiTrendingUp className="w-5 h-5 text-green-600" />
+                            <span className="font-medium text-gray-900">Benefits</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {supplement.benefits.map((benefit, index) => (
+                              <span
+                                key={index}
+                                className="px-3 py-1 bg-white text-blue-600 text-sm rounded-full border border-blue-100"
+                              >
+                                {benefit}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-2 text-center text-gray-500">
-                  No supplements recommended yet
+                    </motion.div>
+                  ))}
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* Supplement Schedule */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">Supplement Schedule</h2>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {['Morning', 'Afternoon', 'Evening'].map((time) => (
+                    <div key={time} className="bg-gray-50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">{time}</h3>
+                      <div className="space-y-3">
+                        {supplements
+                          .filter(s => s.timing.toLowerCase().includes(time.toLowerCase()))
+                          .map((supplement) => (
+                            <div key={supplement.id} className="bg-white rounded-lg p-4">
+                              <p className="font-medium text-gray-900">{supplement.name}</p>
+                              <p className="text-sm text-gray-600">{supplement.dosage}</p>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1283,22 +1397,27 @@ export default function ClientDashboard() {
 
         {/* Progress Tab */}
         {activeTab === 'progress' && progressData && (
-          <div className="space-y-6">
-            {/* Progress Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-8">
+            {/* Progress Overview Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl shadow-sm p-6"
+                className="bg-white rounded-2xl shadow-lg p-6"
               >
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Attendance Rate</h3>
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Workout Completion</h3>
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <FiActivity className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-center mb-4">
                   <Chart
                     type="pie"
-                    width={300}
-                    series={[progressData.attendanceRate, 100 - progressData.attendanceRate]}
+                    width={200}
+                    series={[progressData.workoutsCompleted, progressData.totalWorkouts - progressData.workoutsCompleted]}
                     options={{
-                      labels: ['Present', 'Absent'],
+                      labels: ['Completed', 'Remaining'],
                       colors: ['#10B981', '#EF4444'],
                       legend: {
                         position: 'bottom',
@@ -1306,11 +1425,11 @@ export default function ClientDashboard() {
                     }}
                   />
                 </div>
-                <div className="mt-4 text-center">
-                  <p className="text-2xl font-bold text-gray-900">
-                    {progressData.attendanceRate}%
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-gray-900">
+                    {Math.round((progressData.workoutsCompleted / progressData.totalWorkouts) * 100)}%
                   </p>
-                  <p className="text-sm text-gray-600">Attendance Rate</p>
+                  <p className="text-sm text-gray-600">Completion Rate</p>
                 </div>
               </motion.div>
 
@@ -1318,12 +1437,62 @@ export default function ClientDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-xl shadow-sm p-6"
+                className="bg-white rounded-2xl shadow-lg p-6"
               >
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Body Measurements</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Weight Progress</h3>
+                  <div className="p-3 bg-green-100 rounded-full">
+                    <FiTrendingUp className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-center mb-4">
+                  <Chart
+                    type="line"
+                    width={200}
+                    series={[{
+                      name: 'Weight',
+                      data: progressData.weightProgress.history.map(h => h.weight)
+                    }]}
+                    options={{
+                      chart: {
+                        toolbar: {
+                          show: false
+                        }
+                      },
+                      xaxis: {
+                        categories: progressData.weightProgress.history.map(h => h.date)
+                      },
+                      yaxis: {
+                        title: {
+                          text: 'Weight (kg)'
+                        }
+                      }
+                    }}
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-gray-900">
+                    {progressData.weightProgress.current} kg
+                  </p>
+                  <p className="text-sm text-gray-600">Current Weight</p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white rounded-2xl shadow-lg p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Body Measurements</h3>
+                  <div className="p-3 bg-purple-100 rounded-full">
+                    <FiPackage className="w-6 h-6 text-purple-600" />
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   {Object.entries(progressData.measurements).map(([key, value]) => (
-                    <div key={key} className="text-center">
+                    <div key={key} className="bg-gray-50 rounded-xl p-3 text-center">
                       <p className="text-sm text-gray-600 capitalize">{key}</p>
                       <p className="text-lg font-semibold text-gray-900">{value} cm</p>
                     </div>
@@ -1332,109 +1501,163 @@ export default function ClientDashboard() {
               </motion.div>
             </div>
 
-            {/* Weight Progress Chart */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl shadow-sm p-6"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Weight Progress</h3>
-              <div className="flex items-center justify-center">
-                <Chart
-                  type="line"
-                  width={600}
-                  series={[{
-                    name: 'Weight',
-                    data: progressData.weightProgress.history.map(h => h.weight)
-                  }]}
-                  options={{
-                    chart: {
-                      toolbar: {
-                        show: false
-                      }
-                    },
-                    xaxis: {
-                      categories: progressData.weightProgress.history.map(h => h.date)
-                    },
-                    yaxis: {
-                      title: {
-                        text: 'Weight (kg)'
-                      }
-                    }
-                  }}
-                />
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {progressData.weightProgress.current} kg
-                  </p>
-                  <p className="text-sm text-gray-600">Current Weight</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {progressData.weightProgress.target} kg
-                  </p>
-                  <p className="text-sm text-gray-600">Target Weight</p>
+            {/* Detailed Progress Charts */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">Detailed Progress</h2>
+                  <div className="flex space-x-2">
+                    <button className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors">
+                      Weekly
+                    </button>
+                    <button className="px-4 py-2 text-sm bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-colors">
+                      Monthly
+                    </button>
+                  </div>
                 </div>
               </div>
-            </motion.div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Weight Progress</h3>
+                    <div className="flex items-center justify-center">
+                      <Chart
+                        type="line"
+                        width={400}
+                        series={[{
+                          name: 'Weight',
+                          data: progressData.weightProgress.history.map(h => h.weight)
+                        }]}
+                        options={{
+                          chart: {
+                            toolbar: {
+                              show: false
+                            }
+                          },
+                          xaxis: {
+                            categories: progressData.weightProgress.history.map(h => h.date)
+                          },
+                          yaxis: {
+                            title: {
+                              text: 'Weight (kg)'
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="mt-6 grid grid-cols-2 gap-4">
+                      <div className="bg-white p-4 rounded-xl shadow-sm">
+                        <p className="text-sm text-gray-600">Starting Weight</p>
+                        <p className="text-2xl font-bold text-gray-900">{progressData.weightProgress.history[progressData.weightProgress.history.length - 1].weight} kg</p>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl shadow-sm">
+                        <p className="text-sm text-gray-600">Current Weight</p>
+                        <p className="text-2xl font-bold text-gray-900">{progressData.weightProgress.current} kg</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Body Measurements Progress</h3>
+                    <div className="flex items-center justify-center">
+                      <Chart
+                        type="bar"
+                        width={400}
+                        series={[{
+                          name: 'Measurements',
+                          data: Object.values(progressData.measurements)
+                        }]}
+                        options={{
+                          chart: {
+                            toolbar: {
+                              show: false
+                            }
+                          },
+                          xaxis: {
+                            categories: Object.keys(progressData.measurements).map(k => k.charAt(0).toUpperCase() + k.slice(1))
+                          },
+                          yaxis: {
+                            title: {
+                              text: 'cm'
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Meal Plan Tab */}
         {activeTab === 'mealplan' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Current Meal Plan */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Current Meal Plan</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">Current Meal Plan</h2>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Week of:</span>
+                    <span className="text-sm font-medium text-blue-600">Feb 12 - Feb 18</span>
+                  </div>
+                </div>
               </div>
-              <div className="divide-y divide-gray-200">
-                {mealPlan.length > 0 ? (
-                  mealPlan.map((day) => (
-                    <div key={day.day} className="p-6">
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {mealPlan.map((day) => (
+                    <div key={day.day} className="bg-gray-50 rounded-xl p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">{day.day}</h3>
                       <div className="space-y-4">
                         {day.meals.map((meal, index) => (
-                          <div key={index} className="bg-gray-50 rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium">{meal.type}</h4>
+                          <div key={index} className="bg-white rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium text-gray-900">{meal.type}</h4>
                               <span className="text-sm text-gray-600">{meal.time}</span>
                             </div>
                             <div className="space-y-2">
                               {meal.foods.map((food, i) => (
-                                <div key={i} className="flex items-center justify-between text-sm">
-                                  <span>{food.name}</span>
+                                <div key={i} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded">
+                                  <span className="font-medium text-gray-900">{food.name}</span>
                                   <div className="flex items-center space-x-4">
                                     <span className="text-gray-600">{food.portion}</span>
-                                    <span className="text-gray-900 font-medium">{food.calories} cal</span>
+                                    <span className="text-blue-600 font-medium">{food.calories} cal</span>
                                   </div>
                                 </div>
                               ))}
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Total Calories</span>
+                                <span className="text-sm font-medium text-gray-900">
+                                  {meal.foods.reduce((sum, food) => sum + food.calories, 0)} cal
+                                </span>
+                              </div>
                             </div>
                           </div>
                         ))}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="p-6 text-center text-gray-500">
-                    No meal plan available yet
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Meal History */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-gray-900">Meal History</h2>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Total Meals:</span>
-                    <span className="text-sm font-medium text-blue-600">{mealHistory.length}</span>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">Meal History</h2>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Total Meals:</span>
+                      <span className="text-sm font-medium text-blue-600">{mealHistory.length}</span>
+                    </div>
+                    <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
+                      View All
+                      <FiPlus className="w-4 h-4 ml-1" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1446,7 +1669,7 @@ export default function ClientDashboard() {
                     <select
                       value={mealFilter.dateRange}
                       onChange={(e) => setMealFilter({ ...mealFilter, dateRange: e.target.value })}
-                      className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full rounded-xl border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="all">All Time</option>
                       <option value="week">Last Week</option>
@@ -1458,7 +1681,7 @@ export default function ClientDashboard() {
                     <select
                       value={mealFilter.mealType}
                       onChange={(e) => setMealFilter({ ...mealFilter, mealType: e.target.value })}
-                      className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full rounded-xl border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="all">All Meals</option>
                       <option value="Breakfast">Breakfast</option>
@@ -1472,7 +1695,7 @@ export default function ClientDashboard() {
                     <select
                       value={mealFilter.sortBy}
                       onChange={(e) => setMealFilter({ ...mealFilter, sortBy: e.target.value })}
-                      className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full rounded-xl border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="date">Date</option>
                       <option value="calories">Calories</option>
@@ -1483,39 +1706,45 @@ export default function ClientDashboard() {
                 {/* History List */}
                 <div className="space-y-4">
                   {filterMealHistory(mealHistory).map((meal, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center justify-between mb-2">
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-3">
                         <div>
-                          <h3 className="font-medium text-lg">{meal.mealType}</h3>
+                          <h3 className="font-medium text-lg text-gray-900">{meal.mealType}</h3>
                           <p className="text-sm text-gray-600">
                             {new Date(meal.date).toLocaleDateString()} at {meal.time}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-lg">{meal.totalCalories} cal</p>
+                          <p className="font-medium text-lg text-gray-900">{meal.totalCalories} cal</p>
                         </div>
                       </div>
-                      <div className="mt-2">
-                        <h4 className="text-sm font-medium text-gray-700">Foods:</h4>
+                      <div className="mt-3">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Foods:</h4>
                         <div className="mt-1 space-y-1">
                           {meal.foods.map((food, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm bg-white p-2 rounded">
-                              <span className="font-medium">{food.name}</span>
+                            <div key={i} className="flex items-center justify-between text-sm bg-white p-2 rounded-lg">
+                              <span className="font-medium text-gray-900">{food.name}</span>
                               <div className="flex items-center space-x-4">
                                 <span className="text-gray-600">{food.portion}</span>
-                                <span className="text-gray-900">{food.calories} cal</span>
+                                <span className="text-blue-600 font-medium">{food.calories} cal</span>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
                       {meal.notes && (
-                        <div className="mt-2 text-sm text-gray-600 bg-white p-2 rounded">
-                          <p className="font-medium">Notes:</p>
+                        <div className="mt-3 text-sm text-gray-600 bg-white p-3 rounded-lg">
+                          <p className="font-medium text-gray-700">Notes:</p>
                           <p>{meal.notes}</p>
                         </div>
                       )}
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>

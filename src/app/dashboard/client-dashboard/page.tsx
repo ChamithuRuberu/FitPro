@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { getSession } from '@/actions';
+import { getSession, logoutUser } from '@/actions';
 
 const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 
@@ -15,8 +15,8 @@ interface UserData {
   city: string;
   status: string;
   mobile: string;
-  full_name: string;
-  gov_id: string | null;
+  fullName: string;
+  govId: string | null;
 }
 
 interface Workout {
@@ -69,6 +69,7 @@ export default function ClientDashboard() {
   const [schedule, setSchedule] = useState<ScheduleDay[]>([]);
   const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [workoutProgram, setWorkoutProgram] = useState<WorkoutProgram | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -78,18 +79,83 @@ export default function ClientDashboard() {
     return 'Good Night';
   };
 
-
   useEffect(() => {
-    //fetch user data
-    const fetchUserData = async () => {
-      const auth = await getSession();
-      console.log(JSON.stringify(auth, null, 2)); // Pretty-print JSON
-     
+    const checkSession = async () => {
+      try {
+        const session = await getSession();
+        if (!session.success || !session.data) {
+          toast.error('Please log in to access the dashboard');
+          router.push('/login');
+          return;
+        }
+
+        // Set user data from session
+        setUserData({
+          email: session.data.email,
+          fullName: session.data.fullName || '',
+          city: session.data.city || '',
+          status: session.data.userStatus || 'Active',
+          mobile: '', // Add mobile if available in session
+          govId: null, // Add govId if available in session
+        });
+
+        // Fetch additional data based on active tab
+        await fetchTabData(activeTab);
+      } catch (error) {
+        console.error('Session check error:', error);
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchUserData();
 
+    checkSession();
+  }, [router, activeTab]);
 
-  }, []);
+  const fetchTabData = async (tab: string) => {
+    try {
+      switch (tab) {
+        case 'schedule':
+          // Fetch schedule data
+          break;
+        case 'supplements':
+          // Fetch supplements data
+          break;
+        case 'workouts':
+          // Fetch workout program data
+          break;
+        case 'progress':
+          // Fetch progress data
+          break;
+      }
+    } catch (error) {
+      console.error(`Error fetching ${tab} data:`, error);
+      toast.error(`Failed to load ${tab} data`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const result = await logoutUser();
+      if (result.success) {
+        toast.success('Logged out successfully');
+        router.push('/login');
+      } else {
+        toast.error('Failed to logout');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to logout');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -99,10 +165,12 @@ export default function ClientDashboard() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
-            {/* <h1 className="text-2xl font-semibold text-gray-900">{getGreeting()}, {userData.full_name}</h1> */}
+            <h1 className="text-2xl font-semibold text-gray-900">
+              {getGreeting()}, {userData?.fullName}
+            </h1>
             <div className="flex items-center space-x-6">
-
               <button
+                onClick={handleLogout}
                 className="flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <FiLogOut className="w-4 h-4 mr-2" />
@@ -118,19 +186,20 @@ export default function ClientDashboard() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as any)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === tab
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50'
-                    }`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    activeTab === tab
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
               ))}
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Trainer:</span>
-              <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-sm font-medium">
-                Not Assigned
+              <span className="text-sm text-gray-600">Status:</span>
+              <span className="px-3 py-1 bg-green-100 text-green-600 rounded-md text-sm font-medium">
+                {userData?.status}
               </span>
             </div>
           </div>
@@ -152,8 +221,7 @@ export default function ClientDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Contact Info</p>
-                    {/* <p className="text-lg font-semibold text-gray-900">{userData.mobile}</p> */}
-                    {/* <p className="text-sm text-gray-600">{userData.email}</p> */}
+                    <p className="text-lg font-semibold text-gray-900">{userData?.email}</p>
                   </div>
                   <div className="p-3 bg-blue-50 rounded-full">
                     <FiUser className="w-6 h-6 text-blue-600" />
@@ -170,8 +238,7 @@ export default function ClientDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Location</p>
-                    {/* <p className="text-lg font-semibold text-gray-900">{userData.city}</p> */}
-                    <p className="text-sm text-gray-600">Current City</p>
+                    <p className="text-lg font-semibold text-gray-900">{userData?.city}</p>
                   </div>
                   <div className="p-3 bg-green-50 rounded-full">
                     <FiDollarSign className="w-6 h-6 text-green-600" />
@@ -188,8 +255,7 @@ export default function ClientDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Account Status</p>
-                    {/* <p className="text-lg font-semibold text-gray-900">{userData.status}</p> */}
-                    <p className="text-sm text-gray-600">Current Status</p>
+                    <p className="text-lg font-semibold text-gray-900">{userData?.status}</p>
                   </div>
                   <div className="p-3 bg-purple-50 rounded-full">
                     <FiActivity className="w-6 h-6 text-purple-600" />
@@ -197,7 +263,6 @@ export default function ClientDashboard() {
                 </div>
               </motion.div>
             </div>
-
           </div>
         )}
 
@@ -209,11 +274,11 @@ export default function ClientDashboard() {
             </div>
             <div className="divide-y divide-gray-200">
               {schedule.length > 0 ? (
-                schedule.map((day: ScheduleDay) => (
+                schedule.map((day) => (
                   <div key={day.id} className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">{day.day}</h3>
                     <div className="space-y-4">
-                      {day.workouts.map((workout: Workout, index: number) => (
+                      {day.workouts.map((workout, index) => (
                         <div key={index} className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
                           <div>
                             <p className="font-medium">{workout.type}</p>
@@ -242,7 +307,7 @@ export default function ClientDashboard() {
             </div>
             <div className="grid md:grid-cols-2 gap-6 p-6">
               {supplements.length > 0 ? (
-                supplements.map((supplement: Supplement) => (
+                supplements.map((supplement) => (
                   <div key={supplement.id} className="bg-white border rounded-xl p-6 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">{supplement.name}</h3>
@@ -264,7 +329,7 @@ export default function ClientDashboard() {
                       <div>
                         <p className="text-sm text-gray-600">Benefits</p>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {supplement.benefits.map((benefit: string, index: number) => (
+                          {supplement.benefits.map((benefit, index) => (
                             <span
                               key={index}
                               className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full"

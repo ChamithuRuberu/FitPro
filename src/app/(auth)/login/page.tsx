@@ -30,10 +30,18 @@ export default function LoginPage() {
     const loadingToast = toast.loading('Signing in...');
 
     try {
-      const result = await user_login(formData.email, formData.password,"ROLE_USER");
+      console.log('Attempting login with:', { email: formData.email, role_type: "ROLE_USER" });
+      const result = await user_login(formData.email, formData.password, "ROLE_USER");
+      console.log('Login response:', result);
 
       if (!result.success) {
-        throw new Error(result.error || 'Login failed');
+        console.error('Login failed:', result.message);
+        throw new Error(result.message || 'Login failed');
+      }
+
+      if (!result.data) {
+        console.error('No data received from login');
+        throw new Error('No data received from login');
       }
 
       toast.success('Login successful!');

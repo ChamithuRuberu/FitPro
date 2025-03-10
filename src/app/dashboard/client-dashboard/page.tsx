@@ -593,8 +593,8 @@ export default function ClientDashboard() {
           fullName: session.data.fullName || '',
           city: session.data.city || '',
           status: session.data.userStatus || 'Active',
-          mobile: '',
-          govId: null,
+          mobile: session.data.mobile || '',
+          govId: session.data.govId || null,
         });
 
         await fetchTabData(activeTab);

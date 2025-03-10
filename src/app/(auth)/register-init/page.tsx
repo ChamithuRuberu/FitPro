@@ -69,11 +69,11 @@ export default function SignupPage() {
         ...(trainerId && { trainer_id: trainerId })
       });
 
-      if (result.success) {
+      if (result.success && result.data) {
         toast.success('Registration successful! Please verify your account.');
         router.push(`/verify?username=${encodeURIComponent(result.data.app_user_id)}`);
       } else {
-        throw new Error(result.error || 'Registration failed');
+        throw new Error(result.message || 'Registration failed');
       }
     } catch (err) {
       console.error('Registration error:', err);

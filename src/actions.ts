@@ -75,11 +75,11 @@ export async function initializeRegistration(formData: {
 
     // Set session with JWT
     await setSession({
-      userId: data.userId,
+      userId: data.app_user_id,
       email: data.email,
-      fullName: data.fullName,
-      role: data.role,
-      trainerId: data.trainerId,
+      fullName: data.full_name || '',
+      role: formData.role_type,
+      trainerId: data.trainer_id,
     });
 
     return { success: true, data };

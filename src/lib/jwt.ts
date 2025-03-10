@@ -11,6 +11,8 @@ export interface UserPayload {
   city?: string;
   userStatus?: string;
   token?: string;
+  mobile?: string;
+  govId?: string | null;
 }
 
 export async function createToken(payload: Record<string, any>): Promise<string> {

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiBarChart2, FiUsers, FiCheckCircle, FiAward } from 'react-icons/fi';
+import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiBarChart2, FiUsers, FiCheckCircle, FiAward, FiStar } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 import { getSession, checkTrainerAuth, logoutTrainer } from '@/actions';
 
@@ -66,6 +66,14 @@ interface ClientSegment {
   change: number;
 }
 
+interface ClientSummary {
+  id: string;
+  name: string;
+  progress: number;
+  nextSession: string;
+  program: string;
+}
+
 export default function TrainerDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'workouts' | 'nutrition' | 'progress'>('overview');
@@ -77,26 +85,7 @@ export default function TrainerDashboard() {
     monthlyRevenue: 2500,
     rating: 4.8
   });
-  const [clients, setClients] = useState<ClientData[]>([
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      status: 'Active',
-      lastWorkout: '2024-03-10',
-      progress: 75,
-      programType: 'Weight Loss'
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      status: 'Active',
-      lastWorkout: '2024-03-09',
-      progress: 60,
-      programType: 'Muscle Gain'
-    }
-  ]);
+  const [clients, setClients] = useState<ClientSummary[]>([]);
   const [nutritionItems, setNutritionItems] = useState<NutritionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [clientSegments] = useState<ClientSegment[]>([
@@ -297,7 +286,7 @@ export default function TrainerDashboard() {
           <div className="flex justify-between items-center">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold text-white">
-                {getGreeting()}, {trainerData?.fullName}
+                {getGreeting()}, {trainerData?.fullName} {trainerData?.role[0].name}
               </h1>
               <p className="text-blue-100 text-sm">
                 Trainer ID: {trainerData?.trainerId} | {trainerData?.city}
@@ -661,7 +650,7 @@ export default function TrainerDashboard() {
                       <div className="flex items-center space-x-8">
                         <div>
                           <p className="text-sm font-medium text-gray-500">Program</p>
-                          <p className="text-sm font-semibold text-gray-900">{client.programType}</p>
+                          <p className="text-sm font-semibold text-gray-900">{client.program}</p>
                         </div>
                         <div className="w-48">
                           <p className="text-sm font-medium text-gray-500 mb-2">Progress</p>

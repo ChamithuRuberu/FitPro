@@ -154,25 +154,37 @@ export async function user_login(email: string, password: string, role_type: str
       };
     }
 
-    if (!data.data?.user) {
-      return { 
-        success: false, 
-        message: 'Invalid response from server',
-        data: null 
-      };
-    }
-
+    // Extract all necessary data
     const userData = data.data.user;
     const token = data.data.token;
+    const roles = data.data.roles;
+    const primaryRole = roles[0];
 
- 
+    // Create standardized session data
+    const sessionData: UserPayload = {
+      username: userData.email,
+      email: userData.email,
+      role: primaryRole.name,
+      token: token,
+      refreshToken: data.data.refresh_token,
+      userId: userData.gov_id?.toString() || '',
+      fullName: userData.full_name || '',
+      city: userData.city || '',
+      status: userData.status || 'ACTIVE',
+      mobile: userData.mobile || '',
+      trainerId: primaryRole.name === 'ROLE_TRAINER' ? userData.gov_id?.toString() : undefined
+    };
+
+    // Set the session
+    console.log('Setting session with data:', sessionData);
+    await setSession(sessionData);
+
     return { 
       success: true, 
       message: data.message || 'Login successful',
       data: {
-        ...userData,
-        token: token,
-        refreshToken: data.data.refresh_token
+        ...sessionData,
+        roles: roles
       }
     };
   } catch (error) {

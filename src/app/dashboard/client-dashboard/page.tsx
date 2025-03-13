@@ -592,7 +592,7 @@ export default function ClientDashboard() {
           email: session.data.email,
           fullName: session.data.fullName || '',
           city: session.data.city || '',
-          status: session.data.userStatus || 'Active',
+          status: session.data.status || 'Active',
           mobile: session.data.mobile || '',
           govId: session.data.userId || null,
         });

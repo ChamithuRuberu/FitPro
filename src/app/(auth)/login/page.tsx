@@ -57,37 +57,6 @@ export default function LoginSelectionPage() {
               </div>
             </Link>
 
-            {/* Trainer Login Option */}
-            <Link href="/login/trainer" className="block">
-              <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 border border-gray-100">
-                <div className="flex items-center space-x-4">
-                  <div className="bg-indigo-100 p-3 rounded-lg">
-                    <FiActivity className="w-6 h-6 text-indigo-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900">Trainer Login</h3>
-                    <p className="text-sm text-gray-600">Manage your clients and create workout programs</p>
-                  </div>
-                  <FiArrowRight className="w-5 h-5 text-gray-400" />
-                </div>
-              </div>
-            </Link>
-
-            {/* Admin Login Option */}
-            <Link href="/login/admin" className="block">
-              <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 border border-gray-100">
-                <div className="flex items-center space-x-4">
-                  <div className="bg-purple-100 p-3 rounded-lg">
-                    <FiSettings className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900">Admin Login</h3>
-                    <p className="text-sm text-gray-600">Manage gym operations and system settings</p>
-                  </div>
-                  <FiArrowRight className="w-5 h-5 text-gray-400" />
-                </div>
-              </div>
-            </Link>
           </div>
 
           {/* Registration Link */}

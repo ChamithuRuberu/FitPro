@@ -40,8 +40,38 @@ export default function ClientLoginPage() {
         throw new Error('No data received from login');
       }
 
+      // Check for roles in the response
+      if (!result.data.roles || !Array.isArray(result.data.roles) || result.data.roles.length === 0) {
+        throw new Error('No role information received');
+      }
+
+      // Get the primary role from the session data
+      const userRole = result.data.role;
+      console.log('User role from session:', userRole);
+
+      // Determine which dashboard to navigate to based on role
+      let dashboardPath;
+      switch (userRole) {
+        case 'ROLE_TRAINER':
+          dashboardPath = '/dashboard/trainer-admin';
+          break;
+        case 'ROLE_USER':
+          dashboardPath = '/dashboard/client-dashboard';
+          break;
+        case 'ROLE_ADMIN':
+          dashboardPath = '/dashboard/admin';
+          break;
+        case 'ROLE_SUPER_ADMIN':
+          dashboardPath = '/dashboard/super-admin';
+          break;
+        default:
+          console.error('Unexpected role:', userRole);
+          throw new Error('Invalid role type');
+      }
+
+      console.log('Navigating to dashboard:', dashboardPath);
       toast.success('Login successful!');
-      router.push('/dashboard/client-dashboard');
+      router.push(dashboardPath);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during login';
       setError(errorMessage);

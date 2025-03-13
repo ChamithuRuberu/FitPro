@@ -10,22 +10,24 @@
   NEXT_DISABLE_ESLINT = "1"
   DISABLE_ESLINT_PLUGIN = "true"
   NODE_ENV = "production"
+  API_URL = "https://fitpro-backend.onrender.com"
+  NEXT_PUBLIC_API_URL = "https://fitpro-backend.onrender.com"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Rewrite rule to handle client-side routing
+# Handle API requests
+[[redirects]]
+  from = "/api/*"
+  to = "https://fitpro-backend.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# Handle client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Handle API requests
-[[redirects]]
-  from = "/api/*"
-  to = "https://your-backend-api.com/api/:splat"
-  status = 200
-  force = true
 
 [functions]
   # Increase the build timeout to 60 seconds

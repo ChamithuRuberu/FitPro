@@ -6,7 +6,6 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
     // your project has type errors.
     ignoreBuildErrors: true,
@@ -14,24 +13,34 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   swcMinify: true,
+  experimental: {
+    serverActions: true,
+  },
   async rewrites() {
+    const apiUrl = process.env.NODE_ENV === 'production'
+      ? process.env.API_URL || 'https://your-backend-api.com'
+      : 'http://localhost:8080';
+
     return [
       {
         source: '/api/:path*',
-        destination: process.env.NODE_ENV === 'production' 
-          ? process.env.API_URL + '/api/:path*' 
-          : 'http://localhost:8080/api/:path*'
-      }
+        destination: `${apiUrl}/api/:path*`,
+      },
     ];
   },
   // Add image domains if you're using next/image
   images: {
-    domains: ['localhost', 'your-production-domain.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
   },
-  // Disable server-side rendering for static deployment
-  experimental: {
-    appDir: true,
-  }
 };
 
 module.exports = nextConfig 

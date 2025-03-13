@@ -30,7 +30,7 @@ export default function ClientLoginPage() {
     const loadingToast = toast.loading('Signing in...');
 
     try {
-      const result = await user_login(formData.email, formData.password, "ROLE_USER");
+      const result = await user_login(formData.email, formData.password);
       
       if (!result.success) {
         throw new Error(result.message || 'Login failed');

@@ -137,7 +137,7 @@ export async function verifyOTP(username: string, otp: string) {
   }
 }
 
-export async function user_login(email: string, password: string, role_type: string) {
+export async function user_login(email: string, password: string) {
   try {
     console.log('Making login request to:', `${API_BASE_URL}/user/login`);
     const response = await fetch(`${API_BASE_URL}/user/login`, {
@@ -145,12 +145,22 @@ export async function user_login(email: string, password: string, role_type: str
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password, role_type }),
+      body: JSON.stringify({ email, password }),
     });
 
     console.log('Login response status:', response.status);
     const data = await response.json();
     console.log('Login response data:', data);
+
+    // Check if the response has the expected structure
+    if (!data || !data.data || !data.data.user) {
+      console.error('Invalid response structure:', data);
+      return { 
+        success: false, 
+        message: 'Invalid response from server',
+        data: null 
+      };
+    }
 
     if (data.code !== "0000") {
       return { 
@@ -160,26 +170,50 @@ export async function user_login(email: string, password: string, role_type: str
       };
     }
 
-    if (!data.data?.user) {
+    // Create session data from the API response
+    const sessionData: UserPayload = {
+      data: {
+        user: {
+          full_name: data.data.user.full_name || '',
+          mobile: data.data.user.mobile || '',
+          nic: data.data.user.gov_id?.toString() || '',
+          username: data.data.user.email || '',
+          status: data.data.user.status || 'ACTIVE'
+        },
+        token: data.data.token || '',
+        refresh_token: data.data.refresh_token || '',
+        roles: data.data.roles || []
+      },
+      success: true
+    };
+
+    // Validate session data before setting
+    if (!sessionData.data.token || !sessionData.data.user.username) {
+      console.error('Invalid session data:', sessionData);
       return { 
         success: false, 
-        message: 'Invalid response from server',
+        message: 'Invalid session data',
         data: null 
       };
     }
 
-    const userData = data.data.user;
-    const token = data.data.token;
+    // Store session data
+    console.log('Setting session with data:', sessionData);
+    const sessionResult = await setSession(sessionData);
+    
+    if (!sessionResult.success) {
+      console.error('Failed to set session:', sessionResult);
+      return { 
+        success: false, 
+        message: 'Failed to create session',
+        data: null 
+      };
+    }
 
- 
     return { 
       success: true, 
-      message: data.message || 'Login successful',
-      data: {
-        ...userData,
-        token: token,
-        refreshToken: data.data.refresh_token
-      }
+      message: 'Login successful',
+      data: data.data
     };
   } catch (error) {
     console.error('Login error:', error);

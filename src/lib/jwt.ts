@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from 'jose';
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
 export interface UserPayload {
-  data?: {
+  data: {
     user: {
       full_name: string;
       mobile: string;
@@ -22,9 +22,17 @@ export interface UserPayload {
     };
     token: string;
     refresh_token: string;
+    roles?: {
+      id: number;
+      name: string;
+      status: string;
+      permissions: {
+        id: number;
+        name: string;
+      }[];
+    }[];
   };
-  success?: boolean;
-  message?: string;
+  success: boolean;
 }
 
 export async function createToken(payload: UserPayload): Promise<string> {

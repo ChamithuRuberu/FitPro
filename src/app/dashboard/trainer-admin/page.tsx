@@ -190,7 +190,6 @@ export default function TrainerDashboard() {
         };
 
         console.log('Setting trainer data:', trainerData);
-        setTrainerData(trainerData);
 
         // Fetch additional data based on active tab
         await fetchTabData(activeTab);

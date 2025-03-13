@@ -22,6 +22,7 @@ interface RegisterUserFormData {
   weight: string;
   height: string;
   injuries: string;
+  trainerId: string;
 }
 
 export default function RegisterPage() {
@@ -30,7 +31,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState<RegisterUserFormData>({
     username: '',
     name: '',
-    profile: '',
+    profile: 'default',
     full_name: '',
     birth_of_date: '',
     address_no: '',
@@ -39,10 +40,11 @@ export default function RegisterPage() {
     password: '',
     postalCode: '',
     role_type: 'ROLE_USER',
-    servicePeriod: '',
+    servicePeriod: '0',
     weight: '',
     height: '',
-    injuries: ''
+    injuries: '',
+    trainerId: '499763' // Default trainer ID
   });
 
   useEffect(() => {
@@ -50,10 +52,10 @@ export default function RegisterPage() {
       const session = await getSession();
       console.log('User profile session:', session);
       
-      if (session.success && session.data) {
+      if (session.success && session.data?.data?.user) {
         setFormData(prev => ({
           ...prev,
-          username: session.data.username,
+          username: session.data.data.user.username,
           role_type: 'ROLE_USER'
         }));
       } else {
@@ -70,35 +72,76 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // Validate required fields
+      const requiredFields = [
+        'username',
+        'full_name',
+        'birth_of_date',
+        'address_no',
+        'address_street',
+        'city',
+        'password',
+        'postalCode',
+        'weight',
+        'height'
+      ];
+
+      const missingFields = requiredFields.filter(field => !formData[field as keyof RegisterUserFormData]);
+      if (missingFields.length > 0) {
+        toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        setLoading(false);
+        return;
+      }
+
+      // Validate password
+      if (formData.password.length < 6) {
+        toast.error('Password must be at least 6 characters long');
+        setLoading(false);
+        return;
+      }
+
+      // Validate numeric fields
+      if (isNaN(Number(formData.weight)) || isNaN(Number(formData.height))) {
+        toast.error('Weight and height must be valid numbers');
+        setLoading(false);
+        return;
+      }
+
       const requestData = {
-        username: formData.username,
-        name: formData.full_name,
-        profile: "default",
-        full_name: formData.full_name,
+        username: formData.username.trim(),
+        name: formData.full_name.trim(),
+        profile: formData.profile,
+        full_name: formData.full_name.trim(),
         birth_of_date: formData.birth_of_date,
-        address_no: formData.address_no,
-        address_street: formData.address_street,
-        city: formData.city,
+        address_no: formData.address_no.trim(),
+        address_street: formData.address_street.trim(),
+        city: formData.city.trim(),
         password: formData.password,
-        postalCode: formData.postalCode,
-        role_type: "ROLE_USER",
-        servicePeriod: "0",
+        postalCode: formData.postalCode.trim(),
+        role_type: formData.role_type,
+        servicePeriod: formData.servicePeriod,
         weight: formData.weight,
         height: formData.height,
-        injuries: formData.injuries || "None"
+        injuries: formData.injuries?.trim() || "None",
+        trainerId: formData.trainerId
       };
 
+      console.log('Submitting profile data:', requestData);
       const result = await completeUserProfile(requestData);
+      console.log('Profile completion response:', result);
 
-      if (result.success) {
+      if (result.success && result.data) {
         toast.success('Profile created successfully!');
+        // Wait a moment for the session to be updated
+        await new Promise(resolve => setTimeout(resolve, 1000));
         router.replace('/dashboard/client-dashboard');
       } else {
-        toast.error(result.message || 'Registration failed');
+        console.error('Profile completion failed:', result);
+        toast.error(result.message || 'Failed to create profile. Please try again.');
       }
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Failed to create profile');
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -281,6 +324,27 @@ export default function RegisterPage() {
                   value={formData.height}
                   onChange={handleInputChange}
                 />
+              </div>
+            </div>
+
+            {/* Trainer Information */}
+            <div>
+              <label htmlFor="trainerId" className="block text-sm font-medium text-gray-700">
+                Trainer ID
+              </label>
+              <div className="mt-1">
+                <input
+                  id="trainerId"
+                  name="trainerId"
+                  type="text"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.trainerId}
+                  onChange={handleInputChange}
+                  placeholder="Enter trainer ID (default: 499763)"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Leave empty to use default trainer (ID: 499763)
+                </p>
               </div>
             </div>
 

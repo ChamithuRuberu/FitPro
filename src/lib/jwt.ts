@@ -3,21 +3,28 @@ import { SignJWT, jwtVerify } from 'jose';
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
 export interface UserPayload {
-  username: string;
-  email: string;
-  role: string;
-  token: string;
-  refreshToken: string;
-  userId: string;
-  mobile: string;
-  status?: string;
-  fullName?: string;
-  city?: string;
-  trainerId?: string;
-  servicePeriod?: string;
-  weight?: string;
-  height?: string;
-  profile?: string;
+  data?: {
+    user: {
+      full_name: string;
+      mobile: string;
+      nic: string;
+      username: string;
+      status: string;
+    };
+    trainer_obj?: {
+      id: number;
+      name: string;
+      trainerId: string;
+      servicePeriod: string;
+      weight: string;
+      height: string;
+      profile: string;
+    };
+    token: string;
+    refresh_token: string;
+  };
+  success?: boolean;
+  message?: string;
 }
 
 export async function createToken(payload: UserPayload): Promise<string> {

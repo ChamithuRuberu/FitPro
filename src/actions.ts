@@ -104,17 +104,23 @@ export async function verifyOTP(username: string, otp: string) {
       return { success: false, message: data.message || 'Verification failed' };
     }
 
-    // Store username in session after successful verification
-    await setSession({
-      username: username,
-      email: '',
-      role: data.data.trainer_id ? 'ROLE_TRAINER' : 'ROLE_USER',
-      token: '',
-      refreshToken: '',
-      userId:'',
-      mobile:'',
-      status:''
-    });
+    // Create initial session data
+    const sessionData: UserPayload = {
+      data: {
+        user: {
+          full_name: '',
+          mobile: username,
+          nic: data.data.user_id || '',
+          username: username,
+          status: 'PENDING'
+        },
+        token: '',
+        refresh_token: ''
+      },
+      success: true
+    };
+
+    await setSession(sessionData);
 
     return { 
       success: true, 
@@ -224,39 +230,89 @@ export interface UserProfileData {
   weight: string;
   height: string;
   injuries: string;
+  trainerId?: string;
 }
 
 export async function completeUserProfile(profileData: UserProfileData) {
   try {
+    console.log('Sending profile data:', profileData);
     const response = await fetch(`${API_BASE_URL}/user/app-user/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(profileData),
+      body: JSON.stringify({
+        username: profileData.username.trim(),
+        name: profileData.full_name.trim(),
+        profile: profileData.profile || "default",
+        full_name: profileData.full_name.trim(),
+        birth_of_date: profileData.birth_of_date,
+        address_no: profileData.address_no.trim(),
+        address_street: profileData.address_street.trim(),
+        city: profileData.city.trim(),
+        password: profileData.password,
+        postalCode: profileData.postalCode.trim(),
+        role_type: "ROLE_USER",
+        servicePeriod: profileData.servicePeriod || "0",
+        weight: profileData.weight,
+        height: profileData.height,
+        injuries: profileData.injuries?.trim() || "None",
+        trainerId: profileData.trainerId || "499763" // Default trainer ID if not provided
+      }),
     });
 
     const data = await response.json();
+    console.log('User profile completion response:', data);
+
+    if (!response.ok) {
+      console.error('HTTP Error:', response.status, data);
+      return { success: false, message: data.message || `HTTP error: ${response.status}` };
+    }
 
     if (data.code !== "0000") {
+      console.error('API Error:', data);
       return { success: false, message: data.message || 'Profile completion failed' };
     }
 
-    // Update session with new user data
-    await setSession({
-      username: data.data.user_id,
-      email: '',
-      role: profileData.role_type,
-      token: data.data.token || '',
-      refreshToken: data.data.refresh_token || '',
-      userId:'',
-      mobile:''
-    });
+    // Create session data from the API response
+    const sessionData: UserPayload = {
+      data: {
+        user: {
+          full_name: data.data.user.full_name || profileData.full_name,
+          mobile: data.data.user.mobile || profileData.username,
+          nic: data.data.user.nic || '',
+          username: data.data.user.username || profileData.username,
+          status: 'ACTIVE'
+        },
+        token: data.data.token,
+        refresh_token: data.data.refresh_token,
+        trainer_obj: data.data.trainer_obj || null
+      },
+      success: true
+    };
 
-    return { success: true, data: data.data };
+    // Store session data
+    console.log('Setting user profile session with data:', sessionData);
+    const sessionResult = await setSession(sessionData);
+    
+    if (!sessionResult.success) {
+      console.error('Failed to set session:', sessionResult);
+      return { success: false, message: 'Failed to create user session' };
+    }
+
+    return { 
+      success: true, 
+      data: {
+        ...data.data,
+        user: {
+          ...data.data.user,
+          status: 'ACTIVE'
+        }
+      } 
+    };
   } catch (error) {
     console.error('Profile completion error:', error);
-    return { success: false, message: 'Profile completion failed' };
+    return { success: false, message: error instanceof Error ? error.message : 'Profile completion failed' };
   }
 }
 

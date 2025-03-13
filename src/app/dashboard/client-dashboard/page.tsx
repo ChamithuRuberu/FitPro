@@ -581,21 +581,32 @@ export default function ClientDashboard() {
     const checkSession = async () => {
       try {
         const session = await getSession();
-        console.log("Session data",session)
-        if (!session.success || !session.data) {
+        console.log("Session data", session);
+        if (!session.success || !session.data?.data?.user) {
+          console.error('Invalid session data:', session);
           toast.error('Please log in to access the dashboard');
           router.push('/login');
           return;
         }
 
+        const userData = session.data.data.user;
+        const trainerData = session.data.data.trainer_obj;
+
+        // Update user data with the new response structure
         setUserData({
-          email: session.data.email,
-          fullName: session.data.fullName || '',
-          city: session.data.city || '',
-          status: session.data.status || 'Active',
-          mobile: session.data.mobile || '',
-          govId: session.data.userId || null,
+          email: userData.username,
+          fullName: userData.full_name,
+          city: '',  // Will be updated when available
+          status: userData.status,
+          mobile: userData.mobile,
+          govId: userData.nic,
         });
+
+        // If there's trainer data, you can use it here
+        if (trainerData) {
+          console.log('Trainer data:', trainerData);
+          // Update any trainer-specific UI elements
+        }
 
         await fetchTabData(activeTab);
       } catch (error) {
@@ -955,7 +966,7 @@ export default function ClientDashboard() {
                     <div className="flex items-center justify-center">
                       <Chart
                         type="line"
-                        width={300}
+                        width={400}
                         series={[{
                           name: 'Weight',
                           data: sampleBodyMetrics.map(m => m.weight)
@@ -993,7 +1004,7 @@ export default function ClientDashboard() {
                     <div className="flex items-center justify-center">
                       <Chart
                         type="line"
-                        width={300}
+                        width={400}
                         series={[{
                           name: 'BMI',
                           data: sampleBodyMetrics.map(m => m.bmi)

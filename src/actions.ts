@@ -98,12 +98,33 @@ export async function verifyOTP(username: string, otp: string) {
     });
 
     const data = await response.json();
+    console.log('Verification response:', data);
 
-    if (!response.ok) {
+    if (data.code !== "0000") {
       return { success: false, message: data.message || 'Verification failed' };
     }
 
-    return { success: true, data };
+    // Store username in session after successful verification
+    await setSession({
+      username: username,
+      email: '',
+      role: data.data.trainer_id ? 'ROLE_TRAINER' : 'ROLE_USER',
+      token: '',
+      refreshToken: '',
+      userId:'',
+      mobile:'',
+      status:''
+    });
+
+    return { 
+      success: true, 
+      data: {
+        user_status: data.data.user_status,
+        user_id: data.data.user_id,
+        trainer_id: data.data.trainer_id,
+        username: username
+      }
+    };
   } catch (error) {
     console.error('Verification error:', error);
     return { success: false, message: 'Verification failed' };
@@ -187,62 +208,56 @@ export async function logoutUser() {
   }
 }
 
-export async function completeTrainerProfile(profileData: any) {
-  try {
-    const session = await getSession();
-    if (!session.success || !session.data?.token) {
-      return { success: false, message: 'Unauthorized' };
-    }
+export interface UserProfileData {
+  username: string;
+  name: string;
+  profile: string;
+  full_name: string;
+  birth_of_date: string;
+  address_no: string;
+  address_street: string;
+  city: string;
+  password: string;
+  postalCode: string;
+  role_type: string;
+  servicePeriod: string;
+  weight: string;
+  height: string;
+  injuries: string;
+}
 
-    const response = await fetch(`${API_BASE_URL}/trainers/complete-profile`, {
+export async function completeUserProfile(profileData: UserProfileData) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/app-user/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.data.token}`,
       },
       body: JSON.stringify(profileData),
     });
 
     const data = await response.json();
 
-    if (!response.ok) {
+    if (data.code !== "0000") {
       return { success: false, message: data.message || 'Profile completion failed' };
     }
 
-    // Update session with new trainer data
+    // Update session with new user data
     await setSession({
-      ...session.data,
-      trainerId: data.trainerId,
-      city: data.city,
+      username: data.data.user_id,
+      email: '',
+      role: profileData.role_type,
+      token: data.data.token || '',
+      refreshToken: data.data.refresh_token || '',
+      userId:'',
+      mobile:''
     });
 
-    return { success: true, data };
+    return { success: true, data: data.data };
   } catch (error) {
     console.error('Profile completion error:', error);
     return { success: false, message: 'Profile completion failed' };
   }
-}
-
-export async function checkTrainerAuth() {
-  try {
-    const session = await getSession();
-    if (!session.success || !session.data) {
-      return { success: false, message: 'Unauthorized' };
-    }
-
-    if (session.data.role !== 'trainer') {
-      return { success: false, message: 'Not a trainer' };
-    }
-
-    return { success: true, data: session.data };
-  } catch (error) {
-    console.error('Trainer auth check error:', error);
-    return { success: false, message: 'Authentication check failed' };
-  }
-}
-
-export async function logoutTrainer() {
-  return logoutUser();
 }
 
 export interface TrainerProfileData {
@@ -257,66 +272,94 @@ export interface TrainerProfileData {
   profile: string;
 }
 
-export async function getTrainerClients() {
-  const session = await getSession();
-  
-  if (!session.success || !session.data?.token) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
+export async function completeTrainerProfile(profileData: TrainerProfileData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/trainer/clients`, {
+    console.log('Completing trainer profile with data:', profileData);
+    const response = await fetch(`${API_BASE_URL}/user/gov-user/register`, {
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${session.data.token}`,
-        'Accept': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...profileData,
+        username: profileData.username
+      }),
     });
 
     const data = await response.json();
+    console.log('Trainer profile completion response:', data);
 
-    if (data.code === "0000") {
-      return { 
-        success: true, 
-        data: data.data as ClientData[] 
-      };
+    if (data.code !== "0000") {
+      return { success: false, message: data.message || 'Profile completion failed' };
     }
 
-    return { success: false, error: data.message };
+    // Update session with new trainer data from response
+    const sessionData: UserPayload = {
+      username: data.data.user.email,
+      email: data.data.user.email,
+      role: 'ROLE_TRAINER',
+      token: data.data.token,
+      refreshToken: data.data.refresh_token,
+      userId: data.data.user.user_id.toString(),
+      fullName: data.data.user.full_name,
+      city: data.data.user.city,
+      status: data.data.user.status,
+      mobile: profileData.username, // Using the original username as mobile since it's required
+      trainerId: data.data.user.user_id.toString()
+    };
+
+    console.log('Setting session with data:', sessionData);
+    await setSession(sessionData);
+
+    return { 
+      success: true, 
+      data: {
+        ...data.data,
+        user: {
+          ...data.data.user,
+          role: 'ROLE_TRAINER',
+          trainerId: data.data.user.user_id.toString()
+        }
+      } 
+    };
   } catch (error) {
-    console.error('Error fetching trainer clients:', error);
-    return { success: false, error: 'Failed to fetch clients' };
+    console.error('Profile completion error:', error);
+    return { success: false, message: 'Profile completion failed' };
   }
 }
 
-export async function getRecommendedSupplements() {
-  const session = await getSession();
-  
-  if (!session.success || !session.data?.token) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
+export async function checkTrainerAuth() {
   try {
-    const response = await fetch(`${API_BASE_URL}/trainer/supplements/recommended`, {
-      headers: {
-        'Authorization': `Bearer ${session.data.token}`,
-        'Accept': 'application/json'
-      }
-    });
+    const session = await getSession();
+    console.log('Checking trainer auth, session:', session);
 
-    const data = await response.json();
-
-    if (data.code === "0000") {
-      return { 
-        success: true, 
-        data: data.data as NutritionItem[] 
-      };
+    if (!session.success || !session.data) {
+      return { success: false, message: 'Unauthorized' };
     }
 
-    return { success: false, error: data.message };
+    // Check for exact role match
+    if (session.data.role !== 'ROLE_TRAINER') {
+      console.log('Role mismatch:', session.data.role);
+      return { success: false, message: 'Not authorized as trainer' };
+    }
+
+    return { 
+      success: true, 
+      data: {
+        ...session.data,
+        userStatus: session.data.status || 'ACTIVE',
+        fullName: session.data.fullName || session.data.username,
+        city: session.data.city || '',
+      } 
+    };
   } catch (error) {
-    console.error('Error fetching recommended supplements:', error);
-    return { success: false, error: 'Failed to fetch supplements' };
+    console.error('Trainer auth check error:', error);
+    return { success: false, message: 'Authentication check failed' };
   }
+}
+
+export async function logoutTrainer() {
+  return logoutUser();
 }
 
 export interface TrainerStats {

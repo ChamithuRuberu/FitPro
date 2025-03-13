@@ -16,8 +16,8 @@ const publicRoutes = [
   '/login',
   '/register-init',
   '/verify',
-  '/forgot-password',
-  '/reset-password'
+  '/user/profile',
+  '/trainer/profile'
 ];
 
 export async function middleware(request: NextRequest) {

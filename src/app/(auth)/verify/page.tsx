@@ -6,6 +6,16 @@ import { FiLock } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 import { verifyOTP } from '@/actions';
 
+interface VerificationResult {
+  success: boolean;
+  message?: string;
+  data?: {
+    user_status: string;
+    user_id: string;
+    trainer_id: string | null;
+  };
+}
+
 export default function VerifyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -15,7 +25,7 @@ export default function VerifyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     const username = searchParams.get('username');
     if (!username) {
       toast.error('Username is required');
@@ -24,18 +34,19 @@ export default function VerifyPage() {
     }
 
     const loadingToast = toast.loading('Verifying...');
-    
-    try {
-      const result = await verifyOTP(username, otp);
 
-      if (!result.success) {
-        throw new Error(result.error || 'Verification failed');
+    try {
+      const result = await verifyOTP(username, otp) as VerificationResult;
+      console.log("verify result", result);
+
+      if (!result.success || !result.data) {
+        throw new Error(result.message || 'Verification failed');
       }
 
       toast.success('Account verified successfully!');
-      
+
       // Navigate based on user type
-      if (result.isTrainer) {
+      if (result.data.trainer_id !== null) {
         router.push('/trainer-profile');
       } else {
         router.push('/user-profile');
@@ -53,7 +64,7 @@ export default function VerifyPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <Toaster position="top-right" />
-      
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Verify your account
@@ -92,11 +103,10 @@ export default function VerifyPage() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition duration-150 ${
-                loading 
-                  ? 'bg-blue-400 cursor-not-allowed' 
+              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition duration-150 ${loading
+                  ? 'bg-blue-400 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-              }`}
+                }`}
             >
               {loading ? 'Verifying...' : 'Verify OTP'}
             </button>

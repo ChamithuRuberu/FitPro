@@ -26,27 +26,24 @@ export default function TrainerProfilePage() {
 
   useEffect(() => {
     const checkSession = async () => {
-      console.log('Checking session...');
+      console.log('Checking trainer session...');
       const session = await getSession();
-      console.log('Current session:', session);
+      console.log('Trainer profile session:', session);
       
       // Check if user is authorized to access this page
-      if (!session || !session.trainerId) {
-        console.log('Session check failed:', { session, trainerId: session?.trainerId });
+      if (!session.success || !session.data || session.data.role !== 'ROLE_TRAINER') {
+        console.log('Session check failed:', session);
         toast.error('Unauthorized access');
-        router.push('/trainer-login');
+        router.push('/login');
         return;
       }
 
       // Pre-fill username from session
-      setFormData(prev => {
-        const newData = {
-          ...prev,
-          username: session.username || '', // Provide empty string as fallback
-          role_type: 'ROLE_TRAINER'
-        };
-        return newData;
-      });
+      setFormData(prev => ({
+        ...prev,
+        username: session.data.username, // Use username or fallback to email
+        role_type: 'ROLE_TRAINER'
+      }));
     };
 
     checkSession();
@@ -72,12 +69,22 @@ export default function TrainerProfilePage() {
       }
 
       const result = await completeTrainerProfile(formData);
+      console.log('Profile completion result:', result);
 
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error(result.message || 'Profile completion failed');
+      }
+
+      // Check if we have the necessary data
+      if (!result.data?.user?.user_id) {
+        throw new Error('Invalid response: Missing user data');
       }
 
       toast.success('Profile completed successfully! Setting up your dashboard...');
+      
+      // Small delay to ensure session is set
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       router.push('/dashboard/trainer-admin');
     } catch (err) {
       console.error('Profile completion error:', err);

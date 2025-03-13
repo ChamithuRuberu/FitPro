@@ -8,7 +8,6 @@ import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, 
 import toast, { Toaster } from 'react-hot-toast';
 import { getSession, logoutUser } from '@/actions';
 
-const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface UserData {
@@ -582,6 +581,7 @@ export default function ClientDashboard() {
     const checkSession = async () => {
       try {
         const session = await getSession();
+        console.log("Session data",session)
         if (!session.success || !session.data) {
           toast.error('Please log in to access the dashboard');
           router.push('/login');
@@ -594,7 +594,7 @@ export default function ClientDashboard() {
           city: session.data.city || '',
           status: session.data.userStatus || 'Active',
           mobile: session.data.mobile || '',
-          govId: session.data.govId || null,
+          govId: session.data.userId || null,
         });
 
         await fetchTabData(activeTab);

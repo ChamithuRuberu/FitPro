@@ -48,13 +48,17 @@ export default function RegisterPage() {
   useEffect(() => {
     const checkSession = async () => {
       const session = await getSession();
-      if (session.username) {
+      console.log('User profile session:', session);
+      
+      if (session.success && session.data) {
         setFormData(prev => ({
           ...prev,
-          username: session.username || ''
+          username: session.data.username,
+          role_type: 'ROLE_USER'
         }));
       } else {
-        router.replace('/signup');
+        toast.error('Session not found');
+        router.replace('/login');
       }
     };
     
@@ -90,7 +94,7 @@ export default function RegisterPage() {
         toast.success('Profile created successfully!');
         router.replace('/dashboard/client-dashboard');
       } else {
-        toast.error(result.error || 'Registration failed');
+        toast.error(result.message || 'Registration failed');
       }
     } catch (error) {
       console.error('Error:', error);
@@ -293,40 +297,6 @@ export default function RegisterPage() {
                 onChange={handleInputChange}
               />
             </div>
-
-            <div>
-              <label htmlFor="role_type" className="block text-sm font-medium text-gray-700">
-                Role Type
-              </label>
-              <select
-                id="role_type"
-                name="role_type"
-                required
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                value={formData.role_type}
-                onChange={handleInputChange}
-              >
-                <option value="">Select Role</option>
-                <option value="ROLE_USER">User</option>
-                <option value="ROLE_TRAINER">Trainer</option>
-              </select>
-            </div>
-
-            {formData.role_type === 'ROLE_TRAINER' && (
-              <div>
-                <label htmlFor="servicePeriod" className="block text-sm font-medium text-gray-700">
-                  Service Period (years)
-                </label>
-                <input
-                  id="servicePeriod"
-                  name="servicePeriod"
-                  type="number"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.servicePeriod}
-                  onChange={handleInputChange}
-                />
-              </div>
-            )}
 
             <button
               type="submit"

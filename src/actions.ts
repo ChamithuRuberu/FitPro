@@ -187,7 +187,7 @@ export async function user_login(email: string, password: string, role_type: str
 
 export async function logoutUser() {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+    const response = await fetch(`${API_BASE_URL}/user/logout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

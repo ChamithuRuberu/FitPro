@@ -55,10 +55,7 @@ export async function refreshToken(currentToken: string): Promise<string | null>
     }
 
     // Create new token with updated expiration
-    const newToken = await createToken({
-      ...userData,
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours from now
-    });
+    const newToken = await createToken(userData);
 
     return newToken;
   } catch (error) {

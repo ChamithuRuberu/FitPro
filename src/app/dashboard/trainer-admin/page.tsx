@@ -148,7 +148,7 @@ export default function TrainerDashboard() {
       try {
         setLoading(true);
         console.log('Checking trainer dashboard auth...');
-        
+
         const session = await getSession();
         console.log('Dashboard session:', session);
 
@@ -231,16 +231,51 @@ export default function TrainerDashboard() {
 
   const handleLogout = async () => {
     try {
+      setLoading(true);
+      console.log('Logging out trainer...');
+
+      // Show loading toast
+      const loadingToast = toast.loading('Logging out...');
+
+      const session = await getSession();
+      console.log('Current session:', session);
+
+      // Attempt to logout regardless of current session state
       const result = await logoutTrainer();
+      console.log('Logout result:', result);
+
       if (result.success) {
+        // Clear any client-side state
+        setTrainerData(null);
+        setClients([]);
+        setTrainerStats({
+          totalClients: 0,
+          activeWorkouts: 0,
+          completedSessions: 0,
+          monthlyRevenue: 0,
+          rating: 0
+        });
+
         toast.success('Logged out successfully');
+
+        // Small delay to ensure state is cleared
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Redirect to login
         router.push('/login');
       } else {
-        toast.error('Failed to logout');
+        toast.error('Failed to logout. Please try again.');
       }
+
+      toast.dismiss(loadingToast);
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error('Failed to logout');
+      toast.error('Failed to logout. Please try again.');
+
+      // Force redirect to login on error
+      router.push('/login');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -292,11 +327,10 @@ export default function TrainerDashboard() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as any)}
-                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    activeTab === tab
+                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === tab
                       ? 'bg-white text-blue-600 shadow-lg transform scale-105'
                       : 'text-blue-100 hover:bg-blue-700'
-                  }`}
+                    }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
@@ -409,19 +443,16 @@ export default function TrainerDashboard() {
                 {upcomingSessions.map((session) => (
                   <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-center space-x-4">
-                      <div className={`p-2 rounded-full ${
-                        session.status === 'upcoming' ? 'bg-blue-100' : 'bg-green-100'
-                      }`}>
-                        <FiClock className={`w-5 h-5 ${
-                          session.status === 'upcoming' ? 'text-blue-600' : 'text-green-600'
-                        }`} />
+                      <div className={`p-2 rounded-full ${session.status === 'upcoming' ? 'bg-blue-100' : 'bg-green-100'
+                        }`}>
+                        <FiClock className={`w-5 h-5 ${session.status === 'upcoming' ? 'text-blue-600' : 'text-green-600'
+                          }`} />
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
                           <p className="font-medium text-gray-900">{session.clientName}</p>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            session.status === 'upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                          }`}>
+                          <span className={`px-2 py-1 text-xs rounded-full ${session.status === 'upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                            }`}>
                             {session.status}
                           </span>
                         </div>
@@ -456,9 +487,8 @@ export default function TrainerDashboard() {
                       <div className="p-2 bg-blue-100 rounded-full">
                         <FiUsers className="w-5 h-5 text-blue-600" />
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full flex items-center ${
-                        segment.trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
+                      <span className={`px-2 py-1 text-xs rounded-full flex items-center ${segment.trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
                         {segment.trend === 'up' ? '↑' : '↓'} {segment.change}%
                       </span>
                     </div>
@@ -651,11 +681,10 @@ export default function TrainerDashboard() {
                             </div>
                           </div>
                         </div>
-                        <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-                          client.status === 'Active' 
-                            ? 'bg-green-100 text-green-700' 
+                        <span className={`px-4 py-2 rounded-full text-sm font-medium ${client.status === 'Active'
+                            ? 'bg-green-100 text-green-700'
                             : 'bg-gray-100 text-gray-700'
-                        }`}>
+                          }`}>
                           {client.status}
                         </span>
                       </div>

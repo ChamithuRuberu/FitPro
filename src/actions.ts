@@ -152,16 +152,6 @@ export async function user_login(email: string, password: string) {
     const data = await response.json();
     console.log('Login response data:', data);
 
-    // Check if the response has the expected structure
-    if (!data || !data.data || !data.data.user) {
-      console.error('Invalid response structure:', data);
-      return { 
-        success: false, 
-        message: 'Invalid response from server',
-        data: null 
-      };
-    }
-
     if (data.code !== "0000") {
       return { 
         success: false, 
@@ -170,32 +160,25 @@ export async function user_login(email: string, password: string) {
       };
     }
 
-    // Create session data from the API response
+    // Create session data from the API response, handling potential missing fields
     const sessionData: UserPayload = {
       data: {
         user: {
-          full_name: data.data.user.full_name || '',
-          mobile: data.data.user.mobile || '',
-          nic: data.data.user.gov_id?.toString() || '',
-          username: data.data.user.email || '',
-          status: data.data.user.status || 'ACTIVE'
+          email: data.data?.user?.email,
+          city: data.data?.user?.city,
+          status: data.data?.user?.status,
+          mobile: data.data?.user?.mobile,
+          full_name: data.data?.user?.full_name,
+          gov_id: data.data?.user?.gov_id,
+          nic: data.data?.user?.nic,
+          username: data.data?.user?.username
         },
-        token: data.data.token || '',
-        refresh_token: data.data.refresh_token || '',
-        roles: data.data.roles || []
+        roles: data.data?.roles || [],
+        token: data.data?.token,
+        refresh_token: data.data?.refresh_token
       },
       success: true
     };
-
-    // Validate session data before setting
-    if (!sessionData.data.token || !sessionData.data.user.username) {
-      console.error('Invalid session data:', sessionData);
-      return { 
-        success: false, 
-        message: 'Invalid session data',
-        data: null 
-      };
-    }
 
     // Store session data
     console.log('Setting session with data:', sessionData);
@@ -385,17 +368,26 @@ export async function completeTrainerProfile(profileData: TrainerProfileData) {
 
     // Update session with new trainer data from response
     const sessionData: UserPayload = {
-      username: data.data.user.email,
-      email: data.data.user.email,
-      role: 'ROLE_TRAINER',
-      token: data.data.token,
-      refreshToken: data.data.refresh_token,
-      userId: data.data.user.user_id.toString(),
-      fullName: data.data.user.full_name,
-      city: data.data.user.city,
-      status: data.data.user.status,
-      mobile: profileData.username, // Using the original username as mobile since it's required
-      trainerId: data.data.user.user_id.toString()
+      data: {
+        user: {
+          email: data.data?.user?.email,
+          username: data.data?.user?.username,
+          full_name: data.data?.user?.full_name,
+          city: data.data?.user?.city,
+          status: data.data?.user?.status,
+          mobile: profileData.username,
+          gov_id: data.data?.user?.gov_id
+        },
+        roles: [{
+          id: 1,
+          name: 'ROLE_TRAINER',
+          status: 'ACTIVE',
+          permissions: []
+        }],
+        token: data.data?.token,
+        refresh_token: data.data?.refresh_token
+      },
+      success: true
     };
 
     console.log('Setting session with data:', sessionData);
@@ -406,9 +398,8 @@ export async function completeTrainerProfile(profileData: TrainerProfileData) {
       data: {
         ...data.data,
         user: {
-          ...data.data.user,
-          role: 'ROLE_TRAINER',
-          trainerId: data.data.user.user_id.toString()
+          ...data.data?.user,
+          role: 'ROLE_TRAINER'
         }
       } 
     };
@@ -427,19 +418,25 @@ export async function checkTrainerAuth() {
       return { success: false, message: 'Unauthorized' };
     }
 
-    // Check for exact role match
-    if (session.data.role !== 'ROLE_TRAINER') {
-      console.log('Role mismatch:', session.data.role);
+    // Check for trainer role in roles array
+    const isTrainer = session.data.data.roles?.some(role => role.name === 'ROLE_TRAINER');
+    if (!isTrainer) {
+      console.log('Role mismatch: Not a trainer');
       return { success: false, message: 'Not authorized as trainer' };
     }
 
+    // Safely access user data with optional chaining
+    const userData = session.data.data.user;
+    
     return { 
       success: true, 
       data: {
         ...session.data,
-        userStatus: session.data.status || 'ACTIVE',
-        fullName: session.data.fullName || session.data.username,
-        city: session.data.city || '',
+        userStatus: userData?.status || 'ACTIVE',
+        fullName: userData?.full_name || userData?.username || 'Unknown',
+        city: userData?.city || '',
+        email: userData?.email || '',
+        mobile: userData?.mobile || '',
       } 
     };
   } catch (error) {

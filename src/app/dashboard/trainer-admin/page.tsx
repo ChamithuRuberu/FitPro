@@ -20,6 +20,15 @@ interface TrainerData {
   weight: string;
   height: string;
   profile: string;
+  role: Array<{
+    id: number;
+    name: string;
+    status: string;
+    permissions: Array<{
+      id: number;
+      name: string;
+    }>;
+  }>;
 }
 
 interface ClientData {
@@ -72,6 +81,8 @@ interface ClientSummary {
   progress: number;
   nextSession: string;
   program: string;
+  email?: string;
+  status?: string;
 }
 
 export default function TrainerDashboard() {
@@ -149,34 +160,33 @@ export default function TrainerDashboard() {
         }
 
         // Check if we have the necessary session data
-        if (!session.data.token || !session.data.role || session.data.role !== 'ROLE_TRAINER') {
+        const userRole = session.data.data.roles?.[0]?.name;
+        if (!session.data.data.token || !userRole || userRole !== 'ROLE_TRAINER') {
           console.log('Invalid session data:', session.data);
           toast.error('Invalid session data');
           router.push('/login');
           return;
         }
 
-        const trainerAuth = await checkTrainerAuth();
-        console.log('Trainer auth result:', trainerAuth);
-
-        if (!trainerAuth.success) {
-          console.log('Trainer auth failed');
-          toast.error('Unauthorized access');
+        const userData = session.data.data.user;
+        if (!userData) {
+          toast.error('User data not found');
           router.push('/login');
           return;
         }
 
         // Set trainer data from auth response
         const trainerData = {
-          email: session.data.email || '',
-          fullName: session.data.fullName || session.data.username || '',
-          city: session.data.city || '',
-          status: session.data.status || 'Active',
-          trainerId: session.data.trainerId || session.data.userId || '',
-          servicePeriod: session.data.servicePeriod || '0',
-          weight: session.data.weight || '',
-          height: session.data.height || '',
-          profile: session.data.profile || ''
+          email: userData.email,
+          fullName: userData.full_name,
+          city: userData.city,
+          status: userData.status,
+          trainerId: userData.gov_id?.toString() || '',
+          servicePeriod: '0', // Default value since it's not in the response
+          weight: '', // Not in the response
+          height: '', // Not in the response
+          profile: '', // Not in the response
+          role: session.data.data.roles || [] // Provide empty array as fallback
         };
 
         console.log('Setting trainer data:', trainerData);
@@ -286,7 +296,7 @@ export default function TrainerDashboard() {
           <div className="flex justify-between items-center">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold text-white">
-                {getGreeting()}, {trainerData?.fullName} {trainerData?.role[0].name}
+                {getGreeting()}, {trainerData?.fullName} 
               </h1>
               <p className="text-blue-100 text-sm">
                 Trainer ID: {trainerData?.trainerId} | {trainerData?.city}

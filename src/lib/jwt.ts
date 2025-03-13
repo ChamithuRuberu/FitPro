@@ -4,24 +4,16 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-k
 
 export interface UserPayload {
   data: {
-    user: {
-      full_name: string;
-      mobile: string;
-      nic: string;
-      username: string;
-      status: string;
+    user?: {
+      email?: string;
+      city?: string;
+      status?: string;
+      mobile?: string;
+      full_name?: string;
+      gov_id?: number;
+      nic?: string;
+      username?: string;
     };
-    trainer_obj?: {
-      id: number;
-      name: string;
-      trainerId: string;
-      servicePeriod: string;
-      weight: string;
-      height: string;
-      profile: string;
-    };
-    token: string;
-    refresh_token: string;
     roles?: {
       id: number;
       name: string;
@@ -31,6 +23,21 @@ export interface UserPayload {
         name: string;
       }[];
     }[];
+    user_role?: {
+      id: number;
+      name: string;
+      status: string;
+      permissions: {
+        id: number;
+        name: string;
+      }[];
+    }[];
+    token?: string;
+    refresh_token?: string;
+    app_user_id?: string;
+    mobile?: string;
+    gov_id?: number;
+    trainer_obj?: any;
   };
   success: boolean;
 }

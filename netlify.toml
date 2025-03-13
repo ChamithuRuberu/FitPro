@@ -1,0 +1,40 @@
+[build]
+  command = "CI=false npm run build"
+  publish = ".next"
+
+[build.environment]
+  NETLIFY = "true"
+  NEXT_TELEMETRY_DISABLED = "1"
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+  NEXT_DISABLE_ESLINT = "1"
+  DISABLE_ESLINT_PLUGIN = "true"
+  NODE_ENV = "production"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Rewrite rule to handle client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Handle API requests
+[[redirects]]
+  from = "/api/*"
+  to = "https://your-backend-api.com/api/:splat"
+  status = 200
+  force = true
+
+[functions]
+  # Increase the build timeout to 60 seconds
+  node_bundler = "esbuild"
+  external_node_modules = ["@netlify/plugin-nextjs"]
+
+[build.processing]
+  skip_processing = true
+
+[dev]
+  framework = "next"
+  targetPort = 3000 

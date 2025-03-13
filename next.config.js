@@ -18,9 +18,19 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8080/api/:path*'
+        destination: process.env.NODE_ENV === 'production' 
+          ? process.env.API_URL + '/api/:path*' 
+          : 'http://localhost:8080/api/:path*'
       }
     ];
+  },
+  // Add image domains if you're using next/image
+  images: {
+    domains: ['localhost', 'your-production-domain.com'],
+  },
+  // Disable server-side rendering for static deployment
+  experimental: {
+    appDir: true,
   }
 };
 

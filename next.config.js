@@ -18,7 +18,7 @@ const nextConfig = {
   },
   async rewrites() {
     const apiUrl = process.env.NODE_ENV === 'production'
-      ? process.env.API_URL
+      ? process.env.API_URL || 'https://your-backend-api.com'
       : 'http://localhost:8080';
 
     return [

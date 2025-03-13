@@ -2,26 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --secondary: #10b981;
+  --secondary-dark: #059669;
+  --background: #f9fafb;
+  --foreground: #111827;
+}
+
 @layer base {
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-text-primary;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-lg shadow-card p-4;
+    @apply bg-white rounded-card shadow-card transition-shadow duration-200;
+  }
+  
+  .card:hover {
+    @apply shadow-card-hover;
   }
 
   .btn-primary {
-    @apply bg-primary text-white px-4 py-2 rounded-md hover:opacity-90 transition-all;
+    @apply bg-primary text-white px-4 py-2 rounded-md hover:bg-dark-primary transition-colors duration-200;
   }
 
   .btn-secondary {
-    @apply bg-secondary text-white px-4 py-2 rounded-md hover:opacity-90 transition-all;
+    @apply bg-secondary text-white px-4 py-2 rounded-md hover:opacity-90 transition-opacity duration-200;
   }
 
   .input-field {
-    @apply w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary;
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-text-secondary mb-1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }

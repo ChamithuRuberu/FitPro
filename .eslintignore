@@ -1,0 +1,14 @@
+*
+**/*
+.next/*
+out/*
+build/*
+dist/*
+node_modules/*
+public/*
+*.config.js
+*.config.mjs
+next.config.js
+next.config.mjs
+postcss.config.js
+tailwind.config.js 

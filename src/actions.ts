@@ -104,25 +104,37 @@ export async function verifyOTP(username: string, otp: string) {
       return { success: false, message: data.message || 'Verification failed' };
     }
 
-    // Store username in session after successful verification
-    await setSession({
+    // Determine role and next step
+    const userRole = data.data.user_role?.[0]?.name || 'ROLE_USER';
+    const nextPath = userRole === 'ROLE_TRAINER' ? '/trainer-profile' : '/user-profile';
+
+    // Create minimal session data for initial signup
+    const sessionData: UserPayload = {
       username: username,
-      email: '',
-      role: data.data.trainer_id ? 'ROLE_TRAINER' : 'ROLE_USER',
-      token: '',
+      email: username, // Using username as email since it's required
+      role: userRole,
+      token: '',  // Will be set after profile completion
       refreshToken: '',
-      userId:'',
-      mobile:'',
-      status:''
-    });
+      userId: data.data.app_user_id || '',
+      fullName: '',  // Will be set during profile completion
+      city: '',      // Will be set during profile completion
+      status: 'PENDING', // Set as pending until profile is completed
+      mobile: data.data.mobile || username
+    };
+
+    // Store session data
+    console.log('Setting signup session with data:', sessionData);
+    await setSession(sessionData);
 
     return { 
       success: true, 
       data: {
-        user_status: data.data.user_status,
-        user_id: data.data.user_id,
-        trainer_id: data.data.trainer_id,
-        username: username
+        user_status: 'PENDING',
+        user_id: data.data.app_user_id,
+        username: username,
+        role: userRole,
+        nextPath: nextPath, // Include the next path in response
+        requiresProfile: true // Flag to indicate profile completion is needed
       }
     };
   } catch (error) {
@@ -160,7 +172,7 @@ export async function user_login(email: string, password: string, role_type: str
     const roles = data.data.roles;
     const primaryRole = roles[0];
 
-    // Create standardized session data
+    // Create minimal session data with only necessary fields
     const sessionData: UserPayload = {
       username: userData.email,
       email: userData.email,
@@ -171,21 +183,17 @@ export async function user_login(email: string, password: string, role_type: str
       fullName: userData.full_name || '',
       city: userData.city || '',
       status: userData.status || 'ACTIVE',
-      mobile: userData.mobile || '',
-      trainerId: primaryRole.name === 'ROLE_TRAINER' ? userData.gov_id?.toString() : undefined
+      mobile: userData.mobile || ''
     };
 
     // Set the session
-    console.log('Setting session with data:', sessionData);
+    console.log('Setting login session with data:', sessionData);
     await setSession(sessionData);
 
     return { 
       success: true, 
       message: data.message || 'Login successful',
-      data: {
-        ...sessionData,
-        roles: roles
-      }
+      data: sessionData
     };
   } catch (error) {
     console.error('Login error:', error);
@@ -249,23 +257,43 @@ export async function completeUserProfile(profileData: UserProfileData) {
     });
 
     const data = await response.json();
+    console.log('User profile completion response:', data);
 
     if (data.code !== "0000") {
       return { success: false, message: data.message || 'Profile completion failed' };
     }
 
-    // Update session with new user data
-    await setSession({
-      username: data.data.user_id,
-      email: '',
-      role: profileData.role_type,
+    // Create complete session data
+    const sessionData: UserPayload = {
+      username: profileData.username,
+      email: profileData.username,
+      role: 'ROLE_USER',
       token: data.data.token || '',
       refreshToken: data.data.refresh_token || '',
-      userId:'',
-      mobile:''
-    });
+      userId: data.data.user_id || '',
+      fullName: profileData.full_name,
+      city: profileData.city,
+      status: 'ACTIVE',
+      mobile: profileData.username,
+      weight: profileData.weight,
+      height: profileData.height
+    };
 
-    return { success: true, data: data.data };
+    // Store session data
+    console.log('Setting user profile session with data:', sessionData);
+    await setSession(sessionData);
+
+    return { 
+      success: true, 
+      data: {
+        ...data.data,
+        user: {
+          ...data.data,
+          role: 'ROLE_USER',
+          status: 'ACTIVE'
+        }
+      } 
+    };
   } catch (error) {
     console.error('Profile completion error:', error);
     return { success: false, message: 'Profile completion failed' };

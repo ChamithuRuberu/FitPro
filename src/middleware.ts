@@ -4,8 +4,8 @@ import { verifyToken } from '@/lib/jwt';
 
 // Define protected routes patterns
 const protectedRoutes = {
-  trainer: ['/trainer', '/trainer-dashboard'],
-  client: ['/client', '/client-dashboard'],
+  trainer: ['/trainer', '/trainer-dashboard', '/dashboard/trainer-admin'],
+  client: ['/client', '/client-dashboard', '/dashboard/client-dashboard'],
   nutritionist: ['/nutritionist', '/nutritionist-dashboard'],
   admin: ['/admin', '/admin-dashboard']
 };
@@ -16,8 +16,8 @@ const publicRoutes = [
   '/login',
   '/register-init',
   '/verify',
-  '/user/profile',
-  '/trainer/profile'
+  '/user-profile',
+  '/trainer-profile'
 ];
 
 export async function middleware(request: NextRequest) {
@@ -51,20 +51,36 @@ export async function middleware(request: NextRequest) {
       return redirectToLogin(request);
     }
 
-    // Check role-based access
-    const userRole = userData.role.toLowerCase();
-    const isAccessingRoleRoute = Object.entries(protectedRoutes).some(
-      ([role, routes]) => routes.some(route => pathname.startsWith(route))
+    // Map role to route group
+    const roleToGroup: { [key: string]: keyof typeof protectedRoutes } = {
+      'ROLE_TRAINER': 'trainer',
+      'ROLE_USER': 'client',
+      'ROLE_NUTRITIONIST': 'nutritionist',
+      'ROLE_ADMIN': 'admin'
+    };
+
+    const userRoleGroup = roleToGroup[userData.role];
+    
+    // Check if user is accessing a protected route
+    const isAccessingProtectedRoute = Object.values(protectedRoutes).flat().some(
+      (route: string) => pathname.startsWith(route)
     );
 
-    if (isAccessingRoleRoute) {
-      const hasAccess = protectedRoutes[userRole as keyof typeof protectedRoutes]?.some(
-        route => pathname.startsWith(route)
+    if (isAccessingProtectedRoute && userRoleGroup) {
+      // Check if user has access to the route
+      const hasAccess = protectedRoutes[userRoleGroup]?.some(
+        (route: string) => pathname.startsWith(route)
       );
 
       if (!hasAccess) {
         // Redirect to appropriate dashboard based on role
-        return redirectToDashboard(request, userRole);
+        const dashboardPath = userRoleGroup === 'client' 
+          ? '/dashboard/client-dashboard'
+          : userRoleGroup === 'trainer'
+          ? '/dashboard/trainer-admin'
+          : '/';
+        
+        return NextResponse.redirect(new URL(dashboardPath, request.url));
       }
     }
 
@@ -87,31 +103,7 @@ export async function middleware(request: NextRequest) {
 }
 
 function redirectToLogin(request: NextRequest) {
-  const url = request.nextUrl.clone();
-  url.pathname = '/login';
-  url.search = `?redirect=${encodeURIComponent(request.nextUrl.pathname)}`;
-  return NextResponse.redirect(url);
-}
-
-function redirectToDashboard(request: NextRequest, role: string) {
-  const url = request.nextUrl.clone();
-  switch (role) {
-    case 'trainer':
-      url.pathname = '/trainer-dashboard';
-      break;
-    case 'client':
-      url.pathname = '/client-dashboard';
-      break;
-    case 'nutritionist':
-      url.pathname = '/nutritionist-dashboard';
-      break;
-    case 'admin':
-      url.pathname = '/admin-dashboard';
-      break;
-    default:
-      url.pathname = '/login';
-  }
-  return NextResponse.redirect(url);
+  return NextResponse.redirect(new URL('/login', request.url));
 }
 
 // Configure which routes should be handled by middleware

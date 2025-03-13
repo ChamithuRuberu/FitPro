@@ -40,14 +40,9 @@ export default function ClientLoginPage() {
         throw new Error('No data received from login');
       }
 
-      // Check for roles in the response
-      if (!result.data.roles || !Array.isArray(result.data.roles) || result.data.roles.length === 0) {
-        throw new Error('No role information received');
-      }
-
-      // Get the primary role from the session data
+      // Get the role from session data
       const userRole = result.data.role;
-      console.log('User role from session:', userRole);
+      console.log('User role:', userRole);
 
       // Determine which dashboard to navigate to based on role
       let dashboardPath;

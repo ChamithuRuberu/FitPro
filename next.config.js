@@ -26,6 +26,7 @@ const nextConfig = {
         source: '/api/:path*',
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         destination: `${apiUrl}/api/:path*`,
       },
     ];
@@ -47,6 +48,11 @@ const nextConfig = {
         destination: 'http://localhost:8080/api/:path*'
       }
     ];
+=======
+        destination: 'http://localhost:8080/api/:path*'
+      }
+    ];
+>>>>>>> parent of 975cf1a (deploy fixed)
 =======
         destination: 'http://localhost:8080/api/:path*'
       }

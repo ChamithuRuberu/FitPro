@@ -59,7 +59,7 @@ export async function initializeRegistration(formData: {
   trainer_id?: number;
 }) {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch(`${API_BASE_URL}/user/register-init`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,16 +73,14 @@ export async function initializeRegistration(formData: {
       return { success: false, message: data.message || 'Registration failed' };
     }
 
-    // Set session with JWT
-    await setSession({
-      userId: data.app_user_id,
-      email: data.email,
-      fullName: data.full_name || '',
-      role: formData.role_type,
-      trainerId: data.trainer_id,
-    });
-
-    return { success: true, data };
+    return { 
+      success: true, 
+      data: {
+        app_user_id: data.data.app_user_id,
+        mobile: data.data.mobile,
+        user_role: data.data.user_role
+      }
+    };
   } catch (error) {
     console.error('Registration error:', error);
     return { success: false, message: 'Registration failed' };
@@ -91,7 +89,7 @@ export async function initializeRegistration(formData: {
 
 export async function verifyOTP(username: string, otp: string) {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+    const response = await fetch(`${API_BASE_URL}/user/register-verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,15 +102,6 @@ export async function verifyOTP(username: string, otp: string) {
     if (!response.ok) {
       return { success: false, message: data.message || 'Verification failed' };
     }
-
-    // Set session with JWT
-    await setSession({
-      userId: data.userId,
-      email: data.email,
-      fullName: data.fullName,
-      role: data.role,
-      trainerId: data.trainerId,
-    });
 
     return { success: true, data };
   } catch (error) {
@@ -155,17 +144,7 @@ export async function user_login(email: string, password: string, role_type: str
     const userData = data.data.user;
     const token = data.data.token;
 
-    // Set session with JWT
-    await setSession({
-      userId: userData.email, // Using email as userId since no id field in response
-      email: userData.email,
-      fullName: userData.full_name,
-      role: role_type,
-      city: userData.city,
-      userStatus: userData.status,
-      token: token,
-    });
-
+ 
     return { 
       success: true, 
       message: data.message || 'Login successful',

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FiMail, FiLock, FiUser, FiArrowRight, FiCheck } from 'react-icons/fi';
+import { FiMail, FiLock, FiUser, FiArrowRight, FiCheck, FiActivity } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 import { user_login } from '@/actions';
 
@@ -13,7 +13,7 @@ interface LoginFormData {
   password: string;
 }
 
-export default function ClientLoginPage() {
+export default function TrainerLoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -30,7 +30,7 @@ export default function ClientLoginPage() {
     const loadingToast = toast.loading('Signing in...');
 
     try {
-      const result = await user_login(formData.email, formData.password, "ROLE_USER");
+      const result = await user_login(formData.email, formData.password, "ROLE_TRAINER");
       
       if (!result.success) {
         throw new Error(result.message || 'Login failed');
@@ -41,7 +41,7 @@ export default function ClientLoginPage() {
       }
 
       toast.success('Login successful!');
-      router.push('/dashboard/client-dashboard');
+      router.push('/dashboard/trainer-admin');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during login';
       setError(errorMessage);
@@ -55,25 +55,29 @@ export default function ClientLoginPage() {
   return (
     <div className="min-h-screen flex bg-gray-50">
       {/* Left side - Image and Content */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-blue-600">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/50 to-blue-700/50" />
+      <div className="hidden lg:flex lg:w-1/2 relative bg-indigo-600">
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/50 to-indigo-700/50" />
         <Image
-          src="/images/fitness-bg.jpg"
-          alt="Fitness motivation"
+          src="/images/trainer-bg.jpg"
+          alt="Trainer motivation"
           fill
           className="object-cover"
           priority
         />
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="bg-black/40 backdrop-blur-sm rounded-xl p-8 max-w-md">
-            <h1 className="text-4xl font-bold mb-4 text-shadow-2xl font-serif">Welcome Back</h1>
+            <h1 className="text-4xl font-bold mb-4 text-shadow-2xl font-serif">Trainer Portal</h1>
             <p className="text-lg text-white mb-8 font-sans">
-              Your journey to a healthier lifestyle continues here. Access your personalized workout plans and track your progress.
+              Manage your clients, create workout plans, and track their progress all in one place.
             </p>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <FiCheck className="w-5 h-5 text-green-300" />
-                <span>Personalized Workout Plans</span>
+                <span>Client Management</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <FiCheck className="w-5 h-5 text-green-300" />
+                <span>Workout Plan Creation</span>
               </div>
               <div className="flex items-center space-x-3">
                 <FiCheck className="w-5 h-5 text-green-300" />
@@ -81,11 +85,7 @@ export default function ClientLoginPage() {
               </div>
               <div className="flex items-center space-x-3">
                 <FiCheck className="w-5 h-5 text-green-300" />
-                <span>Nutritional Guidance</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <FiCheck className="w-5 h-5 text-green-300" />
-                <span>Expert Trainer Support</span>
+                <span>Schedule Management</span>
               </div>
             </div>
           </div>
@@ -98,17 +98,17 @@ export default function ClientLoginPage() {
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="text-center mb-8">
             <div className="flex justify-center">
-              <div className="bg-blue-600 p-3 rounded-xl">
-                <FiUser className="w-8 h-8 text-white" />
+              <div className="bg-indigo-600 p-3 rounded-xl">
+                <FiActivity className="w-8 h-8 text-white" />
               </div>
             </div>
             <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-              Client Login
+              Trainer Login
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               Don't have an account?{' '}
-              <Link href="/register-init" className="font-medium text-blue-600 hover:text-blue-500">
-                Sign up now
+              <Link href="/register/trainer" className="font-medium text-indigo-600 hover:text-indigo-500">
+                Register as Trainer
               </Link>
             </p>
           </div>
@@ -130,8 +130,8 @@ export default function ClientLoginPage() {
                     type="email"
                     autoComplete="email"
                     required
-                    className="appearance-none block w-full pl-10 px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
-                    placeholder="you@example.com"
+                    className="appearance-none block w-full pl-10 px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                    placeholder="trainer@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
@@ -153,7 +153,7 @@ export default function ClientLoginPage() {
                     type="password"
                     autoComplete="current-password"
                     required
-                    className="appearance-none block w-full pl-10 px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                    className="appearance-none block w-full pl-10 px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   />
@@ -167,14 +167,14 @@ export default function ClientLoginPage() {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                     Remember me
                   </label>
                 </div>
                 <div className="text-sm">
-                  <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500 transition duration-150">
+                  <Link href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500 transition duration-150">
                     Forgot password?
                   </Link>
                 </div>
@@ -200,8 +200,8 @@ export default function ClientLoginPage() {
                   disabled={loading}
                   className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white transition duration-150 ${
                     loading 
-                      ? 'bg-blue-400 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                      ? 'bg-indigo-400 cursor-not-allowed' 
+                      : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
                   }`}
                 >
                   {loading ? (

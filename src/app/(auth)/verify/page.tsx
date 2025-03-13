@@ -13,8 +13,6 @@ interface VerificationResult {
     user_status: string;
     user_id: string;
     trainer_id: string | null;
-    nextPath?: string;
-    role?: string;
   };
 }
 
@@ -47,19 +45,11 @@ export default function VerifyPage() {
 
       toast.success('Account verified successfully!');
 
-      // Small delay to ensure session is set
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Navigate based on nextPath from response
-      if (result.data.nextPath) {
-        router.push(result.data.nextPath);
+      // Navigate based on user type
+      if (result.data.trainer_id !== null) {
+        router.push('/trainer-profile');
       } else {
-        // Fallback to role-based navigation if nextPath is not provided
-        if (result.data.role === 'ROLE_TRAINER') {
-          router.push('/trainer-profile');
-        } else {
-          router.push('/user-profile');
-        }
+        router.push('/user-profile');
       }
     } catch (error) {
       console.error('Error:', error);

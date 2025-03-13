@@ -10,8 +10,19 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...compat.extends("next/core-web-vitals"),
   {
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parser: "@typescript-eslint/parser",
+      parserOptions: {
+        ecmaVersion: 2021,
+        sourceType: "module",
+        ecmaFeatures: {
+          jsx: true
+        }
+      }
+    },
     rules: {
       // Disable TypeScript-specific rules
       '@typescript-eslint/no-unused-vars': 'off',
@@ -60,17 +71,19 @@ const eslintConfig = [
       "import/no-unresolved": "off",
       "jsx-a11y/alt-text": "off",
       "jsx-a11y/anchor-is-valid": "off",
-      "jsx-a11y/role-has-required-aria-props": "off",
+      "jsx-a11y/role-has-required-aria-props": "off"
     },
     // Ignore all warnings
     ignorePatterns: ["**/*"],
-    // Set all warnings to off
     settings: {
       next: {
-        rootDir: ".",
+        rootDir: "."
       },
-    },
-  },
+      react: {
+        version: "detect"
+      }
+    }
+  }
 ];
 
 export default eslintConfig;

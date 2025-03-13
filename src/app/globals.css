@@ -13,30 +13,33 @@
 
 @layer base {
   body {
-    @apply antialiased text-gray-900 bg-background;
+    @apply bg-background text-text-primary;
   }
 }
 
 @layer components {
-  .btn-primary {
-    @apply px-6 py-3 bg-primary text-white rounded-lg font-semibold 
-           hover:bg-primary-dark transition-colors duration-200 
-           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  .card {
+    @apply bg-white rounded-card shadow-card transition-shadow duration-200;
   }
   
-  .btn-secondary {
-    @apply px-6 py-3 bg-secondary text-white rounded-lg font-semibold 
-           hover:bg-secondary-dark transition-colors duration-200 
-           focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2;
+  .card:hover {
+    @apply shadow-card-hover;
   }
 
-  .card {
-    @apply bg-white rounded-xl shadow-sm p-6;
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-md hover:bg-dark-primary transition-colors duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white px-4 py-2 rounded-md hover:opacity-90 transition-opacity duration-200;
   }
 
   .input-field {
-    @apply w-full px-4 py-2 rounded-lg border border-gray-300 
-           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-text-secondary mb-1;
   }
 }
 

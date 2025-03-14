@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FiUser, FiMapPin, FiLock, FiClock, FiActivity } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 import { completeTrainerProfile, getSession } from '@/actions';
 import type { TrainerProfileData } from '@/actions';
+import { ApiResponse } from '@/types/api';
 
 export default function TrainerProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState<TrainerProfileData>({
     username: '',
     name: '',
@@ -26,28 +28,22 @@ export default function TrainerProfilePage() {
 
   useEffect(() => {
     const checkSession = async () => {
-      console.log('Checking trainer session...');
-      const session = await getSession();
-      console.log('Trainer profile session:', session);
-      
-      // Check if user is authorized to access this page
-      if (!session.success || !session.data || session.data.role !== 'ROLE_TRAINER') {
-        console.log('Session check failed:', session);
-        toast.error('Unauthorized access');
+      const username = searchParams.get('username');
+      if (!username) {
+        toast.error('Invalid access');
         router.push('/login');
         return;
       }
 
-      // Pre-fill username from session
       setFormData(prev => ({
         ...prev,
-        username: session.data.username, // Use username or fallback to email
+        username,
         role_type: 'ROLE_TRAINER'
       }));
     };
 
     checkSession();
-  }, [router]);
+  }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,21 +64,20 @@ export default function TrainerProfilePage() {
         throw new Error('Password should not be empty');
       }
 
-      const result = await completeTrainerProfile(formData);
+      const result = await completeTrainerProfile(formData) as unknown as ApiResponse<AuthResponse>;
       console.log('Profile completion result:', result);
 
-      if (!result.success) {
+      if (result.code !== "0000") {
         throw new Error(result.message || 'Profile completion failed');
       }
 
-      // Check if we have the necessary data
-      if (!result.data?.user?.user_id) {
-        throw new Error('Invalid response: Missing user data');
-      }
+      // Store tokens in cookies
+      document.cookie = `token=${result.data.token}; path=/`;
+      document.cookie = `refresh_token=${result.data.refresh_token}; path=/`;
 
-      toast.success('Profile completed successfully! Setting up your dashboard...');
+      toast.success(result.message || 'Profile completed successfully!');
       
-      // Small delay to ensure session is set
+      // Small delay to ensure cookies are set
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       router.push('/dashboard/trainer-admin');

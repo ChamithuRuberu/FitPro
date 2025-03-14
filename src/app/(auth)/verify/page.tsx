@@ -45,13 +45,13 @@ function VerifyForm() {
         throw new Error(result.message || 'Verification failed');
       }
 
-      toast.success('Account verified successfully!');
+      toast.success(result.message || 'Account verified successfully!');
 
-      // Navigate based on user type
-      if (result.data.trainer_id !== null) {
-        router.push('/trainer-profile');
+      // Navigate based on user type and pass the username
+      if (result.data.trainer_id === null) {
+        router.push(`/user-profile?username=${encodeURIComponent(username)}`);
       } else {
-        router.push('/user-profile');
+        router.push(`/trainer-profile?username=${encodeURIComponent(username)}`);
       }
     } catch (error) {
       console.error('Error:', error);

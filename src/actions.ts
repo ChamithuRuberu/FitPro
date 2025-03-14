@@ -488,3 +488,50 @@ export interface NutritionItem {
         currency: string;
     };
 }
+
+export interface TrainerListResponse {
+  trainers: {
+    id: number;
+    name: string;
+    trainerId: string;
+    servicePeriod: string;
+    weight: string;
+    height: string;
+    profile: string;
+  }[];
+}
+
+export async function getAllTrainers() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/trainer/get-all-trainers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({}), // Empty body for POST request
+      cache: 'no-store' // Disable caching to always get fresh data
+    });
+    
+    const data = await response.json();
+    console.log('Trainers API response:', data);
+
+    if (data.code !== "0000") {
+      return { success: false, message: data.message || 'Failed to fetch trainers' };
+    }
+
+    if (!data.data?.trainers) {
+      return { success: false, message: 'No trainers available' };
+    }
+
+    return { 
+      success: true, 
+      data: data.data.trainers 
+    };
+  } catch (error) {
+    console.error('Error fetching trainers:', error);
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Failed to fetch trainers' 
+    };
+  }
+}

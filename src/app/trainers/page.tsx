@@ -1,315 +1,268 @@
 'use client';
 
-import { useState } from 'react';
-import dynamic from 'next/dynamic';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { FiFilter, FiStar, FiMapPin } from 'react-icons/fi';
-
-const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
-
-type Specialization = 'Weight Loss' | 'Muscle Building' | 'Strength Training' | 'HIIT' | 'Yoga' | 'Nutrition';
-
-type Trainer = {
-  id: string;
-  name: string;
-  image: string;
-  specializations: Specialization[];
-  experience: number;
-  rating: number;
-  reviewCount: number;
-  location: string;
-  bio: string;
-  price: {
-    amount: number;
-    currency: string;
-    per: string;
-  };
-  availability: string[];
-  certifications: string[];
-};
-
-const trainers: Trainer[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    image: '/images/trainers/trainer1.jpg',
-    specializations: ['Weight Loss', 'Muscle Building', 'Strength Training'],
-    experience: 8,
-    rating: 4.9,
-    reviewCount: 127,
-    location: 'New York, NY',
-    bio: 'Certified personal trainer with 8+ years of experience helping clients achieve their fitness goals through personalized training programs.',
-    price: {
-      amount: 75,
-      currency: 'USD',
-      per: 'session'
-    },
-    availability: ['Morning', 'Evening', 'Weekend'],
-    certifications: ['NASM CPT', 'ACE Nutrition Specialist', 'CrossFit Level 2'],
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    image: '/images/trainers/trainer2.jpg',
-    specializations: ['HIIT', 'Weight Loss', 'Nutrition'],
-    experience: 6,
-    rating: 4.8,
-    reviewCount: 98,
-    location: 'Los Angeles, CA',
-    bio: 'Passionate about helping people transform their lives through fitness and proper nutrition. Specializing in HIIT and weight loss programs.',
-    price: {
-      amount: 65,
-      currency: 'USD',
-      per: 'session'
-    },
-    availability: ['Afternoon', 'Evening', 'Weekend'],
-    certifications: ['ACE CPT', 'Precision Nutrition Level 1', 'TRX Certified'],
-  },
-  {
-    id: '3',
-    name: 'Michael Chen',
-    image: '/images/trainers/trainer3.jpg',
-    specializations: ['Strength Training', 'Muscle Building', 'HIIT'],
-    experience: 10,
-    rating: 5.0,
-    reviewCount: 156,
-    location: 'San Francisco, CA',
-    bio: 'Former competitive powerlifter turned personal trainer. Expert in strength training and muscle development.',
-    price: {
-      amount: 85,
-      currency: 'USD',
-      per: 'session'
-    },
-    availability: ['Morning', 'Afternoon', 'Evening'],
-    certifications: ['NSCA CSCS', 'USA Weightlifting Level 2', 'FMS Certified'],
-  },
-  {
-    id: '4',
-    name: 'Emma Davis',
-    image: '/images/trainers/trainer4.jpg',
-    specializations: ['Yoga', 'Weight Loss', 'Nutrition'],
-    experience: 5,
-    rating: 4.7,
-    reviewCount: 82,
-    location: 'Austin, TX',
-    bio: 'Combining traditional yoga practices with modern fitness techniques to create balanced, sustainable workout programs.',
-    price: {
-      amount: 60,
-      currency: 'USD',
-      per: 'session'
-    },
-    availability: ['Morning', 'Evening'],
-    certifications: ['RYT 500', 'ACE CPT', 'Nutritional Therapy Practitioner'],
-  },
-];
-
-const specializations: Specialization[] = ['Weight Loss', 'Muscle Building', 'Strength Training', 'HIIT', 'Yoga', 'Nutrition'];
-const availabilityOptions = ['Morning', 'Afternoon', 'Evening', 'Weekend'];
+import { useState, useEffect } from 'react';
+import { FiUser, FiMapPin, FiClock, FiActivity, FiSearch, FiFilter, FiStar } from 'react-icons/fi';
+import { getAllTrainers } from '@/actions';
+import type { TrainerListResponse } from '@/actions';
 
 export default function TrainersPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecializations, setSelectedSpecializations] = useState<Specialization[]>([]);
-  const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
+  const [trainers, setTrainers] = useState<TrainerListResponse['trainers']>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-
-  const filteredTrainers = trainers.filter(trainer => {
-    const matchesSearch = 
-      trainer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      trainer.bio.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      trainer.location.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesSpecializations = 
-      selectedSpecializations.length === 0 ||
-      selectedSpecializations.some(spec => trainer.specializations.includes(spec));
-
-    const matchesAvailability =
-      selectedAvailability.length === 0 ||
-      selectedAvailability.some(time => trainer.availability.includes(time));
-
-    return matchesSearch && matchesSpecializations && matchesAvailability;
+  const [filters, setFilters] = useState({
+    name: '',
+    minRating: '',
+    experienceLevel: ''
   });
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+  // Experience level options
+  const experienceLevels = [
+    { value: '', label: 'All Levels' },
+    { value: 'beginner', label: '0-2 years' },
+    { value: 'intermediate', label: '2-5 years' },
+    { value: 'expert', label: '5+ years' }
+  ];
+
+  // Fetch trainers on component mount
+  useEffect(() => {
+    const fetchTrainers = async () => {
+      const result = await getAllTrainers();
+      setLoading(false);
       
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-16">
+      if (!result.success) {
+        setError(result.message || 'Failed to load trainers');
+        return;
+      }
+      
+      setTrainers(result.data);
+    };
+
+    fetchTrainers();
+  }, []);
+
+  // Filter trainers based on all criteria
+  const filteredTrainers = trainers.filter(trainer => {
+    // First filter by trainer ID if provided
+    if (searchQuery && !trainer.trainerId.toLowerCase().includes(searchQuery.toLowerCase().trim())) {
+      return false;
+    }
+
+    // Then apply additional filters
+    const nameMatch = !filters.name || trainer.name.toLowerCase().includes(filters.name.toLowerCase());
+    
+    const experienceMatch = !filters.experienceLevel || (() => {
+      const years = parseInt(trainer.servicePeriod) || 0;
+      switch (filters.experienceLevel) {
+        case 'beginner': return years >= 0 && years <= 2;
+        case 'intermediate': return years > 2 && years <= 5;
+        case 'expert': return years > 5;
+        default: return true;
+      }
+    })();
+
+    return nameMatch && experienceMatch;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-red-50 p-4 rounded-lg">
+          <p className="text-red-800">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+      {/* Hero Section with Integrated Search */}
+      <div className="relative bg-gradient-to-r from-blue-600 to-blue-800 py-16">
         <div className="container mx-auto px-4">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-white mb-4">
-              Expert Fitness Trainers
+              Find Your Perfect Trainer
             </h1>
             <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-              Find the perfect trainer to help you achieve your fitness goals
+              Connect with professional trainers to achieve your fitness goals
             </p>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Filters Section */}
-      <section className="py-8 bg-white shadow-sm sticky top-0 z-10">
+      <section className="py-6 bg-white shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="w-full md:w-auto">
+            {/* Training Level Tabs */}
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setFilters({ ...filters, experienceLevel: '' })}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                  ${!filters.experienceLevel
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+              >
+                All Levels
+              </button>
+              {experienceLevels.filter(level => level.value).map((level) => (
+                <button
+                  key={level.value}
+                  onClick={() => setFilters({ 
+                    ...filters, 
+                    experienceLevel: filters.experienceLevel === level.value ? '' : level.value 
+                  })}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                    ${filters.experienceLevel === level.value
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                >
+                  {level.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search and Filter */}
+            <div className="flex items-center space-x-4">
               <input
                 type="text"
-                placeholder="Search trainers by name, location, or expertise..."
-                className="input-field w-full md:w-80"
+                placeholder="Search by ID or name..."
+                className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`p-2 rounded-lg transition-colors ${
+                  showFilters 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                }`}
+              >
+                <FiFilter className="w-5 h-5" />
+              </button>
             </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
-            >
-              <FiFilter className="w-5 h-5" />
-              <span>Filters</span>
-            </button>
           </div>
 
           {/* Extended Filters */}
           {showFilters && (
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium mb-2">Specializations</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {specializations.map(spec => (
-                      <button
-                        key={spec}
-                        onClick={() => setSelectedSpecializations(prev => 
-                          prev.includes(spec)
-                            ? prev.filter(s => s !== spec)
-                            : [...prev, spec]
-                        )}
-                        className={`px-3 py-1 rounded-full text-sm
-                          ${selectedSpecializations.includes(spec)
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'bg-white text-gray-600 hover:bg-gray-100'
-                          }`}
-                      >
-                        {spec}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">Availability</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {availabilityOptions.map(time => (
-                      <button
-                        key={time}
-                        onClick={() => setSelectedAvailability(prev => 
-                          prev.includes(time)
-                            ? prev.filter(t => t !== time)
-                            : [...prev, time]
-                        )}
-                        className={`px-3 py-1 rounded-full text-sm
-                          ${selectedAvailability.includes(time)
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'bg-white text-gray-600 hover:bg-gray-100'
-                          }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <h3 className="font-medium mb-2">Filter by Name</h3>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter trainer name..."
+                  className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  value={filters.name}
+                  onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+                />
               </div>
             </div>
           )}
+
+          {/* Results Count */}
+          <div className="mt-4 text-sm text-gray-600">
+            {filteredTrainers.length} trainer{filteredTrainers.length !== 1 ? 's' : ''} found
+            {(searchQuery || filters.name || filters.experienceLevel) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilters({ name: '', minRating: '', experienceLevel: '' });
+                }}
+                className="ml-3 text-blue-600 hover:text-blue-700"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
       {/* Trainers Grid */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTrainers.map((trainer) => (
-              <motion.div
-                key={trainer.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="aspect-w-16 aspect-h-9 bg-gray-200">
-                  {/* Placeholder for trainer image */}
-                  <div className="w-full h-48 bg-gray-300 flex items-center justify-center">
-                    {/* Replace with actual Image component when you have images */}
-                    <div className="text-gray-400">Trainer Photo</div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredTrainers.map((trainer) => (
+            <div
+              key={trainer.id}
+              className="bg-white overflow-hidden shadow-xl rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+            >
+              <div className="px-6 py-8">
+                <div className="flex items-center mb-6">
+                  <div className="h-16 w-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center">
+                    <FiUser className="h-8 w-8 text-white" />
                   </div>
-                </div>
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">{trainer.name}</h3>
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <FiMapPin className="w-4 h-4 mr-1" />
-                        {trainer.location}
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <FiStar className="w-4 h-4 text-yellow-400 mr-1" />
-                      <span className="font-medium">{trainer.rating}</span>
-                      <span className="text-gray-500 text-sm ml-1">({trainer.reviewCount})</span>
-                    </div>
-                  </div>
-
-                  <p className="text-gray-600 text-sm mb-4">{trainer.bio}</p>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Specializations:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {trainer.specializations.map((spec, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full"
-                          >
-                            {spec}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Certifications:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {trainer.certifications.map((cert, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
-                          >
-                            {cert}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t flex justify-between items-center">
-                      <div>
-                        <span className="text-lg font-semibold text-blue-600">
-                          ${trainer.price.amount}
-                        </span>
-                        <span className="text-sm text-gray-500 ml-1">
-                          per {trainer.price.per}
-                        </span>
-                      </div>
-                      <button className="btn-primary">
-                        Book Session
-                      </button>
+                  <div className="ml-4">
+                    <h3 className="text-2xl font-bold text-gray-900">{trainer.name}</h3>
+                    <div className="flex items-center text-gray-500 mt-1">
+                      <FiMapPin className="h-4 w-4 mr-1" />
+                      <span className="font-medium text-blue-600">ID: {trainer.trainerId}</span>
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center text-gray-700">
+                    <FiClock className="h-5 w-5 mr-2 text-blue-500" />
+                    <span>Experience: {trainer.servicePeriod} years</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center text-gray-700">
+                      <FiActivity className="h-5 w-5 mr-2 text-blue-500" />
+                      <span>{trainer.weight} kg</span>
+                    </div>
+                    <div className="flex items-center text-gray-700">
+                      <FiActivity className="h-5 w-5 mr-2 text-blue-500" />
+                      <span>{trainer.height} cm</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-gray-600 line-clamp-3">{trainer.profile}</p>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <button
+                    onClick={() => {/* TODO: Implement trainer selection */}}
+                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-105"
+                  >
+                    Select Trainer
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </section>
+
+        {filteredTrainers.length === 0 && (
+          <div className="text-center py-12">
+            <div className="bg-white rounded-xl p-8 max-w-md mx-auto">
+              <p className="text-gray-500 text-xl mb-2">No trainers found matching your criteria</p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilters({ name: '', minRating: '', experienceLevel: '' });
+                }}
+                className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Clear all filters
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 } 

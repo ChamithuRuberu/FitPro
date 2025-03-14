@@ -342,7 +342,8 @@ export interface TrainerProfileData {
   servicePeriod: string;
   weight: string;
   height: string;
-  profile: string;
+    profile: string;
+    trainerId: string;
 }
 
 export async function completeTrainerProfile(profileData: TrainerProfileData) {

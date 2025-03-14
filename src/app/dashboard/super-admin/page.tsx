@@ -795,9 +795,6 @@ export default function SuperAdminDashboard() {
             {/* Right side - Actions */}
             <div className="flex items-center space-x-4">
               
-
-            
-
               {/* Profile Menu */}
               <div className="relative">
                 <button

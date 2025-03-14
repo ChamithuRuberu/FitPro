@@ -794,17 +794,7 @@ export default function SuperAdminDashboard() {
 
             {/* Right side - Actions */}
             <div className="flex items-center space-x-4">
-              {/* Search */}
-              <div className="hidden md:block relative">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              </div>
+              
 
               {/* Notifications */}
               <button

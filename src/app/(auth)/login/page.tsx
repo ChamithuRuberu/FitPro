@@ -260,7 +260,7 @@ export default function ClientLoginPage() {
                 <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
-
+{/* 
             <div className="grid grid-cols-2 gap-3">
               <button className="flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-xl shadow-sm bg-white hover:bg-gray-50 transition-all duration-200">
                 <FiGithub className="w-5 h-5 text-gray-700" />
@@ -270,7 +270,7 @@ export default function ClientLoginPage() {
                 <FiFacebook className="w-5 h-5 text-blue-600" />
                 <span className="ml-2 text-sm font-medium text-gray-700">Facebook</span>
               </button>
-            </div>
+            </div> */}
 
             <div className="text-center">
               <p className="text-sm text-gray-600">

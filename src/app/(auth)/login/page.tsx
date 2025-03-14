@@ -56,9 +56,9 @@ export default function ClientLoginPage() {
             console.log('Redirecting to gym dashboard...');
             router.push('/dashboard/gym-admin');
             break;
-          case 'ROLE_ADMIN':
+          case 'ROLE_SUPER_ADMIN':
             console.log('Redirecting to admin dashboard...');
-            router.push('/dashboard/admin-dashboard');
+            router.push('/dashboard/super-admin');
             break;
           case 'ROLE_USER':
             console.log('Redirecting to client dashboard...');

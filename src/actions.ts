@@ -108,16 +108,10 @@ export async function verifyOTP(username: string, otp: string) {
     const sessionData: UserPayload = {
       data: {
         user: {
-          full_name: '',
-          mobile: username,
-          nic: data.data.user_id || '',
           username: username,
-          status: 'PENDING'
+          trainerId: data.data.trainerId
         },
-        token: '',
-        refresh_token: ''
       },
-      success: true
     };
 
     await setSession(sessionData);
@@ -125,10 +119,8 @@ export async function verifyOTP(username: string, otp: string) {
     return { 
       success: true, 
       data: {
-        user_status: data.data.user_status,
-        user_id: data.data.user_id,
-        trainer_id: data.data.trainer_id,
-        username: username
+        username: username,
+        trainerId: data.data.trainerId
       }
     };
   } catch (error) {
@@ -164,20 +156,12 @@ export async function user_login(email: string, password: string) {
     const sessionData: UserPayload = {
       data: {
         user: {
-          email: data.data?.user?.email,
-          city: data.data?.user?.city,
           status: data.data?.user?.status,
           mobile: data.data?.user?.mobile,
           full_name: data.data?.user?.full_name,
-          gov_id: data.data?.user?.gov_id,
-          nic: data.data?.user?.nic,
           username: data.data?.user?.username
         },
-        roles: data.data?.roles || [],
-        token: data.data?.token,
-        refresh_token: data.data?.refresh_token
       },
-      success: true
     };
 
     // Store session data
@@ -297,15 +281,10 @@ export async function completeUserProfile(profileData: UserProfileData) {
         user: {
           full_name: data.data.user.full_name || profileData.full_name,
           mobile: data.data.user.mobile || profileData.username,
-          nic: data.data.user.nic || '',
           username: data.data.user.username || profileData.username,
           status: 'ACTIVE'
         },
-        token: data.data.token,
-        refresh_token: data.data.refresh_token,
-        trainer_obj: data.data.trainer_obj || null
       },
-      success: true
     };
 
     // Store session data
@@ -342,6 +321,7 @@ export interface TrainerProfileData {
   servicePeriod: string;
   weight: string;
   height: string;
+  trainerId: string;
   profile: string;
 }
 
@@ -355,7 +335,8 @@ export async function completeTrainerProfile(profileData: TrainerProfileData) {
       },
       body: JSON.stringify({
         ...profileData,
-        username: profileData.username
+        username: profileData.username,
+        trainerId: profileData.trainerId
       }),
     });
 
@@ -370,24 +351,10 @@ export async function completeTrainerProfile(profileData: TrainerProfileData) {
     const sessionData: UserPayload = {
       data: {
         user: {
-          email: data.data?.user?.email,
           username: data.data?.user?.username,
-          full_name: data.data?.user?.full_name,
-          city: data.data?.user?.city,
-          status: data.data?.user?.status,
-          mobile: profileData.username,
-          gov_id: data.data?.user?.gov_id
+          trainerId: data.data.trainerId
         },
-        roles: [{
-          id: 1,
-          name: 'ROLE_TRAINER',
-          status: 'ACTIVE',
-          permissions: []
-        }],
-        token: data.data?.token,
-        refresh_token: data.data?.refresh_token
       },
-      success: true
     };
 
     console.log('Setting session with data:', sessionData);
@@ -399,7 +366,8 @@ export async function completeTrainerProfile(profileData: TrainerProfileData) {
         ...data.data,
         user: {
           ...data.data?.user,
-          role: 'ROLE_TRAINER'
+          role: 'ROLE_TRAINER',
+          trainerId: data.data.trainerId
         }
       } 
     };
@@ -409,85 +377,11 @@ export async function completeTrainerProfile(profileData: TrainerProfileData) {
   }
 }
 
-export async function checkTrainerAuth() {
-  try {
-    const session = await getSession();
-    console.log('Checking trainer auth, session:', session);
-
-    if (!session.success || !session.data) {
-      return { success: false, message: 'Unauthorized' };
-    }
-
-    // Check for trainer role in roles array
-    const isTrainer = session.data.data.roles?.some(role => role.name === 'ROLE_TRAINER');
-    if (!isTrainer) {
-      console.log('Role mismatch: Not a trainer');
-      return { success: false, message: 'Not authorized as trainer' };
-    }
-
-    // Safely access user data with optional chaining
-    const userData = session.data.data.user;
-    
-    return { 
-      success: true, 
-      data: {
-        ...session.data,
-        userStatus: userData?.status || 'ACTIVE',
-        fullName: userData?.full_name || userData?.username || 'Unknown',
-        city: userData?.city || '',
-        email: userData?.email || '',
-        mobile: userData?.mobile || '',
-      } 
-    };
-  } catch (error) {
-    console.error('Trainer auth check error:', error);
-    return { success: false, message: 'Authentication check failed' };
-  }
-}
 
 export async function logoutTrainer() {
   return logoutUser();
 }
 
-export interface TrainerStats {
-    monthlyRevenue: number;
-    activeClients: number;
-    completedSessions: number;
-    upcomingSessions: number;
-    averageRating: number;
-}
-
-export interface ClientData {
-    id: string;
-    name: string;
-    program: string;
-    progress: number;
-    attendance: number;
-    nextSession: string;
-    subscriptionStatus: string;
-}
-
-export interface NutritionItem {
-    id: string;
-    name: string;
-    category: string;
-    subCategory: string;
-    description: string;
-    benefits: string[];
-    image: string;
-    tags: string[];
-    nutritionalInfo: {
-        calories: number;
-        protein: number;
-        carbs: number;
-        fats: number;
-    };
-    servingSize: string;
-    price: {
-        amount: number;
-        currency: string;
-    };
-}
 
 export interface TrainerListResponse {
   trainers: {

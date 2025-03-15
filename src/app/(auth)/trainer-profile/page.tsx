@@ -22,7 +22,8 @@ export default function TrainerProfilePage() {
     servicePeriod: '',
     weight: '',
     height: '',
-    profile: ''
+    profile: '',
+    trainerId: ''
   });
 
   const [loading, setLoading] = useState(false);

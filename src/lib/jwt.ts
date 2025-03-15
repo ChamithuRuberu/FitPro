@@ -5,41 +5,15 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-k
 export interface UserPayload {
   data: {
     user?: {
-      email?: string;
-      city?: string;
       status?: string;
-      mobile?: string;
       full_name?: string;
-      gov_id?: number;
-      nic?: string;
       username?: string;
+      token?: string;
+      refresh_token?: string;
+      mobile?: string;
+      trainerId?: string;
     };
-    roles?: {
-      id: number;
-      name: string;
-      status: string;
-      permissions: {
-        id: number;
-        name: string;
-      }[];
-    }[];
-    user_role?: {
-      id: number;
-      name: string;
-      status: string;
-      permissions: {
-        id: number;
-        name: string;
-      }[];
-    }[];
-    token?: string;
-    refresh_token?: string;
-    app_user_id?: string;
-    mobile?: string;
-    gov_id?: number;
-    trainer_obj?: any;
-  };
-  success: boolean;
+  }
 }
 
 export async function createToken(payload: UserPayload): Promise<string> {
@@ -55,7 +29,7 @@ export async function createToken(payload: UserPayload): Promise<string> {
     .setIssuedAt()
     .setExpirationTime('24h')
     .sign(secret);
-  
+
   return token;
 }
 

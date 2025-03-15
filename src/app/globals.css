@@ -12,8 +12,11 @@
 }
 
 @layer base {
+  html {
+    @apply h-full;
+  }
   body {
-    @apply antialiased text-gray-900 bg-background;
+    @apply antialiased text-gray-900 bg-background min-h-screen;
   }
 }
 

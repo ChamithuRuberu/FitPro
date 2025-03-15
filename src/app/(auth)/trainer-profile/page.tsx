@@ -4,99 +4,51 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FiUser, FiMapPin, FiLock, FiClock, FiActivity, FiAlertCircle } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { completeTrainerProfile, getSession } from '@/actions';
-import type { TrainerProfileData } from '@/actions';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { FiCheckCircle } from 'react-icons/fi';
 
+interface TrainerProfileFormData {
+  name: string;
+  city: string;
+  password: string;
+  weight: string;
+  height: string;
+  profile: string;
+  trainer_id: string;
+  servicePeriod: string;
+  role_type: string;
+  username: string;
+}
+
 export default function TrainerProfilePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [formData, setFormData] = useState<TrainerProfileData>({
-    username: '',
+  const [formData, setFormData] = useState<TrainerProfileFormData>({
     name: '',
     city: '',
     password: '',
-    role_type: 'ROLE_TRAINER',
-    servicePeriod: '',
     weight: '',
     height: '',
     profile: '',
-    trainerId: ''
+    trainer_id: '',
+    servicePeriod: '',
+    role_type: '',
+    username: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const username = searchParams.get('username');
-      if (!username) {
-        toast.error('Invalid access');
-        router.push('/login');
-        return;
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        username,
-        role_type: 'ROLE_TRAINER'
-      }));
-    };
-
-    checkSession();
-  }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
 
-    const loadingToast = toast.loading('Completing your profile...');
 
-    try {
-        // Validate name format
-        const nameRegex = /^(?![ .]+$)[a-zA-Z .]*$/;
-        if (!nameRegex.test(formData.name)) {
-            throw new Error('Please enter a valid name');
-        }
-
-        console.log('formData trainer profile start ->');
-
-        // Validate password
-        if (!formData.password) {
-            throw new Error('Password should not be empty');
-        }
-
-        // Make the API request
-        const response = await completeTrainerProfile(formData);
-
-        // If response is a fetch response, parse JSON
-        const result = response instanceof Response ? await response.json() : response;
-
-        if (result.code !== "0000") {
-            router.push('/login');
-        }
-        console.log('Profile completion result:', result);
-        router.push('/dashboard/trainer-admin');
-
-    } catch (err) {
-        console.error('Profile completion error:', err);
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-        toast.error(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-        toast.dismiss(loadingToast);
-        setLoading(false);
-    }
-    console.log('formData trainer profile end ->', formData);
-
-};
+  };
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 to-indigo-50">
       <Toaster position="top-right" />
-      
+
       {/* Left side - Form */}
       <div className="flex-1 flex flex-col justify-center py-4 px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -309,9 +261,8 @@ export default function TrainerProfilePage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full flex justify-center items-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
-                      loading ? 'opacity-75 cursor-not-allowed' : ''
-                    }`}
+                    className={`w-full flex justify-center items-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${loading ? 'opacity-75 cursor-not-allowed' : ''
+                      }`}
                   >
                     {loading ? (
                       <>

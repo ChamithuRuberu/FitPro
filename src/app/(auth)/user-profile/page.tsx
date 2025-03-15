@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiUser, FiLock, FiCalendar, FiMapPin, FiActivity, FiCheckCircle } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { completeUserProfile, getSession } from '@/actions';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
@@ -46,7 +45,7 @@ export default function RegisterPage() {
     weight: '',
     height: '',
     injuries: '',
-    trainerId: '499763' // Default trainer ID
+    trainerId: 'xxxxxx' // Default trainer ID
   });
 
   useEffect(() => {

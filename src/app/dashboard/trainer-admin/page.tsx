@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiBarChart2, FiUsers, FiCheckCircle, FiAward, FiStar } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { getSession, checkTrainerAuth, logoutTrainer } from '@/actions';
 
 const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 

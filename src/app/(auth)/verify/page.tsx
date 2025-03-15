@@ -1,64 +1,66 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, Suspense, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { FiLock, FiCheckCircle } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { verifyOTP } from '@/actions';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { getCookie, verifyOTP } from '@/lib/api';
 
-interface VerificationResult {
-  success: boolean;
-  message?: string;
-  data?: {
-    user_status: string;
-    user_id: string;
-    trainer_id: string | null;
-  };
+interface VerifyRequest {
+  username: string;
+  otp: string;
 }
-
 function VerifyForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verifyRequest, setVerifyRequest] = useState<VerifyRequest>({
+    username: '',
+    otp: '',
+  });
+
+  useEffect(() => {
+    async function fetchUsername() {
+      const username = await getCookie("username");
+      if (!username) {
+        router.push('/login');
+        return;
+      }
+      setVerifyRequest(prev => ({ ...prev, username }));
+    }
+    fetchUsername();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent multiple submissions
     setLoading(true);
 
-    const username = searchParams.get('username');
-    if (!username) {
-      toast.error('Username is required');
-      setLoading(false);
-      return;
-    }
-
     const loadingToast = toast.loading('Verifying...');
-
     try {
-      const result = await verifyOTP(username, otp) as VerificationResult;
-      console.log("verify result", result);
+      const result = await verifyOTP({
+        username: verifyRequest.username,
+        otp: otp // Use the otp state directly
+      });
 
-      if (!result.success || !result.data) {
-        throw new Error(result.message || 'Verification failed');
-      }
+      toast.dismiss(loadingToast);
 
-      toast.success(result.message || 'Account verified successfully!');
-
-      // Navigate based on user type and pass the username
-      if (result.data.trainer_id === null) {
-        router.push(`/user-profile?username=${encodeURIComponent(username)}`);
+      if (result.success && result.data) {
+        toast.success('Verification successful!');
+        if(result.data.trainer_id !== null) {
+          router.push('/trainer-profile');
+        } else {
+          router.push('/user-profile');
+        }
       } else {
-        router.push(`/trainer-profile?username=${encodeURIComponent(username)}`);
+        toast.error(result.message || 'Verification failed');
       }
     } catch (error) {
-      console.error('Error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to verify OTP';
-      toast.error(errorMessage);
-    } finally {
       toast.dismiss(loadingToast);
+      toast.error('Verification failed. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -83,7 +85,11 @@ function VerifyForm() {
             className="appearance-none block w-full pl-10 px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             placeholder="Enter 6-digit OTP"
             value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => {
+              const newOtp = e.target.value.replace(/\D/g, '');
+              setOtp(newOtp);
+              setVerifyRequest(prev => ({ ...prev, otp: newOtp }));
+            }}
           />
         </div>
         <p className="text-sm text-gray-500">

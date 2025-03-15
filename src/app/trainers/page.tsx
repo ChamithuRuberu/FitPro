@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { FiUser, FiMapPin, FiClock, FiActivity, FiSearch, FiFilter, FiStar } from 'react-icons/fi';
-import { getAllTrainers } from '@/actions';
-import type { TrainerListResponse } from '@/actions';
 
 export default function TrainersPage() {
   const [searchQuery, setSearchQuery] = useState('');

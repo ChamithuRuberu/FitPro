@@ -3,38 +3,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiMail, FiLock, FiPhone, FiUser, FiAward, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { FiMail, FiPhone, FiUser, FiAward, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { initializeRegistration } from '@/actions';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { initializeRegistration } from '@/lib/api';
 
-// Define types for our form data and API response
 interface SignupFormData {
   nic: string;
   mobile: string;
   email: string;
   isTrainer: boolean;
-}
-
-interface ApiResponse {
-  code: string;
-  title: string;
-  message: string;
-  data: {
-    user_role: Array<{
-      id: number;
-      name: string;
-      status: string;
-      permissions: Array<{
-        id: number;
-        name: string;
-      }>;
-    }>;
-    app_user_id: string;
-    mobile: string;
-    trainer_id?: number;
-  };
 }
 
 export default function SignupPage() {
@@ -57,23 +36,23 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
+  
     const loadingToast = toast.loading('Creating your account...');
-
+  
     try {
       const trainerId = formData.isTrainer ? generateTrainerId() : undefined;
-      
+  
       const result = await initializeRegistration({
         nic: formData.nic,
         mobile: formData.mobile,
         email: formData.email,
         role_type: formData.isTrainer ? 'ROLE_TRAINER' : 'ROLE_USER',
-        ...(trainerId && { trainer_id: trainerId })
+        ...(trainerId && { trainer_id: trainerId }),
       });
-
+  
       if (result.success && result.data) {
-        toast.success('Registration successful! Please verify your account.');
-        router.push(`/verify?username=${encodeURIComponent(result.data.app_user_id)}`);
+        toast.success(`Registration successful! Please verify your ${result.data.mobile} mobile number.`);     
+        router.push('/verify');
       } else {
         throw new Error(result.message || 'Registration failed');
       }

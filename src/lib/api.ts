@@ -26,18 +26,18 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
 }
 export async function setCookie(key: string, value: string, maxAge: number = 3600) {
     cookies().set({
-      name: key,
-      value: value,
-      maxAge: maxAge, // Default: 1 hour
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+        name: key,
+        value: value,
+        maxAge: maxAge, // Default: 1 hour
+        path: "/",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
     });
-  }
+}
 
 export async function getCookie(key: string): Promise<string | null> {
     return cookies().get(key)?.value || null;
-  }
+}
 
 
 export async function initializeRegistration(formData: {
@@ -80,7 +80,7 @@ export async function initializeRegistration(formData: {
     }
 }
 
-  
+
 export async function verifyOTP(verifyRequest: {
     username: string;
     otp: string;
@@ -99,6 +99,7 @@ export async function verifyOTP(verifyRequest: {
             return { success: false, message: result.message || 'Verification failed' };
         }
 
+        setCookie("trainer_id", result.data.trainer_id);
         return {
             success: true,
             message: result.message,
@@ -109,5 +110,43 @@ export async function verifyOTP(verifyRequest: {
     } catch (error) {
         console.error('Verification error:', error);
         return { success: false, message: 'Verification failed' };
+    }
+}
+
+export async function trainerProfile(trainerProfileRequest: {
+    name: string;
+    city: string;
+    password: string;
+    weight: string;
+    height: string;
+    profile: string;
+    trainerId: string;
+    servicePeriod: string;
+    role_type: string;
+    username: string;
+}) {
+    try {
+        console.log("Trainer profile request ->", trainerProfileRequest);
+        const response = await fetch(`${API_BASE_URL}/user/gov-user/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(trainerProfileRequest),
+        });
+        const result = await response.json();
+        
+        if (!response.ok) {
+            return { success: false, message: result.message || 'Trainer profile failed' };
+        }
+
+        // Stringify the result data before setting it as a cookie
+        await setCookie("signup_data", JSON.stringify(result));
+        console.log("Trainer profile result ->", result);
+        
+        return { success: true, message: result.message , data: result.data};
+    } catch (error) {
+        console.error('Trainer profile error:', error);
+        return { success: false, message: 'Trainer profile failed' };
     }
 }

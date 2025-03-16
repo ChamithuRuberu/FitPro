@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiBarChart2, FiUsers, FiCheckCircle, FiAward, FiStar } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
+import { getCookie } from '@/lib/api';
 
 const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 
@@ -19,15 +20,6 @@ interface TrainerData {
   weight: string;
   height: string;
   profile: string;
-  role: Array<{
-    id: number;
-    name: string;
-    status: string;
-    permissions: Array<{
-      id: number;
-      name: string;
-    }>;
-  }>;
 }
 
 interface ClientData {
@@ -146,52 +138,39 @@ export default function TrainerDashboard() {
     const checkAuth = async () => {
       try {
         setLoading(true);
-        console.log('Checking trainer dashboard auth...');
 
-        const session = await getSession();
+        const session = await getCookie("signup_data");
         console.log('Dashboard session:', session);
 
-        if (!session.success || !session.data) {
-          console.log('No session found');
+        if (session === null) {
           toast.error('Please log in to access the dashboard');
           router.push('/login');
-          return;
+        } else {
+          try {
+            const result = JSON.parse(session); // Parse the JSON string into an object
+            if (result?.data?.trainer_obj) {
+              setTrainerData(result.data.trainer_obj);
+              // Also set other state data from the cookie
+              if (result.data.clients) {
+                setClients(result.data.clients);
+              }
+              if (result.data.stats) {
+                setTrainerStats(result.data.stats);
+              }
+              if (result.data.nutritionItems) {
+                setNutritionItems(result.data.nutritionItems);
+              }
+              console.log('Setting trainer data:', result.data);
+            } else {
+              console.error('Trainer object not found in session data');
+            }
+          } catch (error) {
+            console.error('Error parsing session data:', error);
+          }
         }
 
-        // Check if we have the necessary session data
-        const userRole = session.data.data.roles?.[0]?.name;
-        if (!session.data.data.token || !userRole || userRole !== 'ROLE_TRAINER') {
-          console.log('Invalid session data:', session.data);
-          toast.error('Invalid session data');
-          router.push('/login');
-          return;
-        }
-
-        const userData = session.data.data.user;
-        if (!userData) {
-          toast.error('User data not found');
-          router.push('/login');
-          return;
-        }
-
-        // Set trainer data from auth response
-        const trainerData = {
-          email: userData.email,
-          fullName: userData.full_name,
-          city: userData.city,
-          status: userData.status,
-          trainerId: userData.gov_id?.toString() || '',
-          servicePeriod: '0', // Default value since it's not in the response
-          weight: '', // Not in the response
-          height: '', // Not in the response
-          profile: '', // Not in the response
-          role: session.data.data.roles || [] // Provide empty array as fallback
-        };
-
-        console.log('Setting trainer data:', trainerData);
-
-        // Fetch additional data based on active tab
-        await fetchTabData(activeTab);
+        // No need to fetch additional data since it's all in the cookie
+        // await fetchTabData(activeTab);
       } catch (error) {
         console.error('Auth check error:', error);
         toast.error('Failed to load dashboard data');
@@ -204,76 +183,8 @@ export default function TrainerDashboard() {
     checkAuth();
   }, [router, activeTab]);
 
-  const fetchTabData = async (tab: string) => {
-    try {
-      switch (tab) {
-        case 'clients':
-          // Fetch clients data
-          break;
-        case 'workouts':
-          // Fetch workouts data
-          break;
-        case 'nutrition':
-          // Fetch nutrition data
-          break;
-        case 'progress':
-          // Fetch progress data
-          break;
-      }
-    } catch (error) {
-      console.error(`Error fetching ${tab} data:`, error);
-      toast.error(`Failed to load ${tab} data`);
-    }
-  };
-
   const handleLogout = async () => {
-    try {
-      setLoading(true);
-      console.log('Logging out trainer...');
-
-      // Show loading toast
-      const loadingToast = toast.loading('Logging out...');
-
-      const session = await getSession();
-      console.log('Current session:', session);
-
-      // Attempt to logout regardless of current session state
-      const result = await logoutTrainer();
-      console.log('Logout result:', result);
-
-      if (result.success) {
-        // Clear any client-side state
-        setTrainerData(null);
-        setClients([]);
-        setTrainerStats({
-          totalClients: 0,
-          activeWorkouts: 0,
-          completedSessions: 0,
-          monthlyRevenue: 0,
-          rating: 0
-        });
-
-        toast.success('Logged out successfully');
-
-        // Small delay to ensure state is cleared
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Redirect to login
-        router.push('/login');
-      } else {
-        toast.error('Failed to logout. Please try again.');
-      }
-
-      toast.dismiss(loadingToast);
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to logout. Please try again.');
-
-      // Force redirect to login on error
-      router.push('/login');
-    } finally {
-      setLoading(false);
-    }
+    
   };
 
   if (loading) {

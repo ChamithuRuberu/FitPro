@@ -7,6 +7,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { FiCheckCircle } from 'react-icons/fi';
+import { getCookie, trainerProfile, setCookie } from '@/lib/api';
 
 interface TrainerProfileFormData {
   name: string;
@@ -15,7 +16,7 @@ interface TrainerProfileFormData {
   weight: string;
   height: string;
   profile: string;
-  trainer_id: string;
+  trainerId: string;
   servicePeriod: string;
   role_type: string;
   username: string;
@@ -23,6 +24,8 @@ interface TrainerProfileFormData {
 
 export default function TrainerProfilePage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TrainerProfileFormData>({
     name: '',
     city: '',
@@ -30,19 +33,82 @@ export default function TrainerProfilePage() {
     weight: '',
     height: '',
     profile: '',
-    trainer_id: '',
+    trainerId: '',
     servicePeriod: '',
     role_type: '',
     username: '',
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    async function fetchTrainerProfile() {
+      try {
+        const trainerId = await getCookie("trainer_id");
+        const username = await getCookie("username");
+        console.log("Trainer ID ->", trainerId);
+        console.log("Username ->", username);
+        
+        if (!trainerId || !username) {
+          toast.error('Missing required information');
+          router.push('/login');
+          return;
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          trainerId: trainerId,
+          username: username,
+          role_type: 'ROLE_TRAINER'
+        }));
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast.error('Failed to load profile data');
+        router.push('/login');
+      }
+    }
+    fetchTrainerProfile();
+  }, [router]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return; // Prevent multiple submissions
+    setLoading(true);
 
-
+    const loadingToast = toast.loading('Creating profile...');
+    try {
+      const result = await trainerProfile({
+        username: formData.username,
+        trainerId: formData.trainerId,
+        name: formData.name,
+        city: formData.city,
+        password: formData.password,
+        weight: formData.weight,
+        height: formData.height,
+        profile: formData.profile,
+        servicePeriod: formData.servicePeriod,
+        role_type: "ROLE_TRAINER",
+      });
+      console.log("Trainer profile result ->", result);
+      
+      if (result.success === true) {
+        // Store the signup data in a cookie if it exists
+        if (result.message) {
+          await setCookie("signup_data", JSON.stringify(result.message));
+        }
+        toast.dismiss(loadingToast);
+        toast.success('Trainer profile created successfully.');
+        router.push('/dashboard/trainer-admin');
+      } else {
+        toast.dismiss(loadingToast);
+        toast.error('Failed to create trainer profile. Please try again.');
+      }
+    } catch (error) {
+      console.error('Trainer profile error:', error);
+      toast.dismiss(loadingToast);
+      toast.error('Failed to create trainer profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

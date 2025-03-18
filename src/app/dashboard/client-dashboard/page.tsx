@@ -577,47 +577,8 @@ export default function ClientDashboard() {
   };
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const session = await getSession();
-        console.log("Session data", session);
-        if (!session.success || !session.data?.data?.user) {
-          console.error('Invalid session data:', session);
-          toast.error('Please log in to access the dashboard');
-          router.push('/login');
-          return;
-        }
 
-        const userData = session.data.data.user;
-        const trainerData = session.data.data.trainer_obj;
-
-        // Update user data with the new response structure
-        setUserData({
-          email: userData.username,
-          fullName: userData.full_name,
-          city: '',  // Will be updated when available
-          status: userData.status,
-          mobile: userData.mobile,
-          govId: userData.nic,
-        });
-
-        // If there's trainer data, you can use it here
-        if (trainerData) {
-          console.log('Trainer data:', trainerData);
-          // Update any trainer-specific UI elements
-        }
-
-        await fetchTabData(activeTab);
-      } catch (error) {
-        console.error('Session check error:', error);
-        toast.error('Failed to load dashboard data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-  }, [router, activeTab]);
+  }, []);
 
   const fetchTabData = async (tab: string) => {
     try {
@@ -645,18 +606,7 @@ export default function ClientDashboard() {
   };
 
   const handleLogout = async () => {
-    try {
-      const result = await logoutUser();
-      if (result.success) {
-        toast.success('Logged out successfully');
-        router.push('/login');
-      } else {
-        toast.error('Failed to logout');
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to logout');
-    }
+   
   };
 
   // Add filter functions
@@ -749,27 +699,26 @@ export default function ClientDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
               <div className="flex space-x-2 overflow-x-auto pb-2 w-full md:w-auto">
                 {['overview', 'schedule', 'supplements', 'workouts', 'progress', 'mealplan'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab as any)}
-                    className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                      activeTab === tab
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab as any)}
+                    className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${activeTab === tab
                         ? 'bg-white text-blue-600 shadow-md'
                         : 'text-white hover:bg-white hover:bg-opacity-20'
-                    }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
+                      }`}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center space-x-3 bg-white bg-opacity-20 px-4 py-2 rounded-full">
                 <span className="text-white text-sm"> <div className="flex items-center space-x-2  bg-opacity-20 px-4 py-2 rounded-full">
-                <FiUser className="w-5 h-5 text-white" />
-                <span className="text-white font-medium">{userData?.fullName}</span>
-              </div></span>
+                  <FiUser className="w-5 h-5 text-white" />
+                  <span className="text-white font-medium">{userData?.fullName}</span>
+                </div></span>
                 <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium">
                   {userData?.status}
-              </span>
+                </span>
               </div>
             </div>
           </div>
@@ -821,7 +770,7 @@ export default function ClientDashboard() {
                     <div className="flex items-baseline mt-1">
                       <p className="text-3xl font-bold text-gray-900">{progressData?.attendanceRate}%</p>
                       <p className="ml-2 text-sm text-green-600">↑ 5% from last month</p>
-                  </div>
+                    </div>
                   </div>
                   <div className="p-3 bg-blue-100 rounded-full">
                     <FiCalendar className="w-6 h-6 text-blue-600" />
@@ -829,8 +778,8 @@ export default function ClientDashboard() {
                 </div>
                 <div className="mt-4">
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-blue-600 h-3 rounded-full transition-all duration-500" 
+                    <div
+                      className="bg-blue-600 h-3 rounded-full transition-all duration-500"
                       style={{ width: `${progressData?.attendanceRate}%` }}
                     ></div>
                   </div>
@@ -849,7 +798,7 @@ export default function ClientDashboard() {
                     <div className="flex items-baseline mt-1">
                       <p className="text-3xl font-bold text-gray-900">{sampleBodyMetrics[0].weight} kg</p>
                       <p className="ml-2 text-sm text-green-600">↓ 2.5 kg this month</p>
-                  </div>
+                    </div>
                   </div>
                   <div className="p-3 bg-green-100 rounded-full">
                     <FiTrendingUp className="w-6 h-6 text-green-600" />
@@ -857,8 +806,8 @@ export default function ClientDashboard() {
                 </div>
                 <div className="mt-4">
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-green-600 h-3 rounded-full transition-all duration-500" 
+                    <div
+                      className="bg-green-600 h-3 rounded-full transition-all duration-500"
                       style={{ width: `${(sampleBodyMetrics[0].weight / sampleBodyMetrics[sampleBodyMetrics.length - 1].weight) * 100}%` }}
                     ></div>
                   </div>
@@ -877,7 +826,7 @@ export default function ClientDashboard() {
                     <div className="flex items-baseline mt-1">
                       <p className="text-3xl font-bold text-gray-900">$150</p>
                       <p className="ml-2 text-sm text-gray-600">Due in 5 days</p>
-                  </div>
+                    </div>
                   </div>
                   <div className="p-3 bg-purple-100 rounded-full">
                     <FiDollarSign className="w-6 h-6 text-purple-600" />
@@ -1061,11 +1010,10 @@ export default function ClientDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-gray-900">${payment.amount}</p>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          payment.status === 'paid' ? 'bg-green-100 text-green-800' :
-                          payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${payment.status === 'paid' ? 'bg-green-100 text-green-800' :
+                            payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                          }`}>
                           {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                         </span>
                       </div>
@@ -1082,13 +1030,13 @@ export default function ClientDashboard() {
           <div className="space-y-8">
             {/* Weekly Overview Card */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-gray-900">Weekly Schedule</h2>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-600">Week of:</span>
                     <span className="text-sm font-medium text-blue-600">Feb 12 - Feb 18</span>
-            </div>
+                  </div>
                 </div>
               </div>
               <div className="p-6">
@@ -1099,7 +1047,7 @@ export default function ClientDashboard() {
                         <h3 className="text-lg font-semibold text-gray-900">{day.day}</h3>
                         <span className="text-sm text-gray-600">{day.workouts.length} workouts</span>
                       </div>
-                    <div className="space-y-4">
+                      <div className="space-y-4">
                         {day.workouts.map((workout, index) => (
                           <div key={index} className="bg-white rounded-lg p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex items-center justify-between mb-2">
@@ -1111,29 +1059,28 @@ export default function ClientDashboard() {
                                     <FiClock className="w-5 h-5 text-blue-600" />
                                   )}
                                 </div>
-                          <div>
+                                <div>
                                   <p className="font-medium text-gray-900">{workout.type}</p>
-                            <p className="text-sm text-gray-600">{workout.time}</p>
-                          </div>
+                                  <p className="text-sm text-gray-600">{workout.time}</p>
+                                </div>
                               </div>
                               <span className="text-sm font-medium text-gray-900">{workout.duration}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className={`text-sm px-3 py-1 rounded-full ${
-                                workout.completed 
-                                  ? 'bg-green-100 text-green-800' 
+                              <span className={`text-sm px-3 py-1 rounded-full ${workout.completed
+                                  ? 'bg-green-100 text-green-800'
                                   : 'bg-blue-100 text-blue-800'
-                              }`}>
+                                }`}>
                                 {workout.completed ? 'Completed' : 'Upcoming'}
                               </span>
                               <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                                 View Details
                               </button>
                             </div>
-                        </div>
-                      ))}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
                   ))}
                 </div>
               </div>
@@ -1169,13 +1116,13 @@ export default function ClientDashboard() {
           <div className="space-y-8">
             {/* Supplement Overview */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-gray-900">Recommended Supplements</h2>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-600">Total:</span>
                     <span className="text-sm font-medium text-blue-600">{supplements.length}</span>
-            </div>
+                  </div>
                 </div>
               </div>
               <div className="p-6">
@@ -1187,22 +1134,22 @@ export default function ClientDashboard() {
                       animate={{ opacity: 1, y: 0 }}
                       className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-all duration-300"
                     >
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">{supplement.name}</h3>
-                      {supplement.recommended && (
+                      <div className="flex justify-between items-start mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">{supplement.name}</h3>
+                        {supplement.recommended && (
                           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                          Recommended
-                        </span>
-                      )}
-                    </div>
+                            Recommended
+                          </span>
+                        )}
+                      </div>
                       <div className="space-y-4">
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center space-x-2 mb-2">
                             <FiClock className="w-5 h-5 text-blue-600" />
                             <span className="font-medium text-gray-900">Timing</span>
-                      </div>
+                          </div>
                           <p className="text-gray-600">{supplement.timing}</p>
-                      </div>
+                        </div>
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center space-x-2 mb-2">
                             <FiPackage className="w-5 h-5 text-purple-600" />
@@ -1217,20 +1164,20 @@ export default function ClientDashboard() {
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {supplement.benefits.map((benefit, index) => (
-                            <span
-                              key={index}
+                              <span
+                                key={index}
                                 className="px-3 py-1 bg-white text-blue-600 text-sm rounded-full border border-blue-100"
-                            >
-                              {benefit}
-                            </span>
-                          ))}
+                              >
+                                {benefit}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
                     </motion.div>
                   ))}
-                  </div>
                 </div>
+              </div>
             </div>
 
             {/* Supplement Schedule */}
@@ -1265,49 +1212,49 @@ export default function ClientDashboard() {
         {activeTab === 'workouts' && (
           <div className="space-y-6">
             {/* Current Program */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {workoutProgram ? workoutProgram.name : 'Workout Program'}
-              </h2>
-            </div>
-            <div className="p-6">
-              {workoutProgram ? (
-                workoutProgram.weeks.map((week) => (
-                  <div key={week.weekNumber} className="mb-8">
-                    <h3 className="text-lg font-semibold mb-4">Week {week.weekNumber}</h3>
-                    <div className="space-y-6">
-                      {week.workouts.map((workout, index) => (
-                        <div key={index} className="bg-gray-50 rounded-lg p-6">
-                          <h4 className="font-medium mb-4">{workout.day}</h4>
-                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {workout.exercises.map((exercise, i) => (
-                              <div key={i} className="bg-white p-4 rounded-lg shadow-sm">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {workoutProgram ? workoutProgram.name : 'Workout Program'}
+                </h2>
+              </div>
+              <div className="p-6">
+                {workoutProgram ? (
+                  workoutProgram.weeks.map((week) => (
+                    <div key={week.weekNumber} className="mb-8">
+                      <h3 className="text-lg font-semibold mb-4">Week {week.weekNumber}</h3>
+                      <div className="space-y-6">
+                        {week.workouts.map((workout, index) => (
+                          <div key={index} className="bg-gray-50 rounded-lg p-6">
+                            <h4 className="font-medium mb-4">{workout.day}</h4>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {workout.exercises.map((exercise, i) => (
+                                <div key={i} className="bg-white p-4 rounded-lg shadow-sm">
                                   <div className="flex items-center justify-between mb-2">
-                                <p className="font-medium">{exercise.name}</p>
+                                    <p className="font-medium">{exercise.name}</p>
                                     {exercise.completed ? (
                                       <FiCheck className="w-5 h-5 text-green-600" />
                                     ) : (
                                       <FiX className="w-5 h-5 text-gray-400" />
                                     )}
                                   </div>
-                                <div className="mt-2 text-sm text-gray-600">
-                                  <p>{exercise.sets} sets × {exercise.reps} reps</p>
-                                  <p>Weight: {exercise.weight}</p>
+                                  <div className="mt-2 text-sm text-gray-600">
+                                    <p>{exercise.sets} sets × {exercise.reps} reps</p>
+                                    <p>Weight: {exercise.weight}</p>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500">
+                    No workout program available yet
                   </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-500">
-                  No workout program available yet
-                </div>
-              )}
+                )}
               </div>
             </div>
 

@@ -6,6 +6,7 @@ import { FiUser, FiLock, FiCalendar, FiMapPin, FiActivity, FiCheckCircle } from 
 import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { completeUserProfile, getCookie } from '@/lib/api';
 
 interface RegisterUserFormData {
   username: string;
@@ -50,15 +51,13 @@ export default function RegisterPage() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const session = await getSession();
-      console.log('User profile session:', session);
+      const username = await getCookie("username");
+      console.log('User profile session:', username);
       
-      const username = session.success && session.data?.data?.user?.username;
       if (username) {
         setFormData(prev => ({
           ...prev,
           username,
-          role_type: 'ROLE_USER'
         }));
       } else {
         toast.error('Session not found');
@@ -109,27 +108,25 @@ export default function RegisterPage() {
         return;
       }
 
-      const requestData = {
-        username: formData.username.trim(),
-        name: formData.full_name.trim(),
+      console.log('Submitting profile data:', formData);
+      const result = await completeUserProfile({
+        username: formData.username,
+        name: formData.full_name,
         profile: formData.profile,
-        full_name: formData.full_name.trim(),
+        full_name: formData.full_name,
         birth_of_date: formData.birth_of_date,
-        address_no: formData.address_no.trim(),
-        address_street: formData.address_street.trim(),
-        city: formData.city.trim(),
+        address_no: formData.address_no,
+        address_street: formData.address_street,
+        city: formData.city,
         password: formData.password,
-        postalCode: formData.postalCode.trim(),
+        postalCode: formData.postalCode,
         role_type: formData.role_type,
         servicePeriod: formData.servicePeriod,
         weight: formData.weight,
         height: formData.height,
-        injuries: formData.injuries?.trim() || "None",
+        injuries: formData.injuries,
         trainerId: formData.trainerId
-      };
-
-      console.log('Submitting profile data:', requestData);
-      const result = await completeUserProfile(requestData);
+      });
       console.log('Profile completion response:', result);
 
       if (result.success && result.data) {
@@ -195,27 +192,6 @@ export default function RegisterPage() {
               <form id="user-profile-form" className="space-y-4" onSubmit={handleSubmit}>
                 {/* Basic Info Section */}
                 <div className="space-y-4">
-                  <div>
-                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                      Username (Email)
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiUser className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        id="username"
-                        name="username"
-                        type="email"
-                        required
-                        disabled
-                        className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                       Password

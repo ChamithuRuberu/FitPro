@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,8 @@ import { FiUser, FiLock, FiMail, FiCheckCircle, FiGithub, FiFacebook } from 'rea
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { userLogin } from '@/lib/api';
+import { usePreventBackNavigation } from '@/lib/navigation';
+import { getSession, getDashboardPath } from '@/lib/session';
 
 
 interface LoginRequest {
@@ -18,10 +20,36 @@ interface LoginRequest {
 export default function ClientLoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [formData, setFormData] = useState<LoginRequest>({
     email: '',
     password: ''
   });
+
+  // Prevent back navigation if authenticated
+  usePreventBackNavigation(isAuthenticated);
+
+  useEffect(() => {
+    // Check authentication status
+    const checkAuth = async () => {
+      try {
+        const session = await getSession();
+        setIsAuthenticated(session.isAuthenticated);
+        
+        if (session.isAuthenticated && session.user) {
+          // Replace current history entry with dashboard
+          const dashboardPath = await getDashboardPath(session.user.role);
+          window.history.replaceState(null, '', dashboardPath);
+          router.replace(dashboardPath);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        toast.error('Failed to check authentication status');
+      }
+    };
+    
+    checkAuth();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,34 +71,26 @@ export default function ClientLoginPage() {
         return;
       }
 
-      // Store role for debugging
-      const roleName = result.data.roles[0].name.toUpperCase(); // Normalize to uppercase
-      console.log('Normalized role name:', roleName);
-
-      // Navigate based on role
-      switch (roleName) {
-        case 'ROLE_TRAINER':
-          console.log('Redirecting to trainer dashboard...');
-          router.push('/dashboard/trainer-admin');
-          break;
-        case 'ROLE_GYM':
-          console.log('Redirecting to gym dashboard...');
-          router.push('/dashboard/gym-admin');
-          break;
-        case 'ROLE_SUPER_ADMIN':
-          console.log('Redirecting to admin dashboard...');
-          router.push('/dashboard/super-admin');
-          break;
-        case 'ROLE_USER':
-          console.log('Redirecting to client dashboard...');
-          router.push('/dashboard/client-dashboard');
-          break;
-       
-      }
+      const roleName = result.data.roles[0].name.toUpperCase();
+      const dashboardPath = await getDashboardPath(roleName);
+      
+      // Clear history and redirect to dashboard
+      window.history.replaceState(null, '', dashboardPath);
+      router.replace(dashboardPath);
+      
     } catch (error) {
       console.error('Login error:', error);
       if (error instanceof Error) {
-
+        if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+          toast.error('Network error. Please check your internet connection.');
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+          toast.error('Invalid email or password. Please try again.');
+        } else if (error.message.includes('404')) {
+          toast.error('Service not available. Please try again later.');
+        } else {
+          toast.error(`Login failed: ${error.message}`);
+        }
+      } else {
         toast.error('An unexpected error occurred. Please try again.');
       }
     } finally {

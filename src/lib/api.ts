@@ -39,9 +39,6 @@ export async function getCookie(key: string): Promise<string | null> {
     return cookies().get(key)?.value || null;
 }
 
-export async function deleteCookie(key: string) {
-    cookies().delete(key);
-  }
 
 export async function initializeRegistration(formData: {
     nic: string;
@@ -170,7 +167,7 @@ export async function userLogin(loginRequest: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(loginRequest),
-            credentials: 'include',
+            credentials: 'include', // Important: include credentials for cookies
         });
 
         const result = await response.json();
@@ -183,21 +180,9 @@ export async function userLogin(loginRequest: {
             };
         }
 
-        // Store session data
+        // Store session data in cookie if provided
         if (result.data?.token) {
             await setCookie("session", result.data.token);
-            
-            // Store user role in a separate cookie for easy access
-            if (result.data.roles && result.data.roles.length > 0) {
-                await setCookie("user_role", result.data.roles[0].name);
-            }
-            
-            // Store user data
-            await setCookie("user_data", JSON.stringify({
-                userId: result.data.userId,
-                email: loginRequest.email,
-                role: result.data.roles?.[0]?.name || 'ROLE_USER'
-            }));
         }
 
         return {

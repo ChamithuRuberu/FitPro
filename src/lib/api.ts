@@ -174,8 +174,8 @@ export async function userLogin(loginRequest: {
         console.log("User login result ->", result);
 
         if (!response.ok) {
-            return { 
-                success: false, 
+            return {
+                success: false,
                 message: result.message || `Login failed with status: ${response.status}`
             };
         }
@@ -192,8 +192,8 @@ export async function userLogin(loginRequest: {
         };
     } catch (error) {
         console.error('Login error:', error);
-        return { 
-            success: false, 
+        return {
+            success: false,
             message: error instanceof Error ? error.message : 'Login failed'
         };
     }
@@ -201,7 +201,6 @@ export async function userLogin(loginRequest: {
 
 export async function completeUserProfile(formData: {
     username: string;
-    name: string;
     profile: string;
     full_name: string;
     birth_of_date: string;
@@ -211,7 +210,7 @@ export async function completeUserProfile(formData: {
     password: string;
     postalCode: string;
     role_type: string;
-    servicePeriod: string;  
+    servicePeriod: string;
     weight: string;
     height: string;
     injuries: string;
@@ -219,29 +218,32 @@ export async function completeUserProfile(formData: {
 }) {
     try {
         console.log("Complete user profile request ->", formData);
-        const response = await fetch(`${API_BASE_URL}/user/app-user/register`, {
+
+        const response = await fetch(`${API_BASE_URL}/user/client-register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(formData), 
-            credentials: 'include', // Important: include credentials for cookies
+            body: JSON.stringify({
+                ...formData,
+                password: btoa(formData.password), // Example: Encode password before sending
+            }),
         });
 
         const result = await response.json();
-        console.log("Complete user profile result ->", result); 
-        
+        console.log("Complete user profile result ->", result);
+
         if (!response.ok) {
-            return { success: false, message: result.message || 'Profile completion failed' };
+            throw new Error(result.message || 'Profile completion failed');
         }
 
         return {
-            success: true,  
+            success: true,
             message: result.message,
-            data: result.data
+            data: result
         };
-    } catch (error) {
-        console.error('Profile completion error:', error);
-        return { success: false, message: 'Profile completion failed' };
-    }   
+    } catch (error: any) {
+        console.error('Profile completion error:', error.message);
+        return { success: false, message: error.message || 'Profile completion failed' };
+    }
 }   

@@ -10,7 +10,6 @@ import { completeUserProfile, getCookie } from '@/lib/api';
 
 interface RegisterUserFormData {
   username: string;
-  name: string;
   profile: string;
   full_name: string;
   birth_of_date: string;
@@ -30,30 +29,29 @@ interface RegisterUserFormData {
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<RegisterUserFormData>({
-    username: '',
-    name: '',
-    profile: 'default',
-    full_name: '',
-    birth_of_date: '',
-    address_no: '',
-    address_street: '',
-    city: '',
-    password: '',
-    postalCode: '',
-    role_type: 'ROLE_USER',
-    servicePeriod: '0',
-    weight: '',
-    height: '',
-    injuries: '',
-    trainerId: 'xxxxxx' // Default trainer ID
+   const [formData, setFormData] = useState<RegisterUserFormData>({
+    username: "",
+    profile: "",
+    full_name: "",
+    birth_of_date: "",
+    address_no: "",
+    address_street: "",
+    city: "",
+    password: "",
+    postalCode: "",
+    role_type: "ROLE_USER",
+    servicePeriod: "",
+    weight: "",
+    height: "",
+    injuries: "",
+    trainerId: "",
   });
 
   useEffect(() => {
     const checkSession = async () => {
       const username = await getCookie("username");
       console.log('User profile session:', username);
-      
+
       if (username) {
         setFormData(prev => ({
           ...prev,
@@ -64,87 +62,29 @@ export default function RegisterPage() {
         router.replace('/login');
       }
     };
-    
+
     checkSession();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
+    setLoading(true); // Set loading to true at the start
+  
     try {
-      // Validate required fields
-      const requiredFields = [
-        'username',
-        'full_name',
-        'birth_of_date',
-        'address_no',
-        'address_street',
-        'city',
-        'password',
-        'postalCode',
-        'weight',
-        'height'
-      ];
-
-      const missingFields = requiredFields.filter(field => !formData[field as keyof RegisterUserFormData]);
-      if (missingFields.length > 0) {
-        toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
-        setLoading(false);
-        return;
-      }
-
-      // Validate password
-      if (formData.password.length < 6) {
-        toast.error('Password must be at least 6 characters long');
-        setLoading(false);
-        return;
-      }
-
-      // Validate numeric fields
-      if (isNaN(Number(formData.weight)) || isNaN(Number(formData.height))) {
-        toast.error('Weight and height must be valid numbers');
-        setLoading(false);
-        return;
-      }
-
-      console.log('Submitting profile data:', formData);
-      const result = await completeUserProfile({
-        username: formData.username,
-        name: formData.full_name,
-        profile: formData.profile,
-        full_name: formData.full_name,
-        birth_of_date: formData.birth_of_date,
-        address_no: formData.address_no,
-        address_street: formData.address_street,
-        city: formData.city,
-        password: formData.password,
-        postalCode: formData.postalCode,
-        role_type: formData.role_type,
-        servicePeriod: formData.servicePeriod,
-        weight: formData.weight,
-        height: formData.height,
-        injuries: formData.injuries,
-        trainerId: formData.trainerId
-      });
-      console.log('Profile completion response:', result);
-
-      if (result.success && result.data) {
-        toast.success('Profile created successfully!');
-        // Wait a moment for the session to be updated
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await completeUserProfile(formData);
+      if (result.success) {
         router.replace('/dashboard/client-dashboard');
       } else {
-        console.error('Profile completion failed:', result);
         toast.error(result.message || 'Failed to create profile. Please try again.');
       }
     } catch (error) {
       console.error('Error:', error);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset loading to false
     }
   };
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -157,7 +97,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 to-indigo-50">
       <Toaster position="top-right" />
-      
+
       {/* Left side - Form */}
       <div className="flex-1 flex flex-col justify-center py-4 px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -429,9 +369,8 @@ export default function RegisterPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full flex justify-center items-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
-                      loading ? 'opacity-75 cursor-not-allowed' : ''
-                    }`}
+                    className={`w-full flex justify-center items-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${loading ? 'opacity-75 cursor-not-allowed' : ''
+                      }`}
                   >
                     {loading ? (
                       <>

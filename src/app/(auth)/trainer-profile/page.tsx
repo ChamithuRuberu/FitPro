@@ -74,7 +74,6 @@ export default function TrainerProfilePage() {
     if (loading) return; // Prevent multiple submissions
     setLoading(true);
 
-    const loadingToast = toast.loading('Creating profile...');
     try {
       const result = await trainerProfile({
         username: formData.username,
@@ -95,16 +94,13 @@ export default function TrainerProfilePage() {
         if (result.message) {
           await setCookie("signup_data", JSON.stringify(result.message));
         }
-        toast.dismiss(loadingToast);
         toast.success('Trainer profile created successfully.');
         router.push('/dashboard/trainer-admin');
       } else {
-        toast.dismiss(loadingToast);
         toast.error('Failed to create trainer profile. Please try again.');
       }
     } catch (error) {
       console.error('Trainer profile error:', error);
-      toast.dismiss(loadingToast);
       toast.error('Failed to create trainer profile. Please try again.');
     } finally {
       setLoading(false);

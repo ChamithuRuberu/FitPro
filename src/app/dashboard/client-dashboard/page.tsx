@@ -6,8 +6,6 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { useAuthRedirect } from '@/lib/navigation';
-import { getSession, getDashboardPath } from '@/lib/session';
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -570,39 +568,6 @@ export default function ClientDashboard() {
     sortBy: 'date',
   });
 
-  // Prevent navigation to auth pages
-  useAuthRedirect();
-
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const session = await getSession();
-        if (!session.isAuthenticated) {
-          // Clear history and redirect to login
-          window.history.replaceState(null, '', '/login');
-          router.replace('/login');
-          return;
-        }
-
-        const userData = session.user;
-        if (!userData || userData.role !== 'ROLE_USER') {
-          const dashboardPath = await getDashboardPath(userData?.role || '');
-          window.history.replaceState(null, '', dashboardPath);
-          router.replace(dashboardPath);
-          return;
-        }
-
-        // ... rest of your session handling code ...
-      } catch (error) {
-        console.error('Session check error:', error);
-        toast.error('Failed to load dashboard data');
-        router.replace('/login');
-      }
-    };
-
-    checkSession();
-  }, [router]);
-
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) return 'Good Morning';
@@ -610,6 +575,10 @@ export default function ClientDashboard() {
     if (hour >= 17 && hour < 22) return 'Good Evening';
     return 'Good Night';
   };
+
+  useEffect(() => {
+
+  }, []);
 
   const fetchTabData = async (tab: string) => {
     try {
@@ -1600,7 +1569,7 @@ export default function ClientDashboard() {
                             </div>
                             <div className="space-y-2">
                               {meal.foods.map((food, i) => (
-                                <div key={i} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded-lg">
+                                <div key={i} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded">
                                   <span className="font-medium text-gray-900">{food.name}</span>
                                   <div className="flex items-center space-x-4">
                                     <span className="text-gray-600">{food.portion}</span>

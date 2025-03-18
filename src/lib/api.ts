@@ -135,7 +135,7 @@ export async function trainerProfile(trainerProfileRequest: {
             body: JSON.stringify(trainerProfileRequest),
         });
         const result = await response.json();
-
+        
         if (!response.ok) {
             return { success: false, message: result.message || 'Trainer profile failed' };
         }
@@ -143,105 +143,10 @@ export async function trainerProfile(trainerProfileRequest: {
         // Stringify the result data before setting it as a cookie
         await setCookie("signup_data", JSON.stringify(result));
         console.log("Trainer profile result ->", result);
-
-        return {
-            success: true,
-            message: result.message,
-            data: result.data
-        };
-
+        
+        return { success: true, message: result.message , data: result.data};
     } catch (error) {
         console.error('Trainer profile error:', error);
         return { success: false, message: 'Trainer profile failed' };
     }
 }
-
-export async function userLogin(loginRequest: {
-    email: string;
-    password: string;
-}) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/user/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(loginRequest),
-            credentials: 'include', // Important: include credentials for cookies
-        });
-
-        const result = await response.json();
-        console.log("User login result ->", result);
-
-        if (!response.ok) {
-            return { 
-                success: false, 
-                message: result.message || `Login failed with status: ${response.status}`
-            };
-        }
-
-        // Store session data in cookie if provided
-        if (result.data?.token) {
-            await setCookie("session", result.data.token);
-        }
-
-        return {
-            success: true,
-            message: result.message || 'Login successful',
-            data: result.data
-        };
-    } catch (error) {
-        console.error('Login error:', error);
-        return { 
-            success: false, 
-            message: error instanceof Error ? error.message : 'Login failed'
-        };
-    }
-}
-
-export async function completeUserProfile(formData: {
-    username: string;
-    name: string;
-    profile: string;
-    full_name: string;
-    birth_of_date: string;
-    address_no: string;
-    address_street: string;
-    city: string;
-    password: string;
-    postalCode: string;
-    role_type: string;
-    servicePeriod: string;  
-    weight: string;
-    height: string;
-    injuries: string;
-    trainerId: string;
-}) {
-    try {
-        console.log("Complete user profile request ->", formData);
-        const response = await fetch(`${API_BASE_URL}/user/app-user/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData), 
-            credentials: 'include', // Important: include credentials for cookies
-        });
-
-        const result = await response.json();
-        console.log("Complete user profile result ->", result); 
-        
-        if (!response.ok) {
-            return { success: false, message: result.message || 'Profile completion failed' };
-        }
-
-        return {
-            success: true,  
-            message: result.message,
-            data: result.data
-        };
-    } catch (error) {
-        console.error('Profile completion error:', error);
-        return { success: false, message: 'Profile completion failed' };
-    }   
-}   

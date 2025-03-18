@@ -138,6 +138,39 @@ export default function TrainerDashboard() {
     const checkAuth = async () => {
       try {
         setLoading(true);
+
+        const session = await getCookie("signup_data");
+        console.log('Dashboard session:', session);
+
+        if (session === null) {
+          toast.error('Please log in to access the dashboard');
+          router.push('/login');
+        } else {
+          try {
+            const result = JSON.parse(session); // Parse the JSON string into an object
+            if (result?.data?.trainer_obj) {
+              setTrainerData(result.data.trainer_obj);
+              // Also set other state data from the cookie
+              if (result.data.clients) {
+                setClients(result.data.clients);
+              }
+              if (result.data.stats) {
+                setTrainerStats(result.data.stats);
+              }
+              if (result.data.nutritionItems) {
+                setNutritionItems(result.data.nutritionItems);
+              }
+              console.log('Setting trainer data:', result.data);
+            } else {
+              console.error('Trainer object not found in session data');
+            }
+          } catch (error) {
+            console.error('Error parsing session data:', error);
+          }
+        }
+
+        // No need to fetch additional data since it's all in the cookie
+        // await fetchTabData(activeTab);
       } catch (error) {
         console.error('Auth check error:', error);
         toast.error('Failed to load dashboard data');

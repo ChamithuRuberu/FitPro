@@ -246,4 +246,45 @@ export async function completeUserProfile(formData: {
         console.error('Profile completion error:', error.message);
         return { success: false, message: error.message || 'Profile completion failed' };
     }
-}   
+}
+
+export async function registerGym(gymForm: {
+    gymName: string;
+    location: string;
+    email: string;
+    phone: string;
+    desc: string;
+    monthlyFee: string;
+    membership: string;
+    password: string;
+    roleType: string;
+}) {
+    try {
+        console.log("Register gym request ->", gymForm);
+        const response = await fetch(`${API_BASE_URL}/gym/register/gym`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(gymForm),
+        });
+
+        console.log("Register gym response ->", response);
+        const result = await response.json();
+        console.log("Register gym result ->", result);
+
+        if (!response.ok) {
+            console.log("Register gym error ->", result);
+            throw new Error(result.message || 'Gym registration failed');
+        }
+
+        return {
+            success: true,
+            message: result.message,
+            data: result.data
+        };
+    } catch (error) {
+        console.error('Gym registration error:', error);
+        return { success: false, message: 'Gym registration failed' };
+    }
+}

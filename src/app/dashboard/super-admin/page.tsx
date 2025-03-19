@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { 
-  FiUsers, FiActivity, FiDollarSign, FiStar, FiMapPin, FiPlus, 
+import {
+  FiUsers, FiActivity, FiDollarSign, FiStar, FiMapPin, FiPlus,
   FiCalendar, FiToggleLeft, FiToggleRight, FiClock, FiAlertCircle,
   FiMail, FiPhone, FiLock, FiImage, FiSearch, FiFilter, FiDownload,
   FiTrendingUp, FiBarChart2, FiPieChart, FiSettings, FiRefreshCw,
@@ -12,8 +11,9 @@ import {
 } from 'react-icons/fi';
 import type { GymData, TrainerData, ClientData, DashboardStats } from '@/types/dashboard';
 import { useRouter } from 'next/navigation';
+import { registerGym } from '@/lib/api';
+import toast from 'react-hot-toast';
 
-const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 
 // Sample data
 const stats: DashboardStats = {
@@ -28,197 +28,15 @@ const stats: DashboardStats = {
 };
 
 const latestGyms: GymData[] = [
-  {
-    id: '1',
-    name: 'FitPro Central',
-    location: 'New York, NY',
-    memberCount: 450,
-    trainerCount: 12,
-    rating: 4.9,
-    revenue: 45000,
-    status: 'active',
-    nextPaymentDate: '2024-04-15',
-    registeredDate: '2024-03-01'
-  },
-  {
-    id: '2',
-    name: 'Elite Fitness Club',
-    location: 'Los Angeles, CA',
-    memberCount: 380,
-    trainerCount: 10,
-    rating: 4.7,
-    revenue: 38000,
-    status: 'active',
-    nextPaymentDate: '2024-04-20',
-    registeredDate: '2024-03-05'
-  },
-  {
-    id: '3',
-    name: 'PowerFit Studio',
-    location: 'Chicago, IL',
-    memberCount: 290,
-    trainerCount: 8,
-    rating: 4.8,
-    revenue: 32000,
-    status: 'inactive',
-    nextPaymentDate: '2024-04-18',
-    registeredDate: '2024-03-08'
-  },
-  {
-    id: '4',
-    name: 'Flex Fitness Center',
-    location: 'Miami, FL',
-    memberCount: 320,
-    trainerCount: 9,
-    rating: 4.6,
-    revenue: 35000,
-    status: 'active',
-    nextPaymentDate: '2024-04-22',
-    registeredDate: '2024-03-10'
-  },
-  {
-    id: '5',
-    name: 'Peak Performance Gym',
-    location: 'Seattle, WA',
-    memberCount: 280,
-    trainerCount: 7,
-    rating: 4.9,
-    revenue: 30000,
-    status: 'active',
-    nextPaymentDate: '2024-04-25',
-    registeredDate: '2024-03-12'
-  }
+
 ];
 
 const latestTrainers: TrainerData[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    gym: 'FitPro Central',
-    clientCount: 25,
-    rating: 4.9,
-    specializations: ['Weight Loss', 'Strength Training'],
-    activePrograms: 3,
-    revenue: 8500,
-    status: 'active',
-    nextPaymentDate: '2024-04-10',
-    registeredDate: '2024-03-05'
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    gym: 'Elite Fitness Club',
-    clientCount: 22,
-    rating: 4.8,
-    specializations: ['HIIT', 'Nutrition Coaching'],
-    activePrograms: 4,
-    revenue: 7800,
-    status: 'active',
-    nextPaymentDate: '2024-04-12',
-    registeredDate: '2024-03-06'
-  },
-  {
-    id: '3',
-    name: 'Michael Chen',
-    gym: 'PowerFit Studio',
-    clientCount: 18,
-    rating: 4.7,
-    specializations: ['Bodybuilding', 'Sports Performance'],
-    activePrograms: 2,
-    revenue: 6500,
-    status: 'inactive',
-    nextPaymentDate: '2024-04-15',
-    registeredDate: '2024-03-08'
-  },
-  {
-    id: '4',
-    name: 'Emily Rodriguez',
-    gym: 'Flex Fitness Center',
-    clientCount: 20,
-    rating: 4.9,
-    specializations: ['Yoga', 'Pilates'],
-    activePrograms: 3,
-    revenue: 7200,
-    status: 'active',
-    nextPaymentDate: '2024-04-18',
-    registeredDate: '2024-03-09'
-  },
-  {
-    id: '5',
-    name: 'David Kim',
-    gym: 'Peak Performance Gym',
-    clientCount: 23,
-    rating: 4.8,
-    specializations: ['Functional Training', 'Rehabilitation'],
-    activePrograms: 4,
-    revenue: 8000,
-    status: 'active',
-    nextPaymentDate: '2024-04-20',
-    registeredDate: '2024-03-11'
-  }
+
 ];
 
 const latestClients: ClientData[] = [
-  {
-    id: '1',
-    name: 'Alice Johnson',
-    program: 'Weight Loss Program',
-    trainer: 'John Smith',
-    progress: 75,
-    attendance: 90,
-    nextSession: '2024-03-15 10:00 AM',
-    subscriptionStatus: 'active',
-    nextPaymentDate: '2024-04-01',
-    registeredDate: '2024-03-10'
-  },
-  {
-    id: '2',
-    name: 'Robert Wilson',
-    program: 'Strength Training',
-    trainer: 'Sarah Johnson',
-    progress: 85,
-    attendance: 95,
-    nextSession: '2024-03-16 11:00 AM',
-    subscriptionStatus: 'active',
-    nextPaymentDate: '2024-04-05',
-    registeredDate: '2024-03-11'
-  },
-  {
-    id: '3',
-    name: 'Maria Garcia',
-    program: 'HIIT Program',
-    trainer: 'Michael Chen',
-    progress: 60,
-    attendance: 80,
-    nextSession: '2024-03-15 2:00 PM',
-    subscriptionStatus: 'expired',
-    nextPaymentDate: '2024-04-08',
-    registeredDate: '2024-03-12'
-  },
-  {
-    id: '4',
-    name: 'James Lee',
-    program: 'Yoga & Flexibility',
-    trainer: 'Emily Rodriguez',
-    progress: 70,
-    attendance: 85,
-    nextSession: '2024-03-17 9:00 AM',
-    subscriptionStatus: 'active',
-    nextPaymentDate: '2024-04-10',
-    registeredDate: '2024-03-13'
-  },
-  {
-    id: '5',
-    name: 'Sophie Martin',
-    program: 'Rehabilitation',
-    trainer: 'David Kim',
-    progress: 65,
-    attendance: 88,
-    nextSession: '2024-03-16 3:00 PM',
-    subscriptionStatus: 'pending',
-    nextPaymentDate: '2024-04-12',
-    registeredDate: '2024-03-14'
-  }
+
 ];
 
 export default function SuperAdminDashboard() {
@@ -234,15 +52,29 @@ export default function SuperAdminDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
 
+  interface GymForm {
+    gymName: string;
+    location: string;
+    email: string;
+    phone: string;
+    desc: string;
+    monthlyFee: string;
+    membership: string;
+    password: string;
+    roleType: string;
+  }
+
   // Form states
-  const [gymForm, setGymForm] = useState({
-    name: '',
+  const [gymForm, setGymForm] = useState<GymForm>({
+    gymName: '',
     location: '',
     email: '',
     phone: '',
-    description: '',
+    desc: '',
     monthlyFee: '',
-    image: null as File | null
+    membership: '',
+    password: '',
+    roleType: 'ROLE_GYM',
   });
 
   const [trainerForm, setTrainerForm] = useState({
@@ -285,24 +117,31 @@ export default function SuperAdminDashboard() {
 
   const handleGymSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
+      console.log("Submitting gym form:", gymForm);
       setLoading(true);
-      // TODO: Implement gym registration API call
-      console.log('Submitting gym data:', gymForm);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setGymForm({
-        name: '',
-        location: '',
-        email: '',
-        phone: '',
-        description: '',
-        monthlyFee: '',
-        image: null
-      });
-      // Show success message
+      const result = await registerGym({
+        gymName: gymForm.gymName,
+        location: gymForm.location,
+        email: gymForm.email,
+        phone: gymForm.phone,
+        desc: gymForm.desc,
+        monthlyFee: gymForm.monthlyFee,
+        membership: gymForm.membership,
+        password: gymForm.password,
+        roleType: "ROLE_GYM",
+
+      })
+
+      if (result.success && result.data) {
+        toast.success("Gym registered successfully");
+      } else {
+        toast.error(result.message);
+      }
     } catch (error) {
       console.error('Error registering gym:', error);
-      // Show error message
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -388,8 +227,8 @@ export default function SuperAdminDashboard() {
                   <input
                     type="text"
                     required
-                    value={gymForm.name}
-                    onChange={(e) => setGymForm(prev => ({ ...prev, name: e.target.value }))}
+                    value={gymForm.gymName}
+                    onChange={(e) => setGymForm(prev => ({ ...prev, gymName: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -434,38 +273,43 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <div className="mt-1">
-                  <textarea
-                    rows={3}
-                    value={gymForm.description}
-                    onChange={(e) => setGymForm(prev => ({ ...prev, description: e.target.value }))}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Package Type</label>
+                <div className="mt-1 relative">
+                  <select
+                    required
+                    value={gymForm.monthlyFee} // Bind the selected value to the state
+                    onChange={(e) => setGymForm(prev => ({ ...prev, monthlyFee: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  >
+                    <option value="">Select Package Type</option>
+                    <option value="basic">Basic - 6/month</option>
+                    <option value="standard">Standard - 12/month</option>
+                    <option value="premium">Premium - 36/month</option>
+                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Monthly Fee</label>
+                <label className="block text-sm font-medium text-gray-700">Fee</label>
                 <div className="mt-1 relative">
                   <input
                     type="number"
                     required
-                    value={gymForm.monthlyFee}
-                    onChange={(e) => setGymForm(prev => ({ ...prev, monthlyFee: e.target.value }))}
+                    value={gymForm.membership}
+                    onChange={(e) => setGymForm(prev => ({ ...prev, membership: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700">Gym Image</label>
-                <div className="mt-1">
+                <label className="block text-sm font-medium text-gray-700">password</label>
+                <div className="mt-1 relative">
                   <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files && handleImageUpload(e.target.files[0], 'gym')}
+                    type="password"
+                    required
+                    value={gymForm.password}
+                    onChange={(e) => setGymForm(prev => ({ ...prev, password: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -476,9 +320,8 @@ export default function SuperAdminDashboard() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  loading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${loading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 {loading ? 'Registering...' : 'Register Gym'}
               </button>
@@ -616,9 +459,8 @@ export default function SuperAdminDashboard() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  loading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${loading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 {loading ? 'Registering...' : 'Register Trainer'}
               </button>
@@ -734,9 +576,8 @@ export default function SuperAdminDashboard() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  loading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${loading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 {loading ? 'Registering...' : 'Register Client'}
               </button>
@@ -748,14 +589,14 @@ export default function SuperAdminDashboard() {
 
   const filteredGyms = latestGyms.filter(gym => {
     const matchesSearch = gym.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         gym.location.toLowerCase().includes(searchTerm.toLowerCase());
+      gym.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' ? true : gym.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
   const filteredTrainers = latestTrainers.filter(trainer => {
     const matchesSearch = trainer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         trainer.gym.toLowerCase().includes(searchTerm.toLowerCase());
+      trainer.gym.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' ? true : trainer.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -794,7 +635,7 @@ export default function SuperAdminDashboard() {
 
             {/* Right side - Actions */}
             <div className="flex items-center space-x-4">
-              
+
 
               {/* Notifications */}
               <button
@@ -820,9 +661,8 @@ export default function SuperAdminDashboard() {
                     <p className="text-sm font-medium text-gray-900">Super Admin</p>
                     <p className="text-xs text-gray-500">admin@fitpro.com</p>
                   </div>
-                  <FiChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
-                    showProfileMenu ? 'transform rotate-180' : ''
-                  }`} />
+                  <FiChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${showProfileMenu ? 'transform rotate-180' : ''
+                    }`} />
                 </button>
 
                 {showProfileMenu && (
@@ -865,11 +705,10 @@ export default function SuperAdminDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id as any)}
-                  className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
-                    activeTab === item.id
-                      ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                  className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${activeTab === item.id
+                    ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
                 >
                   <item.icon className="w-4 h-4 mr-2" />
                   {item.label}
@@ -897,7 +736,7 @@ export default function SuperAdminDashboard() {
                 Export
               </button>
             </div>
-            <button 
+            <button
               onClick={() => {
                 setActiveTab('register');
                 setRegisterType('gym');
@@ -1097,21 +936,20 @@ export default function SuperAdminDashboard() {
                         <p className="text-sm font-medium text-gray-900">{item.name}</p>
                         <p className="text-sm text-gray-500">
                           {'location' in item ? `New gym registered in ${item.location}` :
-                           'specializations' in item ? `New trainer joined ${item.gym}` :
-                           `New client assigned to ${item.trainer}`}
+                            'specializations' in item ? `New trainer joined ${item.gym}` :
+                              `New client assigned to ${item.trainer}`}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
                           {new Date(item.registeredDate).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="flex-shrink-0">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          'status' in item
-                            ? item.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${'status' in item
+                          ? item.status === 'active'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                          : 'bg-blue-100 text-blue-800'
+                          }`}>
                           {'status' in item ? item.status : 'subscriptionStatus' in item ? item.subscriptionStatus : 'New'}
                         </span>
                       </div>
@@ -1162,11 +1000,10 @@ export default function SuperAdminDashboard() {
                   <button
                     key={type}
                     onClick={() => setRegisterType(type as any)}
-                    className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      registerType === type
-                        ? 'bg-blue-50 text-blue-600 shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
+                    className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${registerType === type
+                      ? 'bg-blue-50 text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-50'
+                      }`}
                   >
                     {type === 'gym' && <FiMapPin className="w-4 h-4 mr-2" />}
                     {type === 'trainer' && <FiActivity className="w-4 h-4 mr-2" />}

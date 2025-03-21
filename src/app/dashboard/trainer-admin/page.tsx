@@ -270,6 +270,18 @@ export default function TrainerDashboard() {
   const [activeModalTab, setActiveModalTab] = useState<'workout' | 'meal'>('workout');
   const [selectedWorkoutType, setSelectedWorkoutType] = useState<keyof typeof workoutExercises | ''>('');
   const [selectedExercise, setSelectedExercise] = useState('');
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [newClientData, setNewClientData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    age: '',
+    weight: '',
+    height: '',
+    goal: 'Weight Loss',
+    medicalHistory: '',
+    experience: 'Beginner'
+  });
   const [exerciseDetails, setExerciseDetails] = useState<WorkoutExercise>({
     name: '',
     sets: 3,
@@ -580,6 +592,54 @@ export default function TrainerDashboard() {
     const updatedMeals = clientMeals.filter(meal => meal.id !== id);
     setClientMeals(updatedMeals);
     toast.success('Meal removed from plan');
+  };
+
+  const handleAddClient = () => {
+    // Validate form data
+    if (!newClientData.name || !newClientData.email) {
+      toast.error('Name and email are required');
+      return;
+    }
+
+    // Generate a unique ID for the new client
+    const newClientId = Math.random().toString(36).substr(2, 9);
+    
+    // Create new client object
+    const newClient: ClientSummary = {
+      id: newClientId,
+      name: newClientData.name,
+      email: newClientData.email,
+      progress: 0,
+      nextSession: 'Not scheduled',
+      program: newClientData.goal,
+      status: 'Active'
+    };
+    
+    // Add to clients list
+    setClients([...clients, newClient]);
+    
+    // Reset form and close modal
+    setNewClientData({
+      name: '',
+      email: '',
+      phone: '',
+      age: '',
+      weight: '',
+      height: '',
+      goal: 'Weight Loss',
+      medicalHistory: '',
+      experience: 'Beginner'
+    });
+    setShowAddClientModal(false);
+    
+    toast.success('Client added successfully');
+  };
+
+  const handleClientDataChange = (field: string, value: string) => {
+    setNewClientData({
+      ...newClientData,
+      [field]: value
+    });
   };
 
   if (loading) {
@@ -921,9 +981,7 @@ export default function TrainerDashboard() {
                 <p className="text-gray-500 mt-1">Manage and track your clients' progress</p>
               </div>
               <button 
-                onClick={() => {
-                  // Add logic to open add client modal
-                }}
+                onClick={() => setShowAddClientModal(true)}
                 className="flex items-center px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
               >
                 <FiPlus className="w-5 h-5 mr-2" />
@@ -1499,6 +1557,179 @@ export default function TrainerDashboard() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Client Modal */}
+      {showAddClientModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Add New Client
+              </h2>
+              <button
+                onClick={() => setShowAddClientModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FiX className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <form onSubmit={(e) => { e.preventDefault(); handleAddClient(); }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Personal Information</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        value={newClientData.name}
+                        onChange={(e) => handleClientDataChange('name', e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        value={newClientData.email}
+                        onChange={(e) => handleClientDataChange('email', e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        value={newClientData.phone}
+                        onChange={(e) => handleClientDataChange('phone', e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Age
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        value={newClientData.age}
+                        onChange={(e) => handleClientDataChange('age', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Health Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Health Information</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Current Weight (kg)
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        value={newClientData.weight}
+                        onChange={(e) => handleClientDataChange('weight', e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Height (cm)
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        value={newClientData.height}
+                        onChange={(e) => handleClientDataChange('height', e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Fitness Goal
+                      </label>
+                      <select
+                        className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        value={newClientData.goal}
+                        onChange={(e) => handleClientDataChange('goal', e.target.value)}
+                      >
+                        <option value="Weight Loss">Weight Loss</option>
+                        <option value="Muscle Gain">Muscle Gain</option>
+                        <option value="General Fitness">General Fitness</option>
+                        <option value="Endurance Training">Endurance Training</option>
+                        <option value="Sports Performance">Sports Performance</option>
+                        <option value="Rehabilitation">Rehabilitation</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Fitness Experience
+                      </label>
+                      <select
+                        className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        value={newClientData.experience}
+                        onChange={(e) => handleClientDataChange('experience', e.target.value)}
+                      >
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Medical History */}
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Medical History / Special Considerations
+                  </label>
+                  <textarea
+                    rows={3}
+                    className="w-full form-textarea rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="List any injuries, conditions or medications that may affect training..."
+                    value={newClientData.medicalHistory}
+                    onChange={(e) => handleClientDataChange('medicalHistory', e.target.value)}
+                  ></textarea>
+                </div>
+                
+                {/* Form Actions */}
+                <div className="mt-8 flex justify-end space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddClientModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Add Client
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

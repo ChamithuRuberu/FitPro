@@ -98,6 +98,7 @@ interface MealPlan {
     portion: string;
     calories: number;
   }[];
+  category?: string;
 }
 
 interface ClientWorkoutPlan {
@@ -295,6 +296,12 @@ export default function TrainerDashboard() {
   const [currentWeek, setCurrentWeek] = useState(1);
   const [totalWeeks, setTotalWeeks] = useState(4);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [activeMealType, setActiveMealType] = useState<'Breakfast' | 'Lunch' | 'Dinner' | 'Snack'>('Breakfast');
+  const [mealTime, setMealTime] = useState('08:00');
+  const [mealItems, setMealItems] = useState<{name: string; portion: string; calories: number}[]>([
+    { name: '', portion: '', calories: 0 }
+  ]);
+  const [mealCategory, setMealCategory] = useState<string>('Regular');
 
   const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -538,10 +545,6 @@ export default function TrainerDashboard() {
     toast.success('Workout added to plan');
   };
 
-  const [mealItems, setMealItems] = useState<{name: string; portion: string; calories: number}[]>([
-    { name: '', portion: '', calories: 0 }
-  ]);
-
   const handleAddMealItem = () => {
     setMealItems([...mealItems, { name: '', portion: '', calories: 0 }]);
   };
@@ -554,6 +557,34 @@ export default function TrainerDashboard() {
       newMealItems[index][field] = value;
     }
     setMealItems(newMealItems);
+  };
+
+  const handleAddMeal = () => {
+    if (!activeMealType || mealItems[0].name === '') return;
+
+    const newMeal: MealPlan = {
+      id: Math.random().toString(36).substr(2, 9),
+      mealType: activeMealType,
+      time: mealTime,
+      items: [...mealItems],
+      category: mealCategory
+    };
+
+    setClientMeals([...clientMeals, newMeal]);
+    
+    // Reset form for next meal
+    setActiveMealType('Breakfast');
+    setMealTime('08:00');
+    setMealItems([{ name: '', portion: '', calories: 0 }]);
+    setMealCategory('Regular');
+
+    toast.success('Meal added to plan');
+  };
+
+  const handleDeleteMeal = (id: string) => {
+    const updatedMeals = clientMeals.filter(meal => meal.id !== id);
+    setClientMeals(updatedMeals);
+    toast.success('Meal removed from plan');
   };
 
   if (loading) {
@@ -1215,73 +1246,200 @@ export default function TrainerDashboard() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Meal Plan Form */}
+                  {/* Meal Plan Form - Organized by meal type */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Meal</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Meal Type
-                        </label>
-                        <select className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                          <option value="">Select Meal Type</option>
-                          <option value="Breakfast">Breakfast</option>
-                          <option value="Lunch">Lunch</option>
-                          <option value="Dinner">Dinner</option>
-                          <option value="Snack">Snack</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Time
-                        </label>
-                        <input
-                          type="time"
-                          className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                      </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Meal Plan</h3>
+                    
+                    {/* Meal Type Tabs */}
+                    <div className="flex space-x-2 mb-6">
+                      {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => {
+                            setActiveMealType(type as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack');
+                            setMealTime(
+                              type === 'Breakfast' ? '08:00' : 
+                              type === 'Lunch' ? '13:00' : 
+                              type === 'Dinner' ? '19:00' : '16:00'
+                            );
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            activeMealType === type
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
                     </div>
                     
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Food Items
-                      </label>
-                      <div className="space-y-2">
-                        {mealItems.map((item, index) => (
-                          <div key={index} className="grid grid-cols-3 gap-4">
-                            <input
-                              type="text"
-                              value={item.name}
-                              onChange={(e) => handleMealItemChange(index, 'name', e.target.value)}
-                              placeholder="Food item"
-                              className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
-                            <input
-                              type="text"
-                              value={item.portion}
-                              onChange={(e) => handleMealItemChange(index, 'portion', e.target.value)}
-                              placeholder="Portion"
-                              className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
-                            <input
-                              type="number"
-                              value={item.calories || ''}
-                              onChange={(e) => handleMealItemChange(index, 'calories', e.target.value)}
-                              placeholder="Calories"
-                              className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
-                          </div>
-                        ))}
+                    {/* Active Meal Type Section */}
+                    <div className="border rounded-lg p-5 bg-gray-50">
+                      <h4 className="font-medium text-gray-900 mb-4">{activeMealType} Meal</h4>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Time
+                          </label>
+                          <input
+                            type="time"
+                            className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            value={mealTime}
+                            onChange={(e) => setMealTime(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Diet Category
+                          </label>
+                          <select 
+                            className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            onChange={(e) => setMealCategory(e.target.value)}
+                            value={mealCategory}
+                          >
+                            <option value="Regular">Regular</option>
+                            <option value="Weight Loss">Weight Loss</option>
+                            <option value="Muscle Gain">Muscle Gain</option>
+                            <option value="Vegetarian">Vegetarian</option>
+                            <option value="Vegan">Vegan</option>
+                            <option value="Keto">Keto</option>
+                            <option value="Low Carb">Low Carb</option>
+                            <option value="Gluten Free">Gluten Free</option>
+                            <option value="High Protein">High Protein</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Food Items
+                        </label>
+                        <div className="space-y-2">
+                          {mealItems.map((item, index) => (
+                            <div key={index} className="grid grid-cols-3 gap-4">
+                              <input
+                                type="text"
+                                value={item.name}
+                                onChange={(e) => handleMealItemChange(index, 'name', e.target.value)}
+                                placeholder="Food item"
+                                className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              />
+                              <input
+                                type="text"
+                                value={item.portion}
+                                onChange={(e) => handleMealItemChange(index, 'portion', e.target.value)}
+                                placeholder="Portion"
+                                className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              />
+                              <input
+                                type="number"
+                                value={item.calories || ''}
+                                onChange={(e) => handleMealItemChange(index, 'calories', e.target.value)}
+                                placeholder="Calories"
+                                className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              />
+                            </div>
+                          ))}
+                          <button
+                            onClick={handleAddMealItem}
+                            className="text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            + Add another item
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex justify-end">
                         <button
-                          onClick={handleAddMealItem}
-                          className="text-sm text-blue-600 hover:text-blue-700"
+                          onClick={handleAddMeal}
+                          disabled={!activeMealType || mealItems[0].name === '' || !mealTime}
+                          className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                            !activeMealType || mealItems[0].name === '' || !mealTime 
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-blue-600 hover:bg-blue-700'
+                          }`}
                         >
-                          + Add another item
+                          Add to {activeMealType} Plan
                         </button>
                       </div>
                     </div>
                   </div>
 
+                  {/* Display Meal Plans */}
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Client Meal Plan Summary</h3>
+                    {clientMeals.length > 0 ? (
+                      <div className="space-y-4">
+                        {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((mealType) => {
+                          const meals = clientMeals.filter(meal => meal.mealType === mealType);
+                          
+                          return (
+                            <div key={mealType} className="border rounded-lg overflow-hidden">
+                              <div className={`px-4 py-3 border-b ${
+                                mealType === 'Breakfast' ? 'bg-yellow-50' : 
+                                mealType === 'Lunch' ? 'bg-green-50' : 
+                                mealType === 'Dinner' ? 'bg-blue-50' : 'bg-purple-50'
+                              }`}>
+                                <h4 className="font-medium text-gray-900">{mealType}</h4>
+                              </div>
+                              <div className="divide-y divide-gray-200">
+                                {meals.length > 0 ? (
+                                  meals.map((meal) => (
+                                    <div key={meal.id} className="p-4">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                          <span className="text-sm text-gray-500">Time: {meal.time}</span>
+                                          {meal.category && (
+                                            <span className="ml-3 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                              {meal.category}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <button 
+                                          onClick={() => handleDeleteMeal(meal.id)}
+                                          className="text-red-500 hover:text-red-700 text-sm"
+                                        >
+                                          Remove
+                                        </button>
+                                      </div>
+                                      <div className="space-y-2">
+                                        {meal.items.map((item, idx) => (
+                                          <div key={idx} className="flex justify-between text-sm">
+                                            <span>{item.name} ({item.portion})</span>
+                                            <span>{item.calories} cal</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="p-4 text-center text-gray-500">
+                                    No {mealType.toLowerCase()} meals added yet
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 bg-gray-50 border rounded-lg">
+                        <p className="text-gray-500">No meals added to plan yet</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Save Plan Button */}
+                  <div className="flex justify-end space-x-4 mt-6">
+                    <button
+                      onClick={() => {/* Add logic to save meal plan */ toast.success('Meal plan saved')}}
+                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Save Meal Plan
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

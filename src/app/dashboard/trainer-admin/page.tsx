@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiBarChart2, FiUsers, FiCheckCircle, FiAward, FiStar, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
+import { getCookie, removeCookie } from '@/lib/api';
 
 
 interface TrainerData {
@@ -352,6 +352,35 @@ export default function TrainerDashboard() {
     const checkAuth = async () => {
       try {
         setLoading(true);
+        
+        // Get the token from client cookie
+        const token = getCookie('token');
+        console.log("Auth check - Token exists:", !!token);
+        
+        if (!token) {
+          console.log("No authentication token found");
+          toast.error('Authentication required');
+          router.push('/login');
+          return;
+        }
+        
+        // Fetch trainer data from cookies
+        const fullName = await getCookie('fullName');
+        const city = await getCookie('city');
+        const status = await getCookie('status');
+        const trainerId = await getCookie('trainerId');
+        
+        
+        // Update trainer data with values from cookies
+        setTrainerData(prevData => ({
+          ...prevData,
+          fullName: fullName || prevData.fullName,
+          city: city || prevData.city,
+          status: status || prevData.status,
+          trainerId: trainerId || prevData.trainerId
+        }));
+        
+        console.log("Authentication successful");
       } catch (error) {
         console.error('Auth check error:', error);
         toast.error('Failed to load dashboard data');
@@ -364,8 +393,23 @@ export default function TrainerDashboard() {
     checkAuth();
   }, [router, activeTab]);
 
-  const handleLogout = async () => {
-    
+  const handleLogout = () => {
+    try {
+      // Clear all cookies
+      removeCookie('token');
+      removeCookie('refresh_token');
+      removeCookie('trainerId');
+      removeCookie('fullName');
+      removeCookie('email');
+      removeCookie('city');
+      removeCookie('status');
+      
+      toast.success('Logged out successfully');
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to log out');
+    }
   };
 
   const handleClientSelect = (client: ClientSummary) => {

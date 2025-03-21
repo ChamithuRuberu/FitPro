@@ -39,6 +39,10 @@ export async function getCookie(key: string): Promise<string | null> {
     return cookies().get(key)?.value || null;
 }
 
+export async function removeCookie(key: string) {
+    cookies().delete(key);
+}
+
 
 export async function initializeRegistration(formData: {
     nic: string;
@@ -183,6 +187,11 @@ export async function userLogin(loginRequest: {
         // Store session data in cookie if provided
         if (result.data?.token) {
             await setCookie("session", result.data.token);
+            await setCookie("refresh_token", result.data.refresh_token);
+            await setCookie("trainerId", result.data.user.gov_id?.toString() || '');
+            await setCookie("fullName", result.data.user.full_name || '');
+            await setCookie("city", result.data.user.city || '');
+            await setCookie("status", result.data.user.status || '');
         }
 
         return {

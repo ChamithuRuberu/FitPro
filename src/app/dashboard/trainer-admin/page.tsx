@@ -988,24 +988,36 @@ export default function TrainerDashboard() {
                     
                     <div className="space-y-6">
                       {/* Plan Duration Selection */}
-                      <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Plan Duration
                           </label>
-                          <select
-                            value={selectedDuration}
-                            onChange={(e) => {
-                              setSelectedDuration(e.target.value as '1month' | '2months' | '3months');
-                              setTotalWeeks(e.target.value === '1month' ? 4 : e.target.value === '2months' ? 8 : 12);
-                            }}
-                            className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                          >
-                            <option value="1month">1 Month</option>
-                            <option value="2months">2 Months</option>
-                            <option value="3months">3 Months</option>
-                          </select>
+                          <div className="flex space-x-4">
+                            {[
+                              { id: '1month', label: '1 Month', weeks: 4 },
+                              { id: '2months', label: '2 Months', weeks: 8 },
+                              { id: '3months', label: '3 Months', weeks: 12 }
+                            ].map((option) => (
+                              <button
+                                key={option.id}
+                                onClick={() => {
+                                  setSelectedDuration(option.id as '1month' | '2months' | '3months');
+                                  setTotalWeeks(option.weeks);
+                                }}
+                                className={`flex-1 py-3 px-4 rounded-lg text-center transition-all duration-200 ${
+                                  selectedDuration === option.id
+                                    ? 'bg-blue-600 text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                              >
+                                <div className="font-medium">{option.label}</div>
+                                <div className="text-xs mt-1 opacity-80">{option.weeks} weeks</div>
+                              </button>
+                            ))}
+                          </div>
                         </div>
+                        
                       </div>
 
                       {/* Weekly Schedule */}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FiPlus, FiUser, FiX, FiLoader } from 'react-icons/fi';
+import { FiPlus, FiUser, FiX, FiLoader, FiClock } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { addClientToTrainer } from '@/lib/api';
 
@@ -27,6 +27,7 @@ export default function ClientsTab({
   isLoading = false
 }: ClientsTabProps) {
   const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [activeTabIndex, setActiveTabIndex] = useState(0); // 0 for Active Clients, 1 for Pending Requests
   const [newClientData, setNewClientData] = useState({
     name: '',
     email: '',
@@ -39,6 +40,15 @@ export default function ClientsTab({
     experience: 'Beginner'
   });
   const [isAddingClient, setIsAddingClient] = useState(false);
+
+  // Filter clients based on their status
+  const activeClients = clients.filter(client => 
+    client.status === 'Active' || client.status === 'ACTIVE'
+  );
+  
+  const pendingClients = clients.filter(client => 
+    client.status === 'Pending' || client.status === 'PENDING'
+  );
 
   const handleAddClient = async () => {
     // Validate form data
@@ -126,6 +136,58 @@ export default function ClientsTab({
     });
   };
 
+  const renderClientsList = (clientsList: ClientSummary[]) => {
+    if (clientsList.length === 0) {
+      return (
+        <div className="p-8 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+            <FiUser className="w-8 h-8 text-gray-400" />
+          </div>
+          <p className="text-gray-500 text-lg">
+            {activeTabIndex === 0 ? 'No active clients yet' : 'No pending requests'}
+          </p>
+          <p className="text-gray-400 text-sm mt-2">
+            {activeTabIndex === 0 ? 'Start by adding your first client' : 'All client requests have been processed'}
+          </p>
+        </div>
+      );
+    }
+
+    return clientsList.map((client) => (
+      <div key={client.id} className="p-6 hover:bg-gray-50 transition-colors">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <span className="text-xl font-semibold text-blue-600">
+                {client.name.charAt(0)}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">{client.name}</h3>
+              <p className="text-sm text-gray-600">{client.email}</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-8">
+            <button
+              onClick={() => onClientSelect(client)}
+              className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              {activeTabIndex === 0 ? 'Manage Plans' : 'Review Request'}
+            </button>
+            
+            <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+              activeTabIndex === 0
+                ? 'bg-green-100 text-green-700'
+                : 'bg-yellow-100 text-yellow-700'
+            }`}>
+              {activeTabIndex === 0 ? 'Active' : 'Pending'}
+            </span>
+          </div>
+        </div>
+      </div>
+    ));
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
       <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center">
@@ -141,6 +203,36 @@ export default function ClientsTab({
           Add New Client
         </button>
       </div>
+
+      {/* Tabs Navigation */}
+      <div className="border-b border-gray-200">
+        <div className="flex px-6">
+          <button
+            className={`py-4 px-4 text-sm font-medium border-b-2 ${
+              activeTabIndex === 0
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } flex items-center space-x-2`}
+            onClick={() => setActiveTabIndex(0)}
+          >
+            <FiUser className="w-4 h-4" />
+            <span>Active Clients ({activeClients.length})</span>
+          </button>
+          <button
+            className={`py-4 px-4 text-sm font-medium border-b-2 ${
+              activeTabIndex === 1
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } flex items-center space-x-2 ml-8`}
+            onClick={() => setActiveTabIndex(1)}
+          >
+            <FiClock className="w-4 h-4" />
+            <span>Pending Requests ({pendingClients.length})</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Client List */}
       <div className="divide-y divide-gray-200">
         {isLoading ? (
           <div className="p-8 text-center">
@@ -149,65 +241,8 @@ export default function ClientsTab({
             </div>
             <p className="text-gray-500 text-lg">Loading clients...</p>
           </div>
-        ) : clients.length > 0 ? (
-          clients.map((client) => (
-            <div key={client.id} className="p-6 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-xl font-semibold text-blue-600">
-                      {client.name.charAt(0)}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{client.name}</h3>
-                    <p className="text-sm text-gray-600">{client.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-8">
-                  <button
-                    onClick={() => onClientSelect(client)}
-                    className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                  >
-                    Manage Plans
-                  </button>
-                  <div className="w-48">
-                    <p className="text-sm font-medium text-gray-500 mb-2">Progress</p>
-                    <div className="relative pt-1">
-                      <div className="flex mb-2 items-center justify-between">
-                        <div>
-                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
-                            {client.progress}%
-                          </span>
-                        </div>
-                      </div>
-                      <div className="overflow-hidden h-2 text-xs flex rounded bg-blue-100">
-                        <div
-                          style={{ width: `${client.progress}%` }}
-                          className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600 transition-all duration-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-                    client.status === 'Active'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {client.status}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))
         ) : (
-          <div className="p-8 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-              <FiUser className="w-8 h-8 text-gray-400" />
-            </div>
-            <p className="text-gray-500 text-lg">No clients assigned yet</p>
-            <p className="text-gray-400 text-sm mt-2">Start by adding your first client</p>
-          </div>
+          renderClientsList(activeTabIndex === 0 ? activeClients : pendingClients)
         )}
       </div>
 

@@ -204,7 +204,6 @@ export default function TrainerDashboard() {
             id: client.id?.toString() || client.govId?.toString(),
             name: client.fullName || client.username,
             email: client.email,
-            progress: 0, // Set default progress
             nextSession: 'Not scheduled',
             program: 'General Fitness',
             status: client.status === 'ACTIVE' ? 'Active' : 'Inactive'

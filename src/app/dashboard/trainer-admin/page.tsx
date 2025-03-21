@@ -4,11 +4,9 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiBarChart2, FiUsers, FiCheckCircle, FiAward, FiStar, FiX } from 'react-icons/fi';
+import { FiCalendar, FiActivity, FiTrendingUp, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiBarChart2, FiUsers, FiCheckCircle, FiAward, FiStar, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { getCookie } from '@/lib/api';
 
-const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 
 interface TrainerData {
   email: string;
@@ -82,11 +80,6 @@ interface WorkoutExercise {
   reps: number;
   weight: string;
   notes?: string;
-}
-
-interface WorkoutPlan {
-  type: 'Legs' | 'Back' | 'Chest' | 'Arms' | 'Shoulders' | 'Core';
-  exercises: WorkoutExercise[];
 }
 
 interface MealPlan {
@@ -229,6 +222,48 @@ export default function TrainerDashboard() {
       duration: '30 min',
       status: 'completed'
     }
+  ]);
+  const [upcomingPayments] = useState([
+    {
+      id: '1',
+      clientName: 'Emma Wilson',
+      amount: 120,
+      dueDate: '2024-03-18',
+      packageType: 'Monthly Subscription',
+      status: 'pending'
+    },
+    {
+      id: '2',
+      clientName: 'Michael Brown',
+      amount: 65,
+      dueDate: '2024-03-20',
+      packageType: 'Personal Training',
+      status: 'pending'
+    },
+    {
+      id: '3',
+      clientName: 'Sarah Davis',
+      amount: 250,
+      dueDate: '2024-03-15',
+      packageType: 'Quarterly Plan',
+      status: 'overdue'
+    },
+    {
+        id: '2',
+        clientName: 'Michael Brown',
+        amount: 65,
+        dueDate: '2024-03-20',
+        packageType: 'Personal Training',
+        status: 'pending'
+      },
+      {
+        id: '2',
+        clientName: 'Michael Brown',
+        amount: 65,
+        dueDate: '2024-03-20',
+        packageType: 'Personal Training',
+        status: 'pending'
+      },
   ]);
   const [selectedClient, setSelectedClient] = useState<ClientSummary | null>(null);
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -515,6 +550,24 @@ export default function TrainerDashboard() {
     <div className="min-h-screen bg-gray-50">
       <Toaster position="top-right" />
 
+      {/* Custom scrollbar styles */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #bcbcbc;
+          border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #a0a0a0;
+        }
+      `}</style>
+
       {/* Dashboard Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 shadow-lg">
         <div className="container mx-auto px-4 py-8">
@@ -655,41 +708,86 @@ export default function TrainerDashboard() {
               </motion.div>
             </div>
 
-            {/* Today's Schedule */}
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Today's Schedule</h2>
-                <button className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
-                  <FiCalendar className="w-4 h-4 mr-2" />
-                  View Full Calendar
-                </button>
-              </div>
-              <div className="space-y-4">
-                {upcomingSessions.map((session) => (
-                  <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-2 rounded-full ${session.status === 'upcoming' ? 'bg-blue-100' : 'bg-green-100'
-                        }`}>
-                        <FiClock className={`w-5 h-5 ${session.status === 'upcoming' ? 'text-blue-600' : 'text-green-600'
-                          }`} />
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <p className="font-medium text-gray-900">{session.clientName}</p>
-                          <span className={`px-2 py-1 text-xs rounded-full ${session.status === 'upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+            {/* Today's Schedule and Upcoming Payments */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Today's Schedule */}
+              <div className="bg-white rounded-xl shadow-lg p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Today's Schedule</h2>
+                  <button className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+                    <FiCalendar className="w-4 h-4 mr-2" />
+                    View Full Calendar
+                  </button>
+                </div>
+                <div className="h-80 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-4">
+                    {upcomingSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-2 rounded-full ${session.status === 'upcoming' ? 'bg-blue-100' : 'bg-green-100'
                             }`}>
-                            {session.status}
-                          </span>
+                            <FiClock className={`w-5 h-5 ${session.status === 'upcoming' ? 'text-blue-600' : 'text-green-600'
+                              }`} />
+                          </div>
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <p className="font-medium text-gray-900">{session.clientName}</p>
+                              <span className={`px-2 py-1 text-xs rounded-full ${session.status === 'upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                                }`}>
+                                {session.status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-500">{session.type} • {session.duration}</p>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-500">{session.type} • {session.duration}</p>
+                        <div className="text-right">
+                          <p className="font-medium text-gray-900">{session.time}</p>
+                          <p className="text-sm text-gray-500">{session.date}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-gray-900">{session.time}</p>
-                      <p className="text-sm text-gray-500">{session.date}</p>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+              </div>
+
+              {/* Upcoming Payments */}
+              <div className="bg-white rounded-xl shadow-lg p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Upcoming Payments</h2>
+                  <button className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+                    <FiDollarSign className="w-4 h-4 mr-2" />
+                    View All Transactions
+                  </button>
+                </div>
+                <div className="h-80 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-4">
+                    {upcomingPayments.map((payment) => (
+                      <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-2 rounded-full ${payment.status === 'pending' ? 'bg-yellow-100' : 'bg-red-100'
+                            }`}>
+                            <FiDollarSign className={`w-5 h-5 ${payment.status === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                              }`} />
+                          </div>
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <p className="font-medium text-gray-900">{payment.clientName}</p>
+                              <span className={`px-2 py-1 text-xs rounded-full ${payment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                }`}>
+                                {payment.status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-500">{payment.packageType}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-green-600">${payment.amount}</p>
+                          <p className="text-sm text-gray-500">Due: {payment.dueDate}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 

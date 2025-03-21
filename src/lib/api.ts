@@ -297,3 +297,113 @@ export async function registerGym(gymForm: {
         return { success: false, message: 'Gym registration failed' };
     }
 }
+
+export async function getTrainerClients() {
+  try {
+    const token = await getCookie('session');
+    
+    if (!token) {
+      return { 
+        success: false, 
+        message: 'Authentication required' 
+      };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/trainer/get-clients`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({})
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        message: result.message || 'Failed to fetch clients'
+      };
+    }
+
+    // Check if the response has the expected structure
+    if (result.code === "0000" && result.data && result.data.clients) {
+      return {
+        success: true,
+        data: result.data
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Invalid response format'
+    };
+  } catch (error) {
+    console.error('Get trainer clients error:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to fetch clients'
+    };
+  }
+}
+
+export async function addClientToTrainer(clientData: {
+  name: string;
+  email: string;
+  phone?: string;
+  age?: string;
+  weight?: string;
+  height?: string;
+  goal?: string;
+  medicalHistory?: string;
+  experience?: string;
+}) {
+  try {
+    const token = await getCookie('session');
+    
+    if (!token) {
+      return { 
+        success: false, 
+        message: 'Authentication required' 
+      };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/trainer/add-client`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(clientData)
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        message: result.message || 'Failed to add client'
+      };
+    }
+
+    // Check if the response has the expected success code
+    if (result.code === "0000" && result.data) {
+      return {
+        success: true,
+        data: result.data
+      };
+    }
+    
+    return {
+      success: false,
+      message: result.message || 'Failed to add client'
+    };
+  } catch (error) {
+    console.error('Add client error:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to add client'
+    };
+  }
+}

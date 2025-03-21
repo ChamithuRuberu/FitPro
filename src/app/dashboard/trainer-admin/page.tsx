@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { useAuthCheck } from '@/components/dashboard/trainer/hooks/useAuthCheck';
 import DashboardHeader from '@/components/dashboard/trainer/DashboardHeader';
 import OverviewTab from '@/components/dashboard/trainer/OverviewTab';
 import ClientsTab from '@/components/dashboard/trainer/ClientsTab';
 import ClientPlanModal from '@/components/dashboard/trainer/ClientPlanModal';
+import { getTrainerClients } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 interface ClientSummary {
   id: string;
@@ -78,6 +80,7 @@ const workoutExercises = {
 export default function TrainerDashboard() {
   const { loading, trainerData } = useAuthCheck();
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'nutrition' | 'progress'>('overview');
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
   
   const [trainerStats, setTrainerStats] = useState({
     totalClients: 12,
@@ -185,6 +188,52 @@ export default function TrainerDashboard() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [clientWorkouts, setClientWorkouts] = useState<ClientWorkoutPlan[]>([]);
   const [clientMeals, setClientMeals] = useState<MealPlan[]>([]);
+
+  // Fetch clients when component mounts or trainerId changes
+  useEffect(() => {
+    async function fetchClients() {
+      if (!trainerData.trainerId) return;
+      
+      setIsLoadingClients(true);
+      try {
+        const result = await getTrainerClients();
+        
+        if (result.success && result.data && result.data.clients) {
+          // Map API data to ClientSummary format - clients are nested under data.clients
+          const formattedClients = result.data.clients.map((client: any) => ({
+            id: client.id?.toString() || client.govId?.toString(),
+            name: client.fullName || client.username,
+            email: client.email,
+            progress: 0, // Set default progress
+            nextSession: 'Not scheduled',
+            program: 'General Fitness',
+            status: client.status === 'ACTIVE' ? 'Active' : 'Inactive'
+          }));
+          
+          setClients(formattedClients);
+          
+          // Update stats
+          if (formattedClients.length > 0) {
+            setTrainerStats(prev => ({
+              ...prev,
+              totalClients: formattedClients.length
+            }));
+          }
+        } else {
+          // Keep sample data if API call fails
+          console.error('Failed to fetch clients:', result.message);
+          toast.error('Failed to load clients. Using sample data.');
+        }
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+        toast.error('Error loading clients. Using sample data.');
+      } finally {
+        setIsLoadingClients(false);
+      }
+    }
+    
+    fetchClients();
+  }, [trainerData.trainerId]);
 
   const handleClientSelect = (client: ClientSummary) => {
     setSelectedClient(client);
@@ -315,6 +364,7 @@ export default function TrainerDashboard() {
             clients={clients} 
             onClientSelect={handleClientSelect}
             setClients={setClients}
+            isLoading={isLoadingClients}
           />
         )}
 

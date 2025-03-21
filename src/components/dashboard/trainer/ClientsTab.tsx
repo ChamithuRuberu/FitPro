@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { FiPlus, FiUser, FiX, FiLoader, FiClock } from 'react-icons/fi';
+import { FiPlus, FiUser, FiX, FiLoader, FiClock, FiSearch, FiToggleRight, FiToggleLeft } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { addClientToTrainer } from '@/lib/api';
+import { addClientToTrainer, toggleClientStatus as toggleClientStatusAPI } from '@/lib/api';
 
 interface ClientSummary {
   id: string;
@@ -28,6 +28,8 @@ export default function ClientsTab({
 }: ClientsTabProps) {
   const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [activeTabIndex, setActiveTabIndex] = useState(0); // 0 for Active Clients, 1 for Pending Requests
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isProcessing, setIsProcessing] = useState<string | null>(null); // Store client ID being processed
   const [newClientData, setNewClientData] = useState({
     name: '',
     email: '',
@@ -41,12 +43,18 @@ export default function ClientsTab({
   });
   const [isAddingClient, setIsAddingClient] = useState(false);
 
-  // Filter clients based on their status
-  const activeClients = clients.filter(client => 
+  // Filter clients based on search query first
+  const filteredClients = clients.filter(client => 
+    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Then filter by status
+  const activeClients = filteredClients.filter(client => 
     client.status === 'Active' || client.status === 'ACTIVE'
   );
   
-  const pendingClients = clients.filter(client => 
+  const pendingClients = filteredClients.filter(client => 
     client.status === 'Pending' || client.status === 'PENDING'
   );
 
@@ -136,6 +144,39 @@ export default function ClientsTab({
     });
   };
 
+  // Function to toggle client status
+  const toggleClientStatus = async (clientId: string, currentStatus: string) => {
+    setIsProcessing(clientId);
+    try {
+      // Convert to API status format
+      const newStatus = currentStatus === 'Active' ? 'INACTIVE' : 'ACTIVE';
+      
+      // Call API to update status
+      const result = await toggleClientStatusAPI(clientId, newStatus as 'ACTIVE' | 'INACTIVE');
+      
+      if (result.success) {
+        // Update clients array with new status
+        const displayStatus = newStatus === 'ACTIVE' ? 'Active' : 'Inactive';
+        const updatedClients = clients.map(client => {
+          if (client.id === clientId) {
+            return { ...client, status: displayStatus };
+          }
+          return client;
+        });
+        
+        setClients(updatedClients);
+        toast.success(`Client ${displayStatus.toLowerCase()} successfully`);
+      } else {
+        toast.error(result.message || 'Failed to update client status');
+      }
+    } catch (error) {
+      console.error('Error toggling client status:', error);
+      toast.error('Failed to update client status');
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
   const renderClientsList = (clientsList: ClientSummary[]) => {
     if (clientsList.length === 0) {
       return (
@@ -144,10 +185,20 @@ export default function ClientsTab({
             <FiUser className="w-8 h-8 text-gray-400" />
           </div>
           <p className="text-gray-500 text-lg">
-            {activeTabIndex === 0 ? 'No active clients yet' : 'No pending requests'}
+            {searchQuery 
+              ? 'No clients match your search' 
+              : activeTabIndex === 0 
+                ? 'No active clients yet' 
+                : 'No pending requests'
+            }
           </p>
           <p className="text-gray-400 text-sm mt-2">
-            {activeTabIndex === 0 ? 'Start by adding your first client' : 'All client requests have been processed'}
+            {searchQuery 
+              ? 'Try a different search term' 
+              : activeTabIndex === 0 
+                ? 'Start by adding your first client' 
+                : 'All client requests have been processed'
+            }
           </p>
         </div>
       );
@@ -167,7 +218,7 @@ export default function ClientsTab({
               <p className="text-sm text-gray-600">{client.email}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-4">
             <button
               onClick={() => onClientSelect(client)}
               className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -175,13 +226,28 @@ export default function ClientsTab({
               {activeTabIndex === 0 ? 'Manage Plans' : 'Review Request'}
             </button>
             
-            <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-              activeTabIndex === 0
-                ? 'bg-green-100 text-green-700'
-                : 'bg-yellow-100 text-yellow-700'
-            }`}>
-              {activeTabIndex === 0 ? 'Active' : 'Pending'}
-            </span>
+            
+            <button
+              onClick={() => toggleClientStatus(
+                client.id, 
+                client.status === 'Active' || client.status === 'ACTIVE' ? 'Active' : 'Inactive'
+              )}
+              disabled={isProcessing === client.id}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                client.status === 'Active' || client.status === 'ACTIVE'
+                  ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {isProcessing === client.id ? (
+                <FiLoader className="w-4 h-4 animate-spin" />
+              ) : client.status === 'Active' || client.status === 'ACTIVE' ? (
+                <FiToggleRight className="w-5 h-5" />
+              ) : (
+                <FiToggleLeft className="w-5 h-5" />
+              )}
+              <span>{client.status === 'Active' || client.status === 'ACTIVE' ? 'Active' : 'Inactive'}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -206,29 +272,45 @@ export default function ClientsTab({
 
       {/* Tabs Navigation */}
       <div className="border-b border-gray-200">
-        <div className="flex px-6">
-          <button
-            className={`py-4 px-4 text-sm font-medium border-b-2 ${
-              activeTabIndex === 0
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } flex items-center space-x-2`}
-            onClick={() => setActiveTabIndex(0)}
-          >
-            <FiUser className="w-4 h-4" />
-            <span>Active Clients ({activeClients.length})</span>
-          </button>
-          <button
-            className={`py-4 px-4 text-sm font-medium border-b-2 ${
-              activeTabIndex === 1
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } flex items-center space-x-2 ml-8`}
-            onClick={() => setActiveTabIndex(1)}
-          >
-            <FiClock className="w-4 h-4" />
-            <span>Pending Requests ({pendingClients.length})</span>
-          </button>
+        <div className="flex justify-between px-6">
+          <div className="flex">
+            <button
+              className={`py-4 px-4 text-sm font-medium border-b-2 ${
+                activeTabIndex === 0
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } flex items-center space-x-2`}
+              onClick={() => setActiveTabIndex(0)}
+            >
+              <FiUser className="w-4 h-4" />
+              <span>Active Clients ({activeClients.length})</span>
+            </button>
+            <button
+              className={`py-4 px-4 text-sm font-medium border-b-2 ${
+                activeTabIndex === 1
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } flex items-center space-x-2 ml-8`}
+              onClick={() => setActiveTabIndex(1)}
+            >
+              <FiClock className="w-4 h-4" />
+              <span>Pending Requests ({pendingClients.length})</span>
+            </button>
+          </div>
+          
+          {/* Search Input */}
+          <div className="relative py-2">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiSearch className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="Search clients..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 

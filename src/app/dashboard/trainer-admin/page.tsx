@@ -100,24 +100,7 @@ export default function TrainerDashboard() {
       program: 'Weight Loss',
       status: 'Active'
     },
-    {
-      id: '2',
-      name: 'Michael Brown',
-      email: 'michael.b@example.com',
-      progress: 60,
-      nextSession: '2024-03-21 11:00 AM',
-      program: 'Muscle Gain',
-      status: 'Active'
-    },
-    {
-      id: '3',
-      name: 'Sarah Davis',
-      email: 'sarah.d@example.com',
-      progress: 45,
-      nextSession: '2024-03-22 09:00 AM',
-      program: 'General Fitness',
-      status: 'Active'
-    }
+   
   ]);
   
   const [upcomingSessions] = useState<WorkoutSession[]>([
@@ -130,24 +113,7 @@ export default function TrainerDashboard() {
       duration: '60 min',
       status: 'upcoming'
     },
-    {
-      id: '2',
-      clientName: 'Sarah Wilson',
-      type: 'HIIT',
-      date: '2024-03-15',
-      time: '11:00 AM',
-      duration: '45 min',
-      status: 'upcoming'
-    },
-    {
-      id: '3',
-      clientName: 'Mike Johnson',
-      type: 'Cardio',
-      date: '2024-03-14',
-      time: '02:00 PM',
-      duration: '30 min',
-      status: 'completed'
-    }
+    
   ]);
   
   const [upcomingPayments] = useState([
@@ -159,22 +125,7 @@ export default function TrainerDashboard() {
       packageType: 'Monthly Subscription',
       status: 'pending'
     },
-    {
-      id: '2',
-      clientName: 'Michael Brown',
-      amount: 65,
-      dueDate: '2024-03-20',
-      packageType: 'Personal Training',
-      status: 'pending'
-    },
-    {
-      id: '3',
-      clientName: 'Sarah Davis',
-      amount: 250,
-      dueDate: '2024-03-15',
-      packageType: 'Quarterly Plan',
-      status: 'overdue'
-    }
+   
   ]);
   
   const [clientSegments] = useState<ClientSegment[]>([

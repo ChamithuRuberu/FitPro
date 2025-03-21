@@ -406,94 +406,10 @@ export default function TrainerDashboard() {
       }
     ];
 
-    const sampleMeals: MealPlan[] = [
-      {
-        id: '1',
-        mealType: 'Breakfast',
-        time: '08:00',
-        items: [
-          {
-            name: 'Oatmeal with Berries',
-            portion: '1 cup',
-            calories: 300
-          },
-          {
-            name: 'Greek Yogurt',
-            portion: '200g',
-            calories: 150
-          },
-          {
-            name: 'Banana',
-            portion: '1 medium',
-            calories: 105
-          }
-        ]
-      },
-      {
-        id: '2',
-        mealType: 'Lunch',
-        time: '13:00',
-        items: [
-          {
-            name: 'Grilled Chicken Breast',
-            portion: '200g',
-            calories: 330
-          },
-          {
-            name: 'Brown Rice',
-            portion: '1 cup',
-            calories: 216
-          },
-          {
-            name: 'Mixed Vegetables',
-            portion: '200g',
-            calories: 70
-          }
-        ]
-      },
-      {
-        id: '3',
-        mealType: 'Dinner',
-        time: '19:00',
-        items: [
-          {
-            name: 'Salmon Fillet',
-            portion: '180g',
-            calories: 367
-          },
-          {
-            name: 'Sweet Potato',
-            portion: '200g',
-            calories: 180
-          },
-          {
-            name: 'Broccoli',
-            portion: '150g',
-            calories: 55
-          }
-        ]
-      },
-      {
-        id: '4',
-        mealType: 'Snack',
-        time: '16:00',
-        items: [
-          {
-            name: 'Almonds',
-            portion: '30g',
-            calories: 164
-          },
-          {
-            name: 'Apple',
-            portion: '1 medium',
-            calories: 95
-          }
-        ]
-      }
-    ];
+
 
     setClientWorkouts(sampleWorkouts);
-    setClientMeals(sampleMeals);
+    // setClientMeals(sampleMeals);
   };
 
   const handleAddExercise = () => {
@@ -1048,7 +964,6 @@ export default function TrainerDashboard() {
 
                   {/* Weekly Schedule */}
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-4">Week {currentWeek} Schedule</h4>
                     <div className="space-y-4">
                       {weekDays.map((day) => (
                         <div key={day} className="border rounded-lg overflow-hidden">

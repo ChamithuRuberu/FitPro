@@ -459,28 +459,7 @@ export default function AdvancedWorkoutProgramForm({ clientId, onWorkoutCreated,
                         )}
 
                         <div className={styles.formSection}>
-                            <div className="flex justify-between items-center mb-4">
-                                <h4 className={styles.formSubtitle}>Add Workout Day</h4>
-                                {currentWeek.workoutDays.length > 0 && (
-                                    <div className="flex gap-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAddWeek(true)}
-                                            className={styles.btnPrimary}
-                                        >
-                                            Complete & Review Program
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAddWeek(false)}
-                                            className={styles.btnSecondary}
-                                        >
-                                            Add Another Week
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                            
+                            <h4 className={styles.formSubtitle}>Add Workout Day</h4>
                             <div className={styles.formGrid}>
                                 <select
                                     value={currentDay.day}

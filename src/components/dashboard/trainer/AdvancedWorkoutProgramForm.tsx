@@ -140,6 +140,8 @@ export default function AdvancedWorkoutProgramForm({ clientId, onWorkoutCreated,
 
     const [showExerciseForm, setShowExerciseForm] = useState(false);
     const [currentStep, setCurrentStep] = useState<'program' | 'week' | 'preview'>('program');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isWorkoutCreated, setIsWorkoutCreated] = useState(false);
 
     const handleAddExercise = () => {
         if (!currentExercise.name) {
@@ -237,40 +239,42 @@ export default function AdvancedWorkoutProgramForm({ clientId, onWorkoutCreated,
         toast.success('Week added successfully');
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (currentWeek.workoutDays.length > 0) {
-            if (!currentWeek.weeklyGoal.trim()) {
-                toast.error('Please set a weekly goal for the current week');
-                return;
-            }
-            setProgram(prev => ({
-                ...prev,
-                weeks: [...prev.weeks, { ...currentWeek }]
-            }));
-        }
-
-        if (program.weeks.length === 0) {
-            toast.error('Add at least one week to the program');
-            return;
-        }
-
+    const handleSubmit = async () => {
         try {
-            const result = await createAdvancedWorkout(program);
-            if (result.success) {
-                onWorkoutCreated(result.data);
-                toast.success('Workout program created successfully!', {
+            setIsSubmitting(true);
+            const response = await createAdvancedWorkout({
+                clientId,
+                programName: program.programName,
+                programDescription: program.programDescription,
+                startDate: program.startDate,
+                endDate: program.endDate,
+                difficulty: program.difficulty,
+                goal: program.goal,
+                weeks: program.weeks
+            });
+
+            if (response) {
+                setIsWorkoutCreated(true);
+                toast.success('Workout program created successfully! 💪', {
                     duration: 3000,
                     icon: '✅'
                 });
-                onClose();
-            } else {
-                toast.error(result.message || 'Failed to create workout program');
+                
+                // Wait for toast to show before closing
+                setTimeout(() => {
+                    if (onClose) {
+                        onClose();
+                    }
+                }, 1000);
             }
         } catch (error) {
-            console.error('Create workout error:', error);
-            toast.error('Failed to create workout program. Please try again.');
+            console.error('Error creating workout:', error);
+            toast.error('Failed to create workout program', {
+                duration: 3000,
+                icon: '❌'
+            });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -738,10 +742,7 @@ export default function AdvancedWorkoutProgramForm({ clientId, onWorkoutCreated,
             {currentStep === 'preview' && (
                 <div className={styles.card}>
                     <div className={styles.cardHeader}>
-                        <h3 className={styles.cardTitle}>Program Review</h3>
-                        <span className={styles.statusBadge}>
-                            {program.weeks.length} weeks planned
-                        </span>
+                        <h3 className={styles.cardTitle}>Review Program</h3>
                     </div>
                     <div className={styles.cardContent}>
                         <div className={styles.previewSection}>
@@ -818,15 +819,34 @@ export default function AdvancedWorkoutProgramForm({ clientId, onWorkoutCreated,
                             type="button"
                             onClick={() => setCurrentStep('week')}
                             className={styles.btnSecondary}
+                            disabled={isSubmitting || isWorkoutCreated}
                         >
-                            Back to Weekly Plan
+                            Back to Week Plan
                         </button>
-                        <button
-                            type="submit"
-                            className={styles.btnPrimary}
-                        >
-                            Create Workout Program
-                        </button>
+                        <div className="flex gap-4">
+                            <button
+                                type="button"
+                                onClick={handleSubmit}
+                                className={styles.btnPrimary}
+                                disabled={isSubmitting || isWorkoutCreated}
+                            >
+                                {isSubmitting ? 'Creating...' : 'Create Program'}
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.btnSecondary} ${(!isWorkoutCreated) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={!isWorkoutCreated}
+                                onClick={() => {
+                                    // Handle navigation to meal plan section
+                                    if (onClose) {
+                                        onClose();
+                                    }
+                                    // You can add additional navigation logic here
+                                }}
+                            >
+                                Create Meal Plan →
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

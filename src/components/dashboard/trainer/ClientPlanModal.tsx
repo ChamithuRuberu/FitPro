@@ -92,7 +92,7 @@ export default function ClientPlanModal({
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [activeMealType, setActiveMealType] = useState<'Breakfast' | 'Lunch' | 'Dinner' | 'Snack'>('Breakfast');
   const [mealTime, setMealTime] = useState('08:00');
-  const [mealItems, setMealItems] = useState<{name: string; portion: string; calories: number}[]>([
+  const [mealItems, setMealItems] = useState<{ name: string; portion: string; calories: number }[]>([
     { name: '', portion: '', calories: 0 }
   ]);
   const [mealCategory, setMealCategory] = useState<string>('Regular');
@@ -113,7 +113,7 @@ export default function ClientPlanModal({
     };
 
     setCurrentWorkoutExercises([...currentWorkoutExercises, newExercise]);
-    
+
     // Reset form for next exercise
     setSelectedExercise('');
     setExerciseDetails({
@@ -127,32 +127,36 @@ export default function ClientPlanModal({
     toast.success('Exercise added to workout');
   };
 
-  const handleWorkoutCreated = (workout: AdvancedWorkoutProgram) => {
-    // Convert each week's workouts into ClientWorkoutPlan format
-    const newWorkouts: ClientWorkoutPlan[] = workout.weeks.flatMap(week => 
-      week.workoutDays.map(day => ({
-        id: Math.random().toString(36).substr(2, 9),
-        type: day.focusArea.includes('LEGS') ? 'Legs' :
-              day.focusArea.includes('BACK') ? 'Back' :
-              day.focusArea.includes('CHEST') ? 'Chest' :
-              day.focusArea.includes('ARMS') ? 'Arms' :
-              day.focusArea.includes('SHOULDERS') ? 'Shoulders' : 'Core',
-        exercises: day.exercises.map(ex => ({
-          name: ex.name,
-          sets: ex.sets,
-          reps: ex.reps,
-          weight: ex.weight,
-          notes: ex.notes
-        })),
-        day: day.day,
-        startTime: day.startTime,
-        duration: day.duration,
-        notes: day.generalNotes
-      }))
-    );
+  const handleWorkoutCreated = (response: any) => {
+    if (response.success) {
+      // Convert the workouts from the response into ClientWorkoutPlan format
+      if (response.data && response.data.workouts) {
+        const newWorkouts: ClientWorkoutPlan[] = response.data.workouts.map((workout: any) => ({
+          id: Math.random().toString(36).substr(2, 9),
+          type: workout.type.includes('LEGS') ? 'Legs' :
+                workout.type.includes('BACK') ? 'Back' :
+                workout.type.includes('CHEST') ? 'Chest' :
+                workout.type.includes('ARMS') ? 'Arms' :
+                workout.type.includes('SHOULDERS') ? 'Shoulders' : 'Core',
+          exercises: workout.exercises.map((ex: any) => ({
+            name: ex.name,
+            sets: ex.sets,
+            reps: ex.reps,
+            weight: ex.weight,
+            notes: ex.notes
+          })),
+          day: workout.day,
+          startTime: workout.startTime,
+          duration: workout.duration,
+          notes: workout.notes
+        }));
 
-    setClientWorkouts([...clientWorkouts, ...newWorkouts]);
-    setShowPlanModal(false);
+        setClientWorkouts([...clientWorkouts, ...newWorkouts]);
+      }
+      
+      // Close the modal
+      setShowPlanModal(false);
+    }
   };
 
   const handleAddWorkout = async () => {
@@ -167,8 +171,8 @@ export default function ClientPlanModal({
     const workoutPlan: WorkoutPlan = {
       clientId: selectedClient.id,
       workoutName: `${selectedWorkoutType} Workout`,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + totalWeeks * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      startDate: new Date().toISOString().slice(0, 19),
+      endDate: new Date(Date.now() + totalWeeks * 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19),
       workouts: [{
         type: selectedWorkoutType,
         day: selectedDay,
@@ -181,7 +185,7 @@ export default function ClientPlanModal({
 
     try {
       const result = await createWorkout(workoutPlan);
-      
+
       if (result.success) {
         // Update local state
         const newWorkout: ClientWorkoutPlan = {
@@ -195,7 +199,7 @@ export default function ClientPlanModal({
         };
 
         setClientWorkouts([...clientWorkouts, newWorkout]);
-        
+
         // Reset form for next workout
         setSelectedWorkoutType('Legs');
         setCurrentWorkoutExercises([]);
@@ -239,7 +243,7 @@ export default function ClientPlanModal({
     };
 
     setClientMeals([...clientMeals, newMeal]);
-    
+
     // Reset form for next meal
     setActiveMealType('Breakfast');
     setMealTime('08:00');
@@ -272,26 +276,24 @@ export default function ClientPlanModal({
               <FiX className="w-6 h-6" />
             </button>
           </div>
-          
+
           {/* Tab Navigation */}
           <div className="flex space-x-4 mt-6">
             <button
               onClick={() => setActiveModalTab('workout')}
-              className={`px-4 py-2 rounded-lg ${
-                activeModalTab === 'workout'
+              className={`px-4 py-2 rounded-lg ${activeModalTab === 'workout'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Workout Plan
             </button>
             <button
               onClick={() => setActiveModalTab('meal')}
-              className={`px-4 py-2 rounded-lg ${
-                activeModalTab === 'meal'
+              className={`px-4 py-2 rounded-lg ${activeModalTab === 'meal'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Meal Plan
             </button>
@@ -311,7 +313,7 @@ export default function ClientPlanModal({
               {/* Meal Plan Form */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Meal Plan</h3>
-                
+
                 {/* Meal Type Tabs */}
                 <div className="flex space-x-2 mb-6">
                   {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((type) => (
@@ -320,26 +322,25 @@ export default function ClientPlanModal({
                       onClick={() => {
                         setActiveMealType(type as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack');
                         setMealTime(
-                          type === 'Breakfast' ? '08:00' : 
-                          type === 'Lunch' ? '13:00' : 
-                          type === 'Dinner' ? '19:00' : '16:00'
+                          type === 'Breakfast' ? '08:00' :
+                            type === 'Lunch' ? '13:00' :
+                              type === 'Dinner' ? '19:00' : '16:00'
                         );
                       }}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        activeMealType === type
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeMealType === type
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                        }`}
                     >
                       {type}
                     </button>
                   ))}
                 </div>
-                
+
                 {/* Active Meal Type Section */}
                 <div className="border rounded-lg p-5 bg-gray-50">
                   <h4 className="font-medium text-gray-900 mb-4">{activeMealType} Meal</h4>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -356,7 +357,7 @@ export default function ClientPlanModal({
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Diet Category
                       </label>
-                      <select 
+                      <select
                         className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         onChange={(e) => setMealCategory(e.target.value)}
                         value={mealCategory}
@@ -373,7 +374,7 @@ export default function ClientPlanModal({
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Food Items
@@ -417,11 +418,10 @@ export default function ClientPlanModal({
                     <button
                       onClick={handleAddMeal}
                       disabled={!activeMealType || mealItems[0].name === '' || !mealTime}
-                      className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                        !activeMealType || mealItems[0].name === '' || !mealTime 
+                      className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${!activeMealType || mealItems[0].name === '' || !mealTime
                           ? 'bg-gray-400 cursor-not-allowed'
                           : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
+                        }`}
                     >
                       Add to {activeMealType} Plan
                     </button>
@@ -436,14 +436,13 @@ export default function ClientPlanModal({
                   <div className="space-y-4">
                     {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((mealType) => {
                       const meals = clientMeals.filter(meal => meal.mealType === mealType);
-                      
+
                       return (
                         <div key={mealType} className="border rounded-lg overflow-hidden">
-                          <div className={`px-4 py-3 border-b ${
-                            mealType === 'Breakfast' ? 'bg-yellow-50' : 
-                            mealType === 'Lunch' ? 'bg-green-50' : 
-                            mealType === 'Dinner' ? 'bg-blue-50' : 'bg-purple-50'
-                          }`}>
+                          <div className={`px-4 py-3 border-b ${mealType === 'Breakfast' ? 'bg-yellow-50' :
+                              mealType === 'Lunch' ? 'bg-green-50' :
+                                mealType === 'Dinner' ? 'bg-blue-50' : 'bg-purple-50'
+                            }`}>
                             <h4 className="font-medium text-gray-900">{mealType}</h4>
                           </div>
                           <div className="divide-y divide-gray-200">
@@ -459,7 +458,7 @@ export default function ClientPlanModal({
                                         </span>
                                       )}
                                     </div>
-                                    <button 
+                                    <button
                                       onClick={() => handleDeleteMeal(meal.id)}
                                       className="text-red-500 hover:text-red-700 text-sm"
                                     >
@@ -496,7 +495,7 @@ export default function ClientPlanModal({
               {/* Save Plan Button */}
               <div className="flex justify-end space-x-4 mt-6">
                 <button
-                  onClick={() => {/* Add logic to save meal plan */ toast.success('Meal plan saved')}}
+                  onClick={() => {/* Add logic to save meal plan */ toast.success('Meal plan saved') }}
                   className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Save Meal Plan

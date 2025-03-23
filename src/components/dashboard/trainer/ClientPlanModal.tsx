@@ -27,11 +27,11 @@ interface WorkoutExercise {
 
 interface ClientWorkoutPlan {
   id: string;
-  type: keyof typeof workoutExercises;
+  type: string;
   exercises: WorkoutExercise[];
   day: string;
   startTime: string;
-  duration: number; // in minutes
+  duration: number;
   notes?: string;
 }
 
@@ -75,7 +75,7 @@ export default function ClientPlanModal({
   clientMeals,
   setClientMeals
 }: ClientPlanModalProps) {
-  const [activeModalTab, setActiveModalTab] = useState<'workout' | 'meal' | 'advanced'>('workout');
+  const [activeModalTab, setActiveModalTab] = useState<'workout' | 'meal'>('workout');
   const [selectedWorkoutType, setSelectedWorkoutType] = useState<keyof typeof workoutExercises | ''>('');
   const [selectedExercise, setSelectedExercise] = useState('');
   const [exerciseDetails, setExerciseDetails] = useState<WorkoutExercise>({
@@ -125,6 +125,30 @@ export default function ClientPlanModal({
     setWorkoutNotes('');
 
     toast.success('Exercise added to workout');
+  };
+
+  const handleWorkoutCreated = (workout: AdvancedWorkoutProgram) => {
+    // Convert each week's workouts into ClientWorkoutPlan format
+    const newWorkouts: ClientWorkoutPlan[] = workout.weeks.flatMap(week => 
+      week.workoutDays.map(day => ({
+        id: Math.random().toString(36).substr(2, 9),
+        type: day.focusArea,
+        exercises: day.exercises.map(ex => ({
+          name: ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          weight: ex.weight,
+          notes: ex.notes
+        })),
+        day: day.day,
+        startTime: day.startTime,
+        duration: day.duration,
+        notes: day.generalNotes
+      }))
+    );
+
+    setClientWorkouts([...clientWorkouts, ...newWorkouts]);
+    setShowPlanModal(false);
   };
 
   const handleAddWorkout = async () => {
@@ -231,7 +255,7 @@ export default function ClientPlanModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -255,17 +279,7 @@ export default function ClientPlanModal({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Quick Workout
-            </button>
-            <button
-              onClick={() => setActiveModalTab('advanced')}
-              className={`px-4 py-2 rounded-lg ${
-                activeModalTab === 'advanced'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Advanced Workout
+              Workout Plan
             </button>
             <button
               onClick={() => setActiveModalTab('meal')}
@@ -281,240 +295,12 @@ export default function ClientPlanModal({
         </div>
 
         <div className="p-6">
-          {activeModalTab === 'advanced' ? (
+          {activeModalTab === 'workout' ? (
             <AdvancedWorkoutProgramForm 
-              clientId={selectedClient?.id || ''}
-              onSuccess={() => {
-                toast.success('Advanced workout program created successfully');
-                setActiveModalTab('workout');
-              }}
+              clientId={selectedClient.id}
+              onWorkoutCreated={handleWorkoutCreated}
+              onClose={() => setShowPlanModal(false)}
             />
-          ) : activeModalTab === 'workout' ? (
-            <div className="space-y-6">
-              {/* Plan Duration Selection */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Plan Duration
-                  </label>
-                  <div className="flex space-x-4">
-                    {[
-                      { id: '1month', label: '1 Month', weeks: 4 },
-                      { id: '2months', label: '2 Months', weeks: 8 },
-                      { id: '3months', label: '3 Months', weeks: 12 }
-                    ].map((option) => (
-                      <button
-                        key={option.id}
-                        onClick={() => {
-                          setSelectedDuration(option.id as '1month' | '2months' | '3months');
-                          setTotalWeeks(option.weeks);
-                        }}
-                        className={`flex-1 py-3 px-4 rounded-lg text-center transition-all duration-200 ${
-                          selectedDuration === option.id
-                            ? 'bg-blue-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        <div className="font-medium">{option.label}</div>
-                        <div className="text-xs mt-1 opacity-80">{option.weeks} weeks</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Weekly Schedule */}
-              <div>
-                <div className="space-y-4">
-                  {weekDays.map((day) => (
-                    <div key={day} className="border rounded-lg overflow-hidden">
-                      <div 
-                        onClick={() => setExpandedDay(expandedDay === day ? null : day)}
-                        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <h5 className="font-medium text-gray-900">{day}</h5>
-                          {/* Show indicator if workouts exist for this day */}
-                          {clientWorkouts.some(workout => workout.day === day) && (
-                            <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden="true"></span>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedDay(day);
-                              setCurrentWorkoutExercises([]);
-                              setSelectedWorkoutType('');
-                              setExpandedDay(day);
-                            }}
-                            className="text-sm text-blue-600 hover:text-blue-700"
-                          >
-                            + Add Workout
-                          </button>
-                          <svg 
-                            className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${expandedDay === day ? 'transform rotate-180' : ''}`} 
-                            fill="none" 
-                            viewBox="0 0 24 24" 
-                            stroke="currentColor"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                      
-                      {/* Workout Form - Only show if expanded */}
-                      {expandedDay === day && (
-                        <div className="p-4 bg-gray-50 border-t">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Workout Type
-                              </label>
-                              <select
-                                value={selectedWorkoutType}
-                                onChange={(e) => setSelectedWorkoutType(e.target.value as keyof typeof workoutExercises)}
-                                className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                              >
-                                <option value="">Select Type</option>
-                                {Object.keys(workoutExercises).map((type) => (
-                                  <option key={type} value={type}>{type}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
-                                <input
-                                  type="time"
-                                  value={workoutTime}
-                                  onChange={(e) => setWorkoutTime(e.target.value)}
-                                  className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-                                <input
-                                  type="number"
-                                  value={workoutDuration}
-                                  onChange={(e) => setWorkoutDuration(parseInt(e.target.value))}
-                                  className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                  min="15"
-                                  step="15"
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          {selectedWorkoutType && (
-                            <div className="mt-4">
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Exercises
-                              </label>
-                              
-                              {/* Display already added exercises */}
-                              {currentWorkoutExercises.length > 0 && (
-                                <div className="mb-4 bg-white p-3 rounded-lg border">
-                                  <h6 className="text-sm font-medium text-gray-700 mb-2">Added Exercises:</h6>
-                                  <div className="space-y-2">
-                                    {currentWorkoutExercises.map((exercise, idx) => (
-                                      <div key={idx} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded border">
-                                        <span>{exercise.name} - {exercise.sets} sets × {exercise.reps} reps {exercise.weight && `(${exercise.weight} kg)`}</span>
-                                        <button 
-                                          onClick={() => {
-                                            const updatedExercises = [...currentWorkoutExercises];
-                                            updatedExercises.splice(idx, 1);
-                                            setCurrentWorkoutExercises(updatedExercises);
-                                          }}
-                                          className="text-red-500 hover:text-red-700 text-xs"
-                                        >
-                                          Remove
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              <div className="space-y-2">
-                                <select
-                                  value={selectedExercise}
-                                  onChange={(e) => setSelectedExercise(e.target.value)}
-                                  className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                >
-                                  <option value="">Select Exercise</option>
-                                  {workoutExercises[selectedWorkoutType as keyof typeof workoutExercises].map((exercise) => (
-                                    <option key={exercise} value={exercise}>{exercise}</option>
-                                  ))}
-                                </select>
-                                {selectedExercise && (
-                                  <div className="grid grid-cols-3 gap-4 mt-2">
-                                    <input
-                                      type="number"
-                                      value={exerciseDetails.sets}
-                                      onChange={(e) => setExerciseDetails({...exerciseDetails, sets: parseInt(e.target.value)})}
-                                      placeholder="Sets"
-                                      className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                    <input
-                                      type="number"
-                                      value={exerciseDetails.reps}
-                                      onChange={(e) => setExerciseDetails({...exerciseDetails, reps: parseInt(e.target.value)})}
-                                      placeholder="Reps"
-                                      className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                    <input
-                                      type="text"
-                                      value={exerciseDetails.weight}
-                                      onChange={(e) => setExerciseDetails({...exerciseDetails, weight: e.target.value})}
-                                      placeholder="Weight (kg)"
-                                      className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {selectedExercise && (
-                                <div className="mt-3 flex justify-end">
-                                  <button
-                                    onClick={handleAddExercise}
-                                    className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-                                  >
-                                    Add Exercise
-                                  </button>
-                                </div>
-                              )}
-                              
-                              {currentWorkoutExercises.length > 0 && (
-                                <div className="mt-4 flex justify-end">
-                                  <button
-                                    onClick={handleAddWorkout}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
-                                  >
-                                    Save Workout
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Save Plan Button */}
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => {/* Add logic to submit plan */}}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Submit Plan
-                </button>
-              </div>
-            </div>
           ) : (
             <div className="space-y-6">
               {/* Meal Plan Form */}

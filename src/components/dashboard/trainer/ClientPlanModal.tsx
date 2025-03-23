@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { createWorkout } from '@/lib/api';
-import type { Exercise, WorkoutSession, WorkoutPlan } from '@/lib/api';
+import type { Exercise, WorkoutSession, WorkoutPlan, AdvancedWorkoutProgram } from '@/lib/api';
 import AdvancedWorkoutProgramForm from './AdvancedWorkoutProgramForm';
 
 interface ClientSummary {

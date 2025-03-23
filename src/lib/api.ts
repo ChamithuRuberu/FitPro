@@ -612,11 +612,20 @@ export async function createAdvancedWorkout(workoutProgram: AdvancedWorkoutProgr
         const token = await getCookie('session');
 
         if (!token) {
+            console.log('Authentication failed: No token found');
             return {
                 success: false,
                 message: 'Authentication required'
             };
         }
+
+        console.log('Creating advanced workout program:', {
+            programName: workoutProgram.programName,
+            clientId: workoutProgram.clientId,
+            weeks: workoutProgram.weeks.length,
+            startDate: workoutProgram.startDate,
+            endDate: workoutProgram.endDate
+        });
 
         const response = await fetch(`${API_BASE_URL}/workout/create-workouts`, {
             method: 'POST',
@@ -628,20 +637,44 @@ export async function createAdvancedWorkout(workoutProgram: AdvancedWorkoutProgr
         });
 
         const result = await response.json();
+        
+        console.log('Server response:', {
+            status: response.status,
+            ok: response.ok,
+            result
+        });
 
         if (!response.ok) {
+            console.error('Failed to create workout:', {
+                status: response.status,
+                error: result.message || 'Unknown error'
+            });
             return {
                 success: false,
                 message: result.message || 'Failed to create advanced workout program'
             };
         }
 
+        console.log('Successfully created workout program:', {
+            programName: workoutProgram.programName,
+            clientId: workoutProgram.clientId,
+            responseData: result.data
+        });
+
         return {
             success: true,
             data: result.data
         };
     } catch (error) {
-        console.error('Create advanced workout error:', error);
+        console.error('Create advanced workout error:', {
+            error,
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            workoutProgram: {
+                programName: workoutProgram.programName,
+                clientId: workoutProgram.clientId
+            }
+        });
         return {
             success: false,
             message: error instanceof Error ? error.message : 'Failed to create advanced workout program'

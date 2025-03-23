@@ -85,13 +85,25 @@ interface WorkoutProgram {
     weeks: WorkoutWeek[];
 }
 
+interface ApiResponse {
+    success: boolean;
+    data?: AdvancedWorkoutProgram;
+    message?: string;
+}
+
 interface AdvancedWorkoutProgramFormProps {
     clientId: string;
     onWorkoutCreated: (workout: AdvancedWorkoutProgram) => void;
     onClose: () => void;
+    onNavigateToMealPlan: () => void;
 }
 
-export default function AdvancedWorkoutProgramForm({ clientId, onWorkoutCreated, onClose }: AdvancedWorkoutProgramFormProps) {
+export default function AdvancedWorkoutProgramForm({ 
+    clientId, 
+    onWorkoutCreated, 
+    onClose,
+    onNavigateToMealPlan 
+}: AdvancedWorkoutProgramFormProps) {
     const [program, setProgram] = useState<WorkoutProgram>({
         clientId: clientId,
         programName: '',
@@ -253,26 +265,94 @@ export default function AdvancedWorkoutProgramForm({ clientId, onWorkoutCreated,
                 weeks: program.weeks
             });
 
-            if (response) {
+            console.log('Form submission response:', response);
+
+            if (response.success) {
                 setIsWorkoutCreated(true);
-                toast.success('Workout program created successfully! 💪', {
-                    duration: 3000,
-                    icon: '✅'
-                });
-                
-                // Wait for toast to show before closing
-                setTimeout(() => {
-                    if (onClose) {
-                        onClose();
-                    }
-                }, 1000);
+                if (response.data) {
+                    onWorkoutCreated(response.data);
+                }
+                toast.custom(
+                    (t) => (
+                        <div
+                            className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
+                            max-w-md w-full bg-gradient-to-r from-green-500 to-green-600 
+                            shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+                        >
+                            <div className="flex-1 w-0 p-4">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0 pt-0.5">
+                                        ✅
+                                    </div>
+                                    <div className="ml-3 flex-1">
+                                        <p className="text-sm font-medium text-white">
+                                            Workout program created successfully! 💪
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    { duration: 3000 }
+                );
+            } else {
+                const errorMessage = response.message || 'Failed to create workout program';
+                console.error('API Error:', errorMessage);
+                toast.custom(
+                    (t) => (
+                        <div
+                            className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
+                            max-w-md w-full bg-gradient-to-r from-red-500 to-red-600 
+                            shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+                        >
+                            <div className="flex-1 w-0 p-4">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0 pt-0.5">
+                                        ❌
+                                    </div>
+                                    <div className="ml-3 flex-1">
+                                        <p className="text-sm font-medium text-white">
+                                            {errorMessage}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    { duration: 3000 }
+                );
             }
         } catch (error) {
-            console.error('Error creating workout:', error);
-            toast.error('Failed to create workout program', {
-                duration: 3000,
-                icon: '❌'
+            console.error('Error creating workout:', {
+                error,
+                message: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
             });
+
+            const errorMessage = error instanceof Error ? error.message : 'Failed to create workout program';
+            toast.custom(
+                (t) => (
+                    <div
+                        className={`${t.visible ? 'animate-enter' : 'animate-leave'} 
+                        max-w-md w-full bg-gradient-to-r from-red-500 to-red-600 
+                        shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+                    >
+                        <div className="flex-1 w-0 p-4">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0 pt-0.5">
+                                    ❌
+                                </div>
+                                <div className="ml-3 flex-1">
+                                    <p className="text-sm font-medium text-white">
+                                        {errorMessage}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ),
+                { duration: 3000 }
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -823,29 +903,26 @@ export default function AdvancedWorkoutProgramForm({ clientId, onWorkoutCreated,
                         >
                             Back to Week Plan
                         </button>
-                        <div className="flex gap-4">
-                            <button
-                                type="button"
-                                onClick={handleSubmit}
-                                className={styles.btnPrimary}
-                                disabled={isSubmitting || isWorkoutCreated}
-                            >
-                                {isSubmitting ? 'Creating...' : 'Create Program'}
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.btnSecondary} ${(!isWorkoutCreated) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                disabled={!isWorkoutCreated}
-                                onClick={() => {
-                                    // Handle navigation to meal plan section
-                                    if (onClose) {
-                                        onClose();
-                                    }
-                                    // You can add additional navigation logic here
-                                }}
-                            >
-                                Create Meal Plan →
-                            </button>
+                        <div className="flex gap-4 items-center">
+                            {!isWorkoutCreated && (
+                                <button
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    className={styles.btnPrimary}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Creating...' : 'Create Program'}
+                                </button>
+                            )}
+                            {isWorkoutCreated && (
+                                <button
+                                    type="button"
+                                    onClick={onNavigateToMealPlan}
+                                    className={styles.btnPrimary}
+                                >
+                                    Continue to Meal Plan →
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

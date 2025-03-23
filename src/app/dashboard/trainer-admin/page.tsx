@@ -93,12 +93,12 @@ export default function TrainerDashboard() {
   const [clients, setClients] = useState<ClientSummary[]>([
     {
       id: '1',
-      name: 'Emma Wilson',
-      email: 'emma.wilson@example.com',
-      progress: 75,
-      nextSession: '2024-03-20 10:00 AM',
-      program: 'Weight Loss',
-      status: 'Active'
+      name: '',
+      email: '',
+      progress: 0,
+      nextSession: '',
+      program: '',
+      status: ''
     },
    
   ]);
@@ -106,10 +106,10 @@ export default function TrainerDashboard() {
   const [upcomingSessions] = useState<WorkoutSession[]>([
     {
       id: '1',
-      clientName: 'John Doe',
-      type: 'Strength Training',
-      date: '2024-03-15',
-      time: '09:00 AM',
+      clientName: ' ',
+      type: ' ',
+      date: '',
+      time: '',
       duration: '60 min',
       status: 'upcoming'
     },
@@ -172,7 +172,6 @@ export default function TrainerDashboard() {
         } else {
           // Keep sample data if API call fails
           console.error('Failed to fetch clients:', result.message);
-          toast.error('Failed to load clients. Using sample data.');
         }
       } catch (error) {
         console.error('Error fetching clients:', error);

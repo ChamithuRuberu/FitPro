@@ -27,7 +27,7 @@ interface WorkoutExercise {
 
 interface ClientWorkoutPlan {
   id: string;
-  type: string;
+  type: keyof typeof workoutExercises;
   exercises: WorkoutExercise[];
   day: string;
   startTime: string;
@@ -76,7 +76,7 @@ export default function ClientPlanModal({
   setClientMeals
 }: ClientPlanModalProps) {
   const [activeModalTab, setActiveModalTab] = useState<'workout' | 'meal'>('workout');
-  const [selectedWorkoutType, setSelectedWorkoutType] = useState<keyof typeof workoutExercises | ''>('');
+  const [selectedWorkoutType, setSelectedWorkoutType] = useState<keyof typeof workoutExercises>('Legs');
   const [selectedExercise, setSelectedExercise] = useState('');
   const [exerciseDetails, setExerciseDetails] = useState<WorkoutExercise>({
     name: '',
@@ -132,7 +132,11 @@ export default function ClientPlanModal({
     const newWorkouts: ClientWorkoutPlan[] = workout.weeks.flatMap(week => 
       week.workoutDays.map(day => ({
         id: Math.random().toString(36).substr(2, 9),
-        type: day.focusArea,
+        type: day.focusArea.includes('LEGS') ? 'Legs' :
+              day.focusArea.includes('BACK') ? 'Back' :
+              day.focusArea.includes('CHEST') ? 'Chest' :
+              day.focusArea.includes('ARMS') ? 'Arms' :
+              day.focusArea.includes('SHOULDERS') ? 'Shoulders' : 'Core',
         exercises: day.exercises.map(ex => ({
           name: ex.name,
           sets: ex.sets,
@@ -182,7 +186,7 @@ export default function ClientPlanModal({
         // Update local state
         const newWorkout: ClientWorkoutPlan = {
           id: Math.random().toString(36).substr(2, 9),
-          type: selectedWorkoutType as keyof typeof workoutExercises,
+          type: selectedWorkoutType,
           exercises: [...currentWorkoutExercises],
           day: selectedDay,
           startTime: workoutTime,
@@ -193,7 +197,7 @@ export default function ClientPlanModal({
         setClientWorkouts([...clientWorkouts, newWorkout]);
         
         // Reset form for next workout
-        setSelectedWorkoutType('');
+        setSelectedWorkoutType('Legs');
         setCurrentWorkoutExercises([]);
         setWorkoutTime('09:00');
         setWorkoutDuration(60);
@@ -296,10 +300,11 @@ export default function ClientPlanModal({
 
         <div className="p-6">
           {activeModalTab === 'workout' ? (
-            <AdvancedWorkoutProgramForm 
+            <AdvancedWorkoutProgramForm
               clientId={selectedClient.id}
               onWorkoutCreated={handleWorkoutCreated}
               onClose={() => setShowPlanModal(false)}
+              onNavigateToMealPlan={() => setActiveModalTab('meal')}
             />
           ) : (
             <div className="space-y-6">

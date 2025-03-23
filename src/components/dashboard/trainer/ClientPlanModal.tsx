@@ -1,6 +1,11 @@
+'use client';
+
 import { useState } from 'react';
 import { FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { createWorkout } from '@/lib/api';
+import type { Exercise, WorkoutSession, WorkoutPlan } from '@/lib/api';
+import AdvancedWorkoutProgramForm from './AdvancedWorkoutProgramForm';
 
 interface ClientSummary {
   id: string;
@@ -70,7 +75,7 @@ export default function ClientPlanModal({
   clientMeals,
   setClientMeals
 }: ClientPlanModalProps) {
-  const [activeModalTab, setActiveModalTab] = useState<'workout' | 'meal'>('workout');
+  const [activeModalTab, setActiveModalTab] = useState<'workout' | 'meal' | 'advanced'>('workout');
   const [selectedWorkoutType, setSelectedWorkoutType] = useState<keyof typeof workoutExercises | ''>('');
   const [selectedExercise, setSelectedExercise] = useState('');
   const [exerciseDetails, setExerciseDetails] = useState<WorkoutExercise>({
@@ -122,27 +127,62 @@ export default function ClientPlanModal({
     toast.success('Exercise added to workout');
   };
 
-  const handleAddWorkout = () => {
-    if (!selectedWorkoutType || currentWorkoutExercises.length === 0) return;
+  const handleAddWorkout = async () => {
+    if (!selectedWorkoutType || currentWorkoutExercises.length === 0 || !selectedClient) return;
 
-    const newWorkout: ClientWorkoutPlan = {
-      id: Math.random().toString(36).substr(2, 9),
-      type: selectedWorkoutType as keyof typeof workoutExercises,
-      exercises: [...currentWorkoutExercises],
-      day: selectedDay,
-      startTime: workoutTime,
-      duration: workoutDuration
+    // Convert WorkoutExercise[] to Exercise[] by ensuring notes is always a string
+    const exercises: Exercise[] = currentWorkoutExercises.map(exercise => ({
+      ...exercise,
+      notes: exercise.notes || '' // Ensure notes is always a string
+    }));
+
+    const workoutPlan: WorkoutPlan = {
+      clientId: selectedClient.id,
+      workoutName: `${selectedWorkoutType} Workout`,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + totalWeeks * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      workouts: [{
+        type: selectedWorkoutType,
+        day: selectedDay,
+        startTime: workoutTime,
+        duration: workoutDuration,
+        exercises: exercises,
+        notes: workoutNotes || '' // Ensure notes is always a string
+      }]
     };
 
-    setClientWorkouts([...clientWorkouts, newWorkout]);
-    
-    // Reset form for next workout
-    setSelectedWorkoutType('');
-    setCurrentWorkoutExercises([]);
-    setWorkoutTime('09:00');
-    setWorkoutDuration(60);
+    try {
+      const result = await createWorkout(workoutPlan);
+      
+      if (result.success) {
+        // Update local state
+        const newWorkout: ClientWorkoutPlan = {
+          id: Math.random().toString(36).substr(2, 9),
+          type: selectedWorkoutType as keyof typeof workoutExercises,
+          exercises: [...currentWorkoutExercises],
+          day: selectedDay,
+          startTime: workoutTime,
+          duration: workoutDuration,
+          notes: workoutNotes
+        };
 
-    toast.success('Workout added to plan');
+        setClientWorkouts([...clientWorkouts, newWorkout]);
+        
+        // Reset form for next workout
+        setSelectedWorkoutType('');
+        setCurrentWorkoutExercises([]);
+        setWorkoutTime('09:00');
+        setWorkoutDuration(60);
+        setWorkoutNotes('');
+
+        toast.success('Workout added to plan');
+      } else {
+        toast.error(result.message || 'Failed to add workout');
+      }
+    } catch (error) {
+      console.error('Error adding workout:', error);
+      toast.error('Failed to add workout to plan');
+    }
   };
 
   const handleAddMealItem = () => {
@@ -215,7 +255,17 @@ export default function ClientPlanModal({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Workout Plan
+              Quick Workout
+            </button>
+            <button
+              onClick={() => setActiveModalTab('advanced')}
+              className={`px-4 py-2 rounded-lg ${
+                activeModalTab === 'advanced'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Advanced Workout
             </button>
             <button
               onClick={() => setActiveModalTab('meal')}
@@ -231,7 +281,15 @@ export default function ClientPlanModal({
         </div>
 
         <div className="p-6">
-          {activeModalTab === 'workout' ? (
+          {activeModalTab === 'advanced' ? (
+            <AdvancedWorkoutProgramForm 
+              clientId={selectedClient?.id || ''}
+              onSuccess={() => {
+                toast.success('Advanced workout program created successfully');
+                setActiveModalTab('workout');
+              }}
+            />
+          ) : activeModalTab === 'workout' ? (
             <div className="space-y-6">
               {/* Plan Duration Selection */}
               <div className="space-y-4">
@@ -431,10 +489,7 @@ export default function ClientPlanModal({
                               {currentWorkoutExercises.length > 0 && (
                                 <div className="mt-4 flex justify-end">
                                   <button
-                                    onClick={() => {
-                                      handleAddWorkout();
-                                      setExpandedDay(null);
-                                    }}
+                                    onClick={handleAddWorkout}
                                     className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                                   >
                                     Save Workout

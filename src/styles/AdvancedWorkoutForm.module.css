@@ -1,0 +1,231 @@
+.formContainer {
+    @apply max-w-4xl mx-auto bg-white p-4 sm:p-6;
+}
+
+.formSection {
+    @apply mb-6 p-4 sm:p-6 bg-white border-l-4 border-blue-500 shadow-sm;
+}
+
+.stepIndicator {
+    @apply flex items-center text-lg font-bold text-blue-600 mb-4;
+}
+
+.stepNumber {
+    @apply w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 font-bold;
+}
+
+.formTitle {
+    @apply text-xl font-bold text-gray-800 mb-2;
+}
+
+.formDescription {
+    @apply text-gray-600 mb-6 text-sm;
+}
+
+.formGrid {
+    @apply grid gap-6;
+    grid-template-columns: 1fr;
+}
+
+.inputGroup {
+    @apply relative;
+}
+
+.inputLabel {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.inputHint {
+    @apply text-xs text-gray-500 mt-1;
+}
+
+.inputField {
+    @apply w-full px-4 py-2 border-2 border-gray-200 rounded-lg bg-white 
+    focus:border-blue-500 focus:ring-0 transition-colors duration-200;
+}
+
+.textareaField {
+    @apply w-full px-4 py-2 border-2 border-gray-200 rounded-lg bg-white 
+    focus:border-blue-500 focus:ring-0 transition-colors duration-200 min-h-[100px] resize-y;
+}
+
+.btnPrimary {
+    @apply w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-medium 
+    hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all duration-200
+    flex items-center justify-center gap-2;
+}
+
+.btnSecondary {
+    @apply w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium 
+    hover:bg-gray-200 focus:ring-4 focus:ring-gray-200 transition-all duration-200
+    flex items-center justify-center gap-2;
+}
+
+.addButton {
+    @apply flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium 
+    hover:bg-green-100 transition-all duration-200 border-2 border-green-200;
+}
+
+.removeButton {
+    @apply flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium transition-colors duration-200;
+}
+
+.exerciseList {
+    @apply space-y-3 mt-4 bg-gray-50 p-4 rounded-lg;
+}
+
+.exerciseItem {
+    @apply flex items-center justify-between p-3 bg-white rounded-lg border-l-4 border-green-400 shadow-sm;
+}
+
+.exerciseName {
+    @apply font-medium text-gray-800;
+}
+
+.exerciseDetails {
+    @apply text-sm text-gray-500 mt-1;
+}
+
+.helpText {
+    @apply text-sm text-gray-500 mt-2;
+}
+
+.errorText {
+    @apply text-sm text-red-600 mt-1;
+}
+
+.successText {
+    @apply text-sm text-green-600 mt-1;
+}
+
+.cardHeader {
+    @apply flex items-center justify-between mb-4 pb-4 border-b border-gray-200;
+}
+
+.weekSection {
+    @apply bg-white rounded-lg border-2 border-gray-100 p-4 mb-6;
+}
+
+.weekHeader {
+    @apply flex items-center justify-between mb-4;
+}
+
+.weekTitle {
+    @apply text-lg font-semibold text-gray-800;
+}
+
+.daySection {
+    @apply bg-gray-50 rounded-lg p-4 mb-4;
+}
+
+.dayHeader {
+    @apply flex items-center gap-2 mb-3;
+}
+
+.dayTitle {
+    @apply text-base font-medium text-gray-700;
+}
+
+.exerciseForm {
+    @apply bg-white p-4 rounded-lg border border-gray-200 mb-4;
+}
+
+/* Helper Classes */
+.required::after {
+    content: "*";
+    @apply text-red-500 ml-1;
+}
+
+.infoIcon {
+    @apply w-4 h-4 text-gray-400 ml-1 cursor-help;
+}
+
+/* Responsive Design */
+@media (min-width: 640px) {
+    .formGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .fullWidth {
+        grid-column: span 2;
+    }
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.formSection {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Custom scrollbar */
+.formContainer ::-webkit-scrollbar {
+    width: 8px;
+}
+
+.formContainer ::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+}
+
+.formContainer ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+}
+
+.formContainer ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+}
+
+/* Form section transitions */
+.formSection {
+    transition: all 0.3s ease-in-out;
+}
+
+.formSection:hover {
+    @apply shadow-md;
+}
+
+/* Input focus styles */
+.inputField:focus, .textareaField:focus {
+    @apply outline-none;
+    transform: translateY(-1px);
+}
+
+/* Button loading state */
+.btnPrimary:disabled, .btnSecondary:disabled {
+    @apply opacity-60 cursor-not-allowed;
+}
+
+/* Exercise item hover effect */
+.exerciseItem:hover {
+    @apply shadow-sm;
+    transform: translateY(-1px);
+}
+
+/* Preview section hover effects */
+.previewItem:hover .previewLabel {
+    @apply text-blue-600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .formGrid {
+        grid-template-columns: 1fr;
+    }
+    
+    .formContainer {
+        @apply p-4;
+    }
+    
+    .formSection {
+        @apply p-4;
+    }
+} 

@@ -491,4 +491,160 @@ export async function getTrainerList() {
             message: error instanceof Error ? error.message : 'Failed to fetch trainers'
         };
     }
+}
+
+export interface Exercise {
+    name: string;
+    sets: number;
+    reps: number;
+    weight: string;
+    notes: string;
+}
+
+export interface WorkoutSession {
+    type: string;
+    day: string;
+    startTime: string;
+    duration: number;
+    exercises: Exercise[];
+    notes: string;
+}
+
+export interface WorkoutPlan {
+    clientId: string;
+    workoutName: string;
+    startDate: string;
+    endDate: string;
+    workouts: WorkoutSession[];
+}
+
+export async function createWorkout(workoutPlan: WorkoutPlan) {
+    try {
+        const token = await getCookie('session');
+
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required'
+            };
+        }
+
+        const response = await fetch(`${API_BASE_URL}/workout/create-workouts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(workoutPlan)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to create workout plan'
+            };
+        }
+
+        return {
+            success: true,
+            data: result.data
+        };
+    } catch (error) {
+        console.error('Create workout error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to create workout plan'
+        };
+    }
+}
+
+export interface ExerciseDetails {
+    name: string;
+    sets: number;
+    reps: number;
+    weight: string;
+    equipment: string;
+    targetMuscles: string;
+    notes: string;
+    restBetweenSets: string;
+    tempo?: string;
+    isDropSet?: boolean;
+    isSuperSet?: boolean;
+    superSetGroup?: string;
+    progressionStrategy: string;
+}
+
+export interface WorkoutDay {
+    day: string;
+    focusArea: string;
+    startTime: string;
+    duration: number;
+    intensity: 'LOW' | 'MEDIUM' | 'HIGH';
+    warmupNotes?: string;
+    cooldownNotes?: string;
+    generalNotes?: string;
+    exercises: ExerciseDetails[];
+    isRestDay?: boolean;
+}
+
+export interface WorkoutWeek {
+    weekNumber: number;
+    weeklyGoal: string;
+    notes: string;
+    workoutDays: WorkoutDay[];
+}
+
+export interface AdvancedWorkoutProgram {
+    clientId: string;
+    programName: string;
+    programDescription: string;
+    startDate: string;
+    endDate: string;
+    difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+    goal: 'WEIGHT_LOSS' | 'STRENGTH_AND_HYPERTROPHY' | 'ENDURANCE' | 'FLEXIBILITY' | 'GENERAL_FITNESS';
+    weeks: WorkoutWeek[];
+}
+
+export async function createAdvancedWorkout(workoutProgram: AdvancedWorkoutProgram) {
+    try {
+        const token = await getCookie('session');
+
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required'
+            };
+        }
+
+        const response = await fetch(`${API_BASE_URL}/workout/create-workouts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(workoutProgram)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to create advanced workout program'
+            };
+        }
+
+        return {
+            success: true,
+            data: result.data
+        };
+    } catch (error) {
+        console.error('Create advanced workout error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to create advanced workout program'
+        };
+    }
 }   

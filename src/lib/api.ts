@@ -235,7 +235,7 @@ export async function completeUserProfile(formData: {
             },
             body: JSON.stringify({
                 ...formData,
-                password: btoa(formData.password), // Example: Encode password before sending
+                // password: btoa(formData.password), // Example: Encode password before sending
             }),
         });
 

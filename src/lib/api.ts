@@ -571,137 +571,60 @@ export async function createWorkout(workoutPlan: WorkoutPlan) {
 }
 
 export interface ExerciseDetails {
+    isDropSet: boolean;
+    reps: string;
+    notes: string;
+    sets: string;
+    targetMuscles: string;
+    restBetweenSets: string;
     name: string;
-    sets: number;
-    reps: number;
     weight: string;
     equipment: string;
-    targetMuscles: string;
-    notes: string;
-    restBetweenSets: string;
-    tempo?: string;
-    isDropSet?: boolean;
-    isSuperSet?: boolean;
-    superSetGroup?: string;
-    progressionStrategy: string;
+    tempo: string;
+    isSuperSet: boolean;
+    superSetGroup: string | null;
 }
 
-export interface WorkoutDay {
-    day: string;
-    focusArea: string;
-    startTime: string;
-    duration: number;
-    intensity: 'LOW' | 'MEDIUM' | 'HIGH';
-    warmupNotes?: string;
-    cooldownNotes?: string;
-    generalNotes?: string;
-    exercises: ExerciseDetails[];
-    isRestDay?: boolean;
+export interface UserInfo {
+    username: string;
+    trainerId: string;
 }
 
-export interface WorkoutWeek {
-    weekNumber: number;
-    weeklyGoal: string;
-    notes: string;
-    workoutDays: WorkoutDay[];
+export interface Notes {
+    general: string | null;
+    cooldown: string | null;
+    warmup: string | null;
 }
 
-export interface AdvancedWorkoutProgram {
-    clientId: string;
+export interface HistoryInfo {
+    historyId: string;
     programName: string;
-    programDescription: string;
-    startDate: string;
-    endDate: string;
-    difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
-    goal: 'WEIGHT_LOSS' | 'STRENGTH_AND_HYPERTROPHY' | 'ENDURANCE' | 'FLEXIBILITY' | 'GENERAL_FITNESS';
-    weeks: WorkoutWeek[];
+    currentWeek: number;
+    status: string;
 }
 
-export async function createAdvancedWorkout(workoutProgram: AdvancedWorkoutProgram) {
-    try {
-        const token = await getCookie('session');
-
-        if (!token) {
-            console.log('Authentication failed: No token found');
-            return {
-                success: false,
-                message: 'Authentication required'
-            };
-        }
-
-        console.log('Creating advanced workout program:', {
-            programName: workoutProgram.programName,
-            clientId: workoutProgram.clientId,
-            weeks: workoutProgram.weeks.length,
-            startDate: workoutProgram.startDate,
-            endDate: workoutProgram.endDate
-        });
-
-        const response = await fetch(`${API_BASE_URL}/workout/create-workouts`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(workoutProgram)
-        });
-
-        const result = await response.json();
-        
-        console.log('Server response:', {
-            status: response.status,
-            ok: response.ok,
-            result
-        });
-
-        if (!response.ok) {
-            console.error('Failed to create workout:', {
-                status: response.status,
-                error: result.message || 'Unknown error'
-            });
-            return {
-                success: false,
-                message: result.message || 'Failed to create advanced workout program'
-            };
-        }
-
-        console.log('Successfully created workout program:', {
-            programName: workoutProgram.programName,
-            clientId: workoutProgram.clientId,
-            responseData: result.data
-        });
-
-        return {
-            success: true,
-            data: result.data
-        };
-    } catch (error) {
-        console.error('Create advanced workout error:', {
-            error,
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined,
-            workoutProgram: {
-                programName: workoutProgram.programName,
-                clientId: workoutProgram.clientId
-            }
-        });
-        return {
-            success: false,
-            message: error instanceof Error ? error.message : 'Failed to create advanced workout program'
-        };
-    }
-}   
+export interface ScheduleInfo {
+    duration: string;
+    startDateTime: string;
+    isRestDay: boolean;
+    endDateTime: string;
+}
 
 export async function getWorkouts(trainerId: string) {
     try {
         const token = await getCookie('session');
         if (!token) {
+            console.warn("No authentication token found");
             return {
                 success: false,
                 message: 'Authentication required',
                 code: "0001"
             };
         }
+
+        console.log("=== Get Workouts Request ===");
+        console.log("TrainerId:", trainerId);
+        console.log("Token:", token ? "Present" : "Missing");
 
         const response = await fetch(`${API_BASE_URL}/workout/get-workouts`, {
             method: 'POST',
@@ -710,31 +633,52 @@ export async function getWorkouts(trainerId: string) {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                trainId: trainerId
+                trainId: trainerId  // Fixed parameter name here
             })
         });
 
+        const result = await response.json();
+        
+        console.log("=== Full API Response ===");
+        console.log(JSON.stringify(result, null, 2));
+
         if (!response.ok) {
-            console.log("Get workouts error ->", response);
-            const errorData = await response.json().catch(() => ({}));
+            console.error("API Error Response:", {
+                status: response.status,
+                statusText: response.statusText,
+                url: response.url,
+                error: result,
+                requestBody: { trainId: trainerId }
+            });
             return {
                 success: false,
-                message: errorData.message || `Failed to fetch workouts: ${response.status}`,
-                code: errorData.code || "0001"
+                message: result?.message || `Failed to fetch workouts: ${response.status}`,
+                code: result?.code || "0001"
             };
         }
 
-        const result = await response.json();
-        console.log("Get workouts result ->", result);
+        // Handle response data
+        const workouts = Array.isArray(result.data?.workouts) ? result.data.workouts : [];
         
+        console.log("=== Processed Workouts ===");
+        console.log(`Found ${workouts.length} workouts`);
+        
+        if (workouts.length > 0) {
+            console.log("First 3 workouts:", workouts.slice(0, 3));
+        }
+
         return {
             success: true,
-            data: result.data || {},
+            data: {
+                workouts: workouts
+            },
             code: result.code || "0000",
-            message: result.message || "Success"
+            message: result.message || "Workouts retrieved successfully"
         };
     } catch (error) {
-        console.error('Error fetching workouts:', error);
+        console.error('=== Workout Fetch Error ===');
+        console.error('Error:', error instanceof Error ? error.message : error);
+        console.error('Stack:', error instanceof Error ? error.stack : 'No stack trace available');
         return {
             success: false,
             message: error instanceof Error ? error.message : 'Failed to fetch workouts',

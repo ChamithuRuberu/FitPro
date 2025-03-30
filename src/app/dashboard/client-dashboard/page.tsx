@@ -271,40 +271,6 @@ const sampleSupplements: Supplement[] = [
   },
 ];
 
-const sampleWorkoutProgram: WorkoutProgram = {
-  name: 'Strength & Conditioning Program',
-  weeks: [
-    {
-      weekNumber: 1,
-      workouts: [
-        {
-          day: 'Monday',
-          exercises: [
-            { name: 'Bench Press', sets: 3, reps: 12, weight: '60kg', completed: true },
-            { name: 'Squats', sets: 4, reps: 10, weight: '80kg', completed: true },
-            { name: 'Deadlifts', sets: 3, reps: 8, weight: '100kg', completed: false },
-          ],
-        },
-        {
-          day: 'Wednesday',
-          exercises: [
-            { name: 'Pull-ups', sets: 3, reps: 8, weight: 'Body weight', completed: true },
-            { name: 'Shoulder Press', sets: 3, reps: 12, weight: '40kg', completed: true },
-            { name: 'Lunges', sets: 3, reps: 12, weight: '20kg', completed: false },
-          ],
-        },
-        {
-          day: 'Friday',
-          exercises: [
-            { name: 'Romanian Deadlifts', sets: 3, reps: 12, weight: '70kg', completed: false },
-            { name: 'Chest Flyes', sets: 3, reps: 12, weight: '20kg', completed: false },
-            { name: 'Leg Press', sets: 4, reps: 10, weight: '120kg', completed: false },
-          ],
-        },
-      ],
-    },
-  ],
-};
 
 const sampleProgressData: ProgressData = {
   workoutsCompleted: 8,
@@ -598,13 +564,67 @@ const sampleBodyMetrics: BodyMetrics[] = [
   },
 ];
 
+interface ExerciseDetails {
+  isDropSet: boolean;
+  reps: string;
+  notes: string;
+  sets: string;
+  targetMuscles: string;
+  restBetweenSets: string;
+  name: string;
+  weight: string;
+  equipment: string;
+  tempo: string;
+  isSuperSet: boolean;
+  superSetGroup: string | null;
+}
+
+interface WorkoutNotes {
+  general: string | null;
+  cooldown: string | null;
+  warmup: string | null;
+}
+
+interface HistoryInfo {
+  historyId: string;
+  programName: string;
+  currentWeek: number;
+  status: string;
+}
+
+interface ScheduleInfo {
+  duration: string;
+  startDateTime: string;
+  isRestDay: boolean;
+  endDateTime: string;
+}
+
+interface WorkoutResponse {
+  id: number;
+  intensity: string;
+  exerciseDetails: ExerciseDetails;
+  notes: WorkoutNotes;
+  historyInfo: HistoryInfo;
+  scheduleInfo: ScheduleInfo;
+  type: string;
+  day: string;
+  weekNumber: number;
+  status: string;
+  focusArea: string;
+}
+
+interface GroupedWorkouts {
+  [programName: string]: {
+    [weekNumber: string]: WorkoutResponse[];
+  };
+}
+
 export default function ClientDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'supplements' | 'workouts' | 'progress' | 'mealplan'>('overview');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [schedule, setSchedule] = useState<ScheduleDay[]>(sampleSchedule);
   const [supplements, setSupplements] = useState<Supplement[]>(sampleSupplements);
-  const [workoutProgram, setWorkoutProgram] = useState<WorkoutProgram | null>(sampleWorkoutProgram);
   const [progressData, setProgressData] = useState<ProgressData | null>(sampleProgressData);
   const [mealPlan, setMealPlan] = useState<MealPlan[]>(sampleMealPlan);
   const [loading, setLoading] = useState(true);
@@ -620,7 +640,7 @@ export default function ClientDashboard() {
     mealType: 'all',
     sortBy: 'date',
   });
-  const [workouts, setWorkouts] = useState<APIWorkout[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const getGreeting = () => {
@@ -761,28 +781,101 @@ export default function ClientDashboard() {
       return <div className="text-red-500 text-center py-4">{error}</div>;
     }
 
-    if (!workouts.length) {
+    if (!workouts || !workouts.length) {
       return <div className="text-center py-4">No workouts found</div>;
     }
 
+    // Group workouts by program name and week number
+    const groupedWorkouts = workouts.reduce<GroupedWorkouts>((acc, workout) => {
+      const programName = workout.historyInfo.programName;
+      const weekNumber = workout.weekNumber.toString();
+      
+      if (!acc[programName]) {
+        acc[programName] = {} as { [key: string]: WorkoutResponse[] };
+      }
+      if (!acc[programName][weekNumber]) {
+        acc[programName][weekNumber] = [];
+      }
+      
+      acc[programName][weekNumber].push(workout);
+      return acc;
+    }, {} as GroupedWorkouts);
+
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {workouts.map((workout) => (
-          <div key={workout.workoutId} className="bg-white rounded-lg shadow-md p-4">
-            <h3 className="text-lg font-semibold mb-2">{workout.workoutName}</h3>
-            <div className="text-sm text-gray-600">
-              <p>Start Date: {new Date(workout.startDate).toLocaleDateString()}</p>
-              <p>End Date: {new Date(workout.endDate).toLocaleDateString()}</p>
+      <div className="space-y-8">
+        {Object.entries(groupedWorkouts).map(([programName, weeks]) => (
+          <div key={programName} className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">{programName}</h3>
             </div>
-            <div className="mt-4">
-              <h4 className="font-medium mb-2">Workout Sessions:</h4>
-              {workout.workouts.map((session, index) => (
-                <div key={index} className="border-t pt-2 mt-2">
-                  <p className="font-medium">{session.type} - {session.day}</p>
-                  <p className="text-sm text-gray-600">
-                    Time: {session.startTime} ({session.duration} minutes)
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">{session.notes}</p>
+            <div className="p-6 space-y-6">
+              {Object.entries(weeks).map(([weekNumber, workouts]) => (
+                <div key={weekNumber} className="space-y-4">
+                  <h4 className="text-lg font-medium text-gray-900">Week {weekNumber}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {workouts.map((workout: WorkoutResponse) => (
+                      <div key={workout.id} className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            workout.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                            workout.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {workout.status}
+                          </span>
+                          <span className="text-sm font-medium text-gray-600">
+                            {workout.day}
+                          </span>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div>
+                            <h5 className="font-medium text-gray-900">{workout.exerciseDetails.name}</h5>
+                            <p className="text-sm text-gray-600">{workout.focusArea.replace(/_/g, ' ')}</p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="bg-white p-2 rounded">
+                              <span className="text-gray-600">Sets:</span>
+                              <span className="ml-2 font-medium">{workout.exerciseDetails.sets}</span>
+                            </div>
+                            <div className="bg-white p-2 rounded">
+                              <span className="text-gray-600">Reps:</span>
+                              <span className="ml-2 font-medium">{workout.exerciseDetails.reps}</span>
+                            </div>
+                            <div className="bg-white p-2 rounded">
+                              <span className="text-gray-600">Weight:</span>
+                              <span className="ml-2 font-medium">{workout.exerciseDetails.weight}</span>
+                            </div>
+                            <div className="bg-white p-2 rounded">
+                              <span className="text-gray-600">Equipment:</span>
+                              <span className="ml-2 font-medium">{workout.exerciseDetails.equipment}</span>
+                            </div>
+                          </div>
+
+                          <div className="bg-white p-3 rounded">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">Schedule:</span>
+                              <span className="font-medium">
+                                {workout.scheduleInfo.startDateTime} - {workout.scheduleInfo.endDateTime}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm mt-1">
+                              <span className="text-gray-600">Duration:</span>
+                              <span className="font-medium">{workout.scheduleInfo.duration} mins</span>
+                            </div>
+                          </div>
+
+                          {workout.notes.warmup && (
+                            <div className="bg-yellow-50 p-3 rounded text-sm">
+                              <p className="font-medium text-yellow-800">Warmup:</p>
+                              <p className="text-yellow-700">{workout.notes.warmup}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1154,64 +1247,6 @@ export default function ClientDashboard() {
         {/* Schedule Tab */}
         {activeTab === 'schedule' && (
           <div className="space-y-8">
-            {/* Weekly Overview Card */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900">Weekly Schedule</h2>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Week of:</span>
-                    <span className="text-sm font-medium text-blue-600">Feb 12 - Feb 18</span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {schedule.map((day) => (
-                    <div key={day.id} className="bg-gray-50 rounded-xl p-6 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">{day.day}</h3>
-                        <span className="text-sm text-gray-600">{day.workouts.length} workouts</span>
-                      </div>
-                      <div className="space-y-4">
-                        {day.workouts.map((workout, index) => (
-                          <div key={index} className="bg-white rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center space-x-3">
-                                <div className={`p-2 rounded-full ${workout.completed ? 'bg-green-100' : 'bg-blue-100'}`}>
-                                  {workout.completed ? (
-                                    <FiCheck className="w-5 h-5 text-green-600" />
-                                  ) : (
-                                    <FiClock className="w-5 h-5 text-blue-600" />
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">{workout.type}</p>
-                                  <p className="text-sm text-gray-600">{workout.time}</p>
-                                </div>
-                              </div>
-                              <span className="text-sm font-medium text-gray-900">{workout.duration}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className={`text-sm px-3 py-1 rounded-full ${workout.completed
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-blue-100 text-blue-800'
-                                }`}>
-                                {workout.completed ? 'Completed' : 'Upcoming'}
-                              </span>
-                              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                View Details
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
             {/* Monthly Calendar View */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
@@ -1326,150 +1361,6 @@ export default function ClientDashboard() {
                             </div>
                           ))}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Workouts Tab */}
-        {activeTab === 'workouts' && (
-          <div className="space-y-6">
-            {/* Current Program */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {workoutProgram ? workoutProgram.name : 'Workout Program'}
-                </h2>
-              </div>
-              <div className="p-6">
-                {workoutProgram ? (
-                  workoutProgram.weeks.map((week) => (
-                    <div key={week.weekNumber} className="mb-8">
-                      <h3 className="text-lg font-semibold mb-4">Week {week.weekNumber}</h3>
-                      <div className="space-y-6">
-                        {week.workouts.map((workout, index) => (
-                          <div key={index} className="bg-gray-50 rounded-lg p-6">
-                            <h4 className="font-medium mb-4">{workout.day}</h4>
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {workout.exercises.map((exercise, i) => (
-                                <div key={i} className="bg-white p-4 rounded-lg shadow-sm">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <p className="font-medium">{exercise.name}</p>
-                                    {exercise.completed ? (
-                                      <FiCheck className="w-5 h-5 text-green-600" />
-                                    ) : (
-                                      <FiX className="w-5 h-5 text-gray-400" />
-                                    )}
-                                  </div>
-                                  <div className="mt-2 text-sm text-gray-600">
-                                    <p>{exercise.sets} sets × {exercise.reps} reps</p>
-                                    <p>Weight: {exercise.weight}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center text-gray-500">
-                    No workout program available yet
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Workout History */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-gray-900">Workout History</h2>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Total Workouts:</span>
-                    <span className="text-sm font-medium text-blue-600">{workoutHistory.length}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6">
-                {/* Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-                    <select
-                      value={workoutFilter.dateRange}
-                      onChange={(e) => setWorkoutFilter({ ...workoutFilter, dateRange: e.target.value })}
-                      className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="all">All Time</option>
-                      <option value="week">Last Week</option>
-                      <option value="month">Last Month</option>
-                    </select>
-                  </div>
-                  <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Workout Type</label>
-                    <select
-                      value={workoutFilter.type}
-                      onChange={(e) => setWorkoutFilter({ ...workoutFilter, type: e.target.value })}
-                      className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="all">All Types</option>
-                      <option value="Strength Training">Strength Training</option>
-                      <option value="Cardio">Cardio</option>
-                      <option value="HIIT">HIIT</option>
-                      <option value="Yoga">Yoga</option>
-                    </select>
-                  </div>
-                  <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
-                    <select
-                      value={workoutFilter.sortBy}
-                      onChange={(e) => setWorkoutFilter({ ...workoutFilter, sortBy: e.target.value })}
-                      className="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="date">Date</option>
-                      <option value="calories">Calories</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* History List */}
-                <div className="space-y-4">
-                  {filterWorkoutHistory(workoutHistory).map((workout, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h3 className="font-medium text-lg">{workout.workoutType}</h3>
-                          <p className="text-sm text-gray-600">{new Date(workout.date).toLocaleDateString()}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-lg">{workout.duration}</p>
-                          <p className="text-sm text-gray-600">{workout.caloriesBurned} cal</p>
-                        </div>
-                      </div>
-                      <div className="mt-2">
-                        <h4 className="text-sm font-medium text-gray-700">Exercises:</h4>
-                        <div className="mt-1 grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {workout.exercises.map((exercise, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm bg-white p-2 rounded">
-                              <span className="font-medium">{exercise.name}</span>
-                              <span className="text-gray-600">
-                                {exercise.sets}×{exercise.reps} {exercise.weight !== 'N/A' && `@ ${exercise.weight}`}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      {workout.notes && (
-                        <div className="mt-2 text-sm text-gray-600 bg-white p-2 rounded">
-                          <p className="font-medium">Notes:</p>
-                          <p>{workout.notes}</p>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>

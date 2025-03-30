@@ -4,98 +4,113 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FiUser, FiMapPin, FiLock, FiClock, FiActivity, FiAlertCircle } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { completeTrainerProfile, getSession } from '@/actions';
-import type { TrainerProfileData } from '@/actions';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { FiCheckCircle } from 'react-icons/fi';
+import { getCookie, trainerProfile, setCookie } from '@/lib/api';
+
+interface TrainerProfileFormData {
+  name: string;
+  city: string;
+  password: string;
+  weight: string;
+  height: string;
+  profile: string;
+  trainerId: string;
+  servicePeriod: string;
+  role_type: string;
+  username: string;
+}
 
 export default function TrainerProfilePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [formData, setFormData] = useState<TrainerProfileData>({
-    username: '',
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<TrainerProfileFormData>({
     name: '',
     city: '',
     password: '',
-    role_type: 'ROLE_TRAINER',
-    servicePeriod: '',
     weight: '',
     height: '',
-    profile: ''
+    profile: '',
+    trainerId: '',
+    servicePeriod: '',
+    role_type: '',
+    username: '',
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
-    const checkSession = async () => {
-      const username = searchParams.get('username');
-      if (!username) {
-        toast.error('Invalid access');
+    async function fetchTrainerProfile() {
+      try {
+        const trainerId = await getCookie("trainer_id");
+        const username = await getCookie("username");
+        console.log("Trainer ID ->", trainerId);
+        console.log("Username ->", username);
+        
+        if (!trainerId || !username) {
+          toast.error('Missing required information');
+          router.push('/login');
+          return;
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          trainerId: trainerId,
+          username: username,
+          role_type: 'ROLE_TRAINER'
+        }));
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast.error('Failed to load profile data');
         router.push('/login');
-        return;
       }
+    }
+    fetchTrainerProfile();
+  }, [router]);
 
-      setFormData(prev => ({
-        ...prev,
-        username,
-        role_type: 'ROLE_TRAINER'
-      }));
-    };
-
-    checkSession();
-  }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    if (loading) return; // Prevent multiple submissions
     setLoading(true);
 
-    const loadingToast = toast.loading('Completing your profile...');
-
     try {
-        // Validate name format
-        const nameRegex = /^(?![ .]+$)[a-zA-Z .]*$/;
-        if (!nameRegex.test(formData.name)) {
-            throw new Error('Please enter a valid name');
+      const result = await trainerProfile({
+        username: formData.username,
+        trainerId: formData.trainerId,
+        name: formData.name,
+        city: formData.city,
+        password: formData.password,
+        weight: formData.weight,
+        height: formData.height,
+        profile: formData.profile,
+        servicePeriod: formData.servicePeriod,
+        role_type: "ROLE_TRAINER",
+      });
+      console.log("Trainer profile result ->", result);
+      
+      if (result.success === true) {
+        // Store the signup data in a cookie if it exists
+        if (result.message) {
+          await setCookie("signup_data", JSON.stringify(result.message));
         }
-
-        console.log('formData trainer profile start ->');
-
-        // Validate password
-        if (!formData.password) {
-            throw new Error('Password should not be empty');
-        }
-
-        // Make the API request
-        const response = await completeTrainerProfile(formData);
-
-        // If response is a fetch response, parse JSON
-        const result = response instanceof Response ? await response.json() : response;
-
-        if (result.code !== "0000") {
-            router.push('/login');
-        }
-        console.log('Profile completion result:', result);
+        toast.success('Trainer profile created successfully.');
         router.push('/dashboard/trainer-admin');
-
-    } catch (err) {
-        console.error('Profile completion error:', err);
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-        toast.error(err instanceof Error ? err.message : 'An unexpected error occurred');
+      } else {
+        toast.error('Failed to create trainer profile. Please try again.');
+      }
+    } catch (error) {
+      console.error('Trainer profile error:', error);
+      toast.error('Failed to create trainer profile. Please try again.');
     } finally {
-        toast.dismiss(loadingToast);
-        setLoading(false);
+      setLoading(false);
     }
-    console.log('formData trainer profile end ->', formData);
-
-};
+  };
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 to-indigo-50">
       <Toaster position="top-right" />
-      
+
       {/* Left side - Form */}
       <div className="flex-1 flex flex-col justify-center py-4 px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -308,9 +323,8 @@ export default function TrainerProfilePage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full flex justify-center items-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
-                      loading ? 'opacity-75 cursor-not-allowed' : ''
-                    }`}
+                    className={`w-full flex justify-center items-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${loading ? 'opacity-75 cursor-not-allowed' : ''
+                      }`}
                   >
                     {loading ? (
                       <>

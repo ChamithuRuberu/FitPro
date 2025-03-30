@@ -28,6 +28,9 @@ const trainers: TrainerData[] = [
     specializations: ['Weight Loss', 'Strength Training'],
     activePrograms: 3,
     revenue: 8500,
+    status: 'active',
+    nextPaymentDate: '2024-03-15',
+    registeredDate: '2024-03-15',
   },
   // Add more trainers...
 ];
@@ -42,6 +45,8 @@ const clients: ClientData[] = [
     attendance: 90,
     nextSession: '2024-03-15 10:00 AM',
     subscriptionStatus: 'active',
+    nextPaymentDate: '2024-03-15',
+    registeredDate: '2024-03-15',
   },
   // Add more clients...
 ];
@@ -51,7 +56,6 @@ export default function GymAdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       
       {/* Dashboard Header */}
       <header className="bg-white shadow">

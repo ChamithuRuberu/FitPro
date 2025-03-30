@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiBarChart2, FiUsers, FiCheckCircle, FiAward, FiStar } from 'react-icons/fi';
+import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiBarChart2, FiUsers, FiCheckCircle, FiAward, FiStar, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { getSession, checkTrainerAuth, logoutTrainer } from '@/actions';
+import { getCookie } from '@/lib/api';
 
 const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 
@@ -20,15 +20,6 @@ interface TrainerData {
   weight: string;
   height: string;
   profile: string;
-  role: Array<{
-    id: number;
-    name: string;
-    status: string;
-    permissions: Array<{
-      id: number;
-      name: string;
-    }>;
-  }>;
 }
 
 interface ClientData {
@@ -85,10 +76,87 @@ interface ClientSummary {
   status?: string;
 }
 
+interface WorkoutExercise {
+  name: string;
+  sets: number;
+  reps: number;
+  weight: string;
+  notes?: string;
+}
+
+interface WorkoutPlan {
+  type: 'Legs' | 'Back' | 'Chest' | 'Arms' | 'Shoulders' | 'Core';
+  exercises: WorkoutExercise[];
+}
+
+interface MealPlan {
+  id: string;
+  mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+  time: string;
+  items: {
+    name: string;
+    portion: string;
+    calories: number;
+  }[];
+  category?: string;
+}
+
+interface ClientWorkoutPlan {
+  id: string;
+  type: keyof typeof workoutExercises;
+  exercises: WorkoutExercise[];
+  day: string;
+  startTime: string;
+  duration: number; // in minutes
+  notes?: string;
+}
+
+interface WorkoutPlanRequest {
+  id: string;
+  clientId: string;
+  clientName: string;
+  startDate: string;
+  endDate: string;
+  duration: '1month' | '2months' | '3months';
+  status: 'draft' | 'pending' | 'approved' | 'active' | 'completed';
+  weeklyPlans: {
+    weekNumber: number;
+    schedule: {
+      [key: string]: { // Monday, Tuesday, etc.
+        workouts: {
+          type: keyof typeof workoutExercises;
+          time: string;
+          duration: number;
+          exercises: WorkoutExercise[];
+        }[];
+      };
+    };
+  }[];
+}
+
+const workoutExercises = {
+  Legs: ['Squat', 'Leg Press', 'Leg Extension', 'Leg Curls', 'Calf Raises'],
+  Back: ['Pull-ups', 'Deadlifts', 'Bent Over Rows', 'Lat Pulldowns', 'Face Pulls'],
+  Chest: ['Bench Press', 'Incline Press', 'Chest Flyes', 'Push-ups', 'Dips'],
+  Arms: ['Bicep Curls', 'Tricep Extensions', 'Hammer Curls', 'Skull Crushers', 'Preacher Curls'],
+  Shoulders: ['Military Press', 'Lateral Raises', 'Front Raises', 'Reverse Flyes', 'Shrugs'],
+  Core: ['Planks', 'Crunches', 'Russian Twists', 'Leg Raises', 'Wood Chops']
+};
+
 export default function TrainerDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'workouts' | 'nutrition' | 'progress'>('overview');
-  const [trainerData, setTrainerData] = useState<TrainerData | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'nutrition' | 'progress'>('overview');
+  const [trainerData, setTrainerData] = useState<TrainerData>({
+    email: 'trainer@fitpro.com',
+    fullName: 'John Smith',
+    city: 'New York',
+    status: 'Active',
+    trainerId: 'TR-2024-001',
+    servicePeriod: '2 years',
+    weight: '75kg',
+    height: '180cm',
+    profile: 'Professional Fitness Trainer'
+  });
   const [trainerStats, setTrainerStats] = useState<TrainerStats>({
     totalClients: 12,
     activeWorkouts: 8,
@@ -96,7 +164,35 @@ export default function TrainerDashboard() {
     monthlyRevenue: 2500,
     rating: 4.8
   });
-  const [clients, setClients] = useState<ClientSummary[]>([]);
+  const [clients, setClients] = useState<ClientSummary[]>([
+    {
+      id: '1',
+      name: 'Emma Wilson',
+      email: 'emma.wilson@example.com',
+      progress: 75,
+      nextSession: '2024-03-20 10:00 AM',
+      program: 'Weight Loss',
+      status: 'Active'
+    },
+    {
+      id: '2',
+      name: 'Michael Brown',
+      email: 'michael.b@example.com',
+      progress: 60,
+      nextSession: '2024-03-21 11:00 AM',
+      program: 'Muscle Gain',
+      status: 'Active'
+    },
+    {
+      id: '3',
+      name: 'Sarah Davis',
+      email: 'sarah.d@example.com',
+      progress: 45,
+      nextSession: '2024-03-22 09:00 AM',
+      program: 'General Fitness',
+      status: 'Active'
+    }
+  ]);
   const [nutritionItems, setNutritionItems] = useState<NutritionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [clientSegments] = useState<ClientSegment[]>([
@@ -134,6 +230,80 @@ export default function TrainerDashboard() {
       status: 'completed'
     }
   ]);
+  const [selectedClient, setSelectedClient] = useState<ClientSummary | null>(null);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [activeModalTab, setActiveModalTab] = useState<'workout' | 'meal'>('workout');
+  const [selectedWorkoutType, setSelectedWorkoutType] = useState<keyof typeof workoutExercises | ''>('');
+  const [selectedExercise, setSelectedExercise] = useState('');
+  const [exerciseDetails, setExerciseDetails] = useState<WorkoutExercise>({
+    name: '',
+    sets: 3,
+    reps: 12,
+    weight: ''
+  });
+  const [clientWorkouts, setClientWorkouts] = useState<ClientWorkoutPlan[]>([]);
+  const [clientMeals, setClientMeals] = useState<MealPlan[]>([]);
+  const [selectedDay, setSelectedDay] = useState<string>('Monday');
+  const [workoutTime, setWorkoutTime] = useState('09:00');
+  const [workoutDuration, setWorkoutDuration] = useState(60);
+  const [workoutNotes, setWorkoutNotes] = useState('');
+  const [currentWorkoutExercises, setCurrentWorkoutExercises] = useState<WorkoutExercise[]>([]);
+  const [workoutPlanRequests, setWorkoutPlanRequests] = useState<WorkoutPlanRequest[]>([
+    {
+      id: '1',
+      clientId: '1',
+      clientName: 'Emma Wilson',
+      startDate: '2024-03-20',
+      endDate: '2024-04-20',
+      duration: '1month',
+      status: 'active',
+      weeklyPlans: [
+        {
+          weekNumber: 1,
+          schedule: {
+            Monday: {
+              workouts: [
+                {
+                  type: 'Legs',
+                  time: '09:00',
+                  duration: 60,
+                  exercises: [
+                    { name: 'Squat', sets: 4, reps: 12, weight: '60', notes: 'Focus on form' },
+                    { name: 'Leg Press', sets: 3, reps: 15, weight: '100' }
+                  ]
+                }
+              ]
+            },
+            Wednesday: {
+              workouts: [
+                {
+                  type: 'Chest',
+                  time: '10:00',
+                  duration: 45,
+                  exercises: [
+                    { name: 'Bench Press', sets: 4, reps: 10, weight: '50' },
+                    { name: 'Push-ups', sets: 3, reps: 15, weight: 'Body weight' }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]);
+  const [selectedDuration, setSelectedDuration] = useState<'1month' | '2months' | '3months'>('1month');
+  const [currentWeek, setCurrentWeek] = useState(1);
+  const [totalWeeks, setTotalWeeks] = useState(4);
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [activeMealType, setActiveMealType] = useState<'Breakfast' | 'Lunch' | 'Dinner' | 'Snack'>('Breakfast');
+  const [mealTime, setMealTime] = useState('08:00');
+  const [mealItems, setMealItems] = useState<{name: string; portion: string; calories: number}[]>([
+    { name: '', portion: '', calories: 0 }
+  ]);
+  const [mealCategory, setMealCategory] = useState<string>('Regular');
+
+  const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -147,52 +317,6 @@ export default function TrainerDashboard() {
     const checkAuth = async () => {
       try {
         setLoading(true);
-        console.log('Checking trainer dashboard auth...');
-
-        const session = await getSession();
-        console.log('Dashboard session:', session);
-
-        if (!session.success || !session.data) {
-          console.log('No session found');
-          toast.error('Please log in to access the dashboard');
-          router.push('/login');
-          return;
-        }
-
-        // Check if we have the necessary session data
-        const userRole = session.data.data.roles?.[0]?.name;
-        if (!session.data.data.token || !userRole || userRole !== 'ROLE_TRAINER') {
-          console.log('Invalid session data:', session.data);
-          toast.error('Invalid session data');
-          router.push('/login');
-          return;
-        }
-
-        const userData = session.data.data.user;
-        if (!userData) {
-          toast.error('User data not found');
-          router.push('/login');
-          return;
-        }
-
-        // Set trainer data from auth response
-        const trainerData = {
-          email: userData.email,
-          fullName: userData.full_name,
-          city: userData.city,
-          status: userData.status,
-          trainerId: userData.gov_id?.toString() || '',
-          servicePeriod: '0', // Default value since it's not in the response
-          weight: '', // Not in the response
-          height: '', // Not in the response
-          profile: '', // Not in the response
-          role: session.data.data.roles || [] // Provide empty array as fallback
-        };
-
-        console.log('Setting trainer data:', trainerData);
-
-        // Fetch additional data based on active tab
-        await fetchTabData(activeTab);
       } catch (error) {
         console.error('Auth check error:', error);
         toast.error('Failed to load dashboard data');
@@ -205,76 +329,262 @@ export default function TrainerDashboard() {
     checkAuth();
   }, [router, activeTab]);
 
-  const fetchTabData = async (tab: string) => {
-    try {
-      switch (tab) {
-        case 'clients':
-          // Fetch clients data
-          break;
-        case 'workouts':
-          // Fetch workouts data
-          break;
-        case 'nutrition':
-          // Fetch nutrition data
-          break;
-        case 'progress':
-          // Fetch progress data
-          break;
-      }
-    } catch (error) {
-      console.error(`Error fetching ${tab} data:`, error);
-      toast.error(`Failed to load ${tab} data`);
-    }
+  const handleLogout = async () => {
+    
   };
 
-  const handleLogout = async () => {
-    try {
-      setLoading(true);
-      console.log('Logging out trainer...');
-
-      // Show loading toast
-      const loadingToast = toast.loading('Logging out...');
-
-      const session = await getSession();
-      console.log('Current session:', session);
-
-      // Attempt to logout regardless of current session state
-      const result = await logoutTrainer();
-      console.log('Logout result:', result);
-
-      if (result.success) {
-        // Clear any client-side state
-        setTrainerData(null);
-        setClients([]);
-        setTrainerStats({
-          totalClients: 0,
-          activeWorkouts: 0,
-          completedSessions: 0,
-          monthlyRevenue: 0,
-          rating: 0
-        });
-
-        toast.success('Logged out successfully');
-
-        // Small delay to ensure state is cleared
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Redirect to login
-        router.push('/login');
-      } else {
-        toast.error('Failed to logout. Please try again.');
+  const handleClientSelect = (client: ClientSummary) => {
+    setSelectedClient(client);
+    setShowPlanModal(true);
+    
+    // Load sample workout data based on client
+    const sampleWorkouts: ClientWorkoutPlan[] = [
+      {
+        id: '1',
+        type: 'Legs',
+        exercises: [
+          {
+            name: 'Squat',
+            sets: 4,
+            reps: 12,
+            weight: '60',
+            notes: 'Focus on form'
+          },
+          {
+            name: 'Leg Press',
+            sets: 3,
+            reps: 15,
+            weight: '100'
+          }
+        ],
+        day: 'Monday',
+        startTime: '09:00',
+        duration: 60,
+        notes: 'Start with light warmup'
+      },
+      {
+        id: '2',
+        type: 'Chest',
+        exercises: [
+          {
+            name: 'Bench Press',
+            sets: 4,
+            reps: 10,
+            weight: '50'
+          },
+          {
+            name: 'Push-ups',
+            sets: 3,
+            reps: 15,
+            weight: 'Body weight'
+          }
+        ],
+        day: 'Wednesday',
+        startTime: '10:00',
+        duration: 45
+      },
+      {
+        id: '3',
+        type: 'Back',
+        exercises: [
+          {
+            name: 'Deadlifts',
+            sets: 4,
+            reps: 8,
+            weight: '80'
+          },
+          {
+            name: 'Lat Pulldowns',
+            sets: 3,
+            reps: 12,
+            weight: '45'
+          }
+        ],
+        day: 'Friday',
+        startTime: '11:00',
+        duration: 50
       }
+    ];
 
-      toast.dismiss(loadingToast);
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to logout. Please try again.');
+    const sampleMeals: MealPlan[] = [
+      {
+        id: '1',
+        mealType: 'Breakfast',
+        time: '08:00',
+        items: [
+          {
+            name: 'Oatmeal with Berries',
+            portion: '1 cup',
+            calories: 300
+          },
+          {
+            name: 'Greek Yogurt',
+            portion: '200g',
+            calories: 150
+          },
+          {
+            name: 'Banana',
+            portion: '1 medium',
+            calories: 105
+          }
+        ]
+      },
+      {
+        id: '2',
+        mealType: 'Lunch',
+        time: '13:00',
+        items: [
+          {
+            name: 'Grilled Chicken Breast',
+            portion: '200g',
+            calories: 330
+          },
+          {
+            name: 'Brown Rice',
+            portion: '1 cup',
+            calories: 216
+          },
+          {
+            name: 'Mixed Vegetables',
+            portion: '200g',
+            calories: 70
+          }
+        ]
+      },
+      {
+        id: '3',
+        mealType: 'Dinner',
+        time: '19:00',
+        items: [
+          {
+            name: 'Salmon Fillet',
+            portion: '180g',
+            calories: 367
+          },
+          {
+            name: 'Sweet Potato',
+            portion: '200g',
+            calories: 180
+          },
+          {
+            name: 'Broccoli',
+            portion: '150g',
+            calories: 55
+          }
+        ]
+      },
+      {
+        id: '4',
+        mealType: 'Snack',
+        time: '16:00',
+        items: [
+          {
+            name: 'Almonds',
+            portion: '30g',
+            calories: 164
+          },
+          {
+            name: 'Apple',
+            portion: '1 medium',
+            calories: 95
+          }
+        ]
+      }
+    ];
 
-      // Force redirect to login on error
-      router.push('/login');
-    } finally {
-      setLoading(false);
+    setClientWorkouts(sampleWorkouts);
+    setClientMeals(sampleMeals);
+  };
+
+  const handleAddExercise = () => {
+    if (!selectedWorkoutType || !selectedExercise) return;
+
+    const newExercise: WorkoutExercise = {
+      name: selectedExercise,
+      sets: exerciseDetails.sets,
+      reps: exerciseDetails.reps,
+      weight: exerciseDetails.weight,
+      notes: workoutNotes
+    };
+
+    setCurrentWorkoutExercises([...currentWorkoutExercises, newExercise]);
+    
+    // Reset form for next exercise
+    setSelectedExercise('');
+    setExerciseDetails({
+      name: '',
+      sets: 3,
+      reps: 12,
+      weight: ''
+    });
+    setWorkoutNotes('');
+
+    toast.success('Exercise added to workout');
+  };
+
+  const handleAddWorkout = () => {
+    if (!selectedWorkoutType || currentWorkoutExercises.length === 0) return;
+
+    const newWorkout: ClientWorkoutPlan = {
+      id: Math.random().toString(36).substr(2, 9),
+      type: selectedWorkoutType as keyof typeof workoutExercises,
+      exercises: [...currentWorkoutExercises],
+      day: selectedDay,
+      startTime: workoutTime,
+      duration: workoutDuration
+    };
+
+    setClientWorkouts([...clientWorkouts, newWorkout]);
+    
+    // Reset form for next workout
+    setSelectedWorkoutType('');
+    setCurrentWorkoutExercises([]);
+    setWorkoutTime('09:00');
+    setWorkoutDuration(60);
+
+    toast.success('Workout added to plan');
+  };
+
+  const handleAddMealItem = () => {
+    setMealItems([...mealItems, { name: '', portion: '', calories: 0 }]);
+  };
+
+  const handleMealItemChange = (index: number, field: keyof typeof mealItems[0], value: string) => {
+    const newMealItems = [...mealItems];
+    if (field === 'calories') {
+      newMealItems[index][field] = parseInt(value) || 0;
+    } else {
+      newMealItems[index][field] = value;
     }
+    setMealItems(newMealItems);
+  };
+
+  const handleAddMeal = () => {
+    if (!activeMealType || mealItems[0].name === '') return;
+
+    const newMeal: MealPlan = {
+      id: Math.random().toString(36).substr(2, 9),
+      mealType: activeMealType,
+      time: mealTime,
+      items: [...mealItems],
+      category: mealCategory
+    };
+
+    setClientMeals([...clientMeals, newMeal]);
+    
+    // Reset form for next meal
+    setActiveMealType('Breakfast');
+    setMealTime('08:00');
+    setMealItems([{ name: '', portion: '', calories: 0 }]);
+    setMealCategory('Regular');
+
+    toast.success('Meal added to plan');
+  };
+
+  const handleDeleteMeal = (id: string) => {
+    const updatedMeals = clientMeals.filter(meal => meal.id !== id);
+    setClientMeals(updatedMeals);
+    toast.success('Meal removed from plan');
   };
 
   if (loading) {
@@ -321,14 +631,15 @@ export default function TrainerDashboard() {
           {/* Tab Navigation */}
           <div className="flex justify-between items-center mt-8">
             <div className="flex space-x-2">
-              {['overview', 'clients', 'workouts', 'nutrition', 'progress'].map((tab) => (
+              {['overview', 'clients', 'nutrition', 'progress'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as any)}
-                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === tab
+                  className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    activeTab === tab
                       ? 'bg-white text-blue-600 shadow-lg transform scale-105'
                       : 'text-blue-100 hover:bg-blue-700'
-                    }`}
+                  }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
@@ -509,91 +820,7 @@ export default function TrainerDashboard() {
               </div>
             </div>
 
-            {/* Trainer Profile */}
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Trainer Profile</h2>
-                  <p className="text-gray-500 mt-1">Your professional information</p>
-                </div>
-                <button className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
-                  <FiUser className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-2xl font-bold text-blue-600">
-                        {trainerData?.fullName?.charAt(0) || 'T'}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{trainerData?.fullName}</h3>
-                      <p className="text-sm text-gray-500">{trainerData?.email}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Location</p>
-                    <p className="text-lg font-semibold text-gray-900 mt-1">{trainerData?.city}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Experience</p>
-                    <p className="text-lg font-semibold text-gray-900 mt-1">{trainerData?.servicePeriod} years</p>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Specializations</p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">Weight Training</span>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">HIIT</span>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">Nutrition</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Certifications</p>
-                    <div className="space-y-2 mt-2">
-                      <div className="flex items-center space-x-2">
-                        <FiAward className="w-4 h-4 text-yellow-500" />
-                        <span className="text-sm text-gray-700">Certified Personal Trainer (CPT)</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <FiAward className="w-4 h-4 text-yellow-500" />
-                        <span className="text-sm text-gray-700">Nutrition Specialist</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Profile Description</p>
-                    <p className="text-gray-700 mt-1">{trainerData?.profile || 'Dedicated fitness professional with expertise in strength training and nutrition coaching.'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Status</p>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                      <span className="text-sm font-medium text-gray-700">{trainerData?.status}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Physical Stats</p>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <p className="text-xs text-gray-500">Height</p>
-                        <p className="text-sm font-medium text-gray-900">{trainerData?.height} cm</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Weight</p>
-                        <p className="text-sm font-medium text-gray-900">{trainerData?.weight} kg</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
 
             {/* Recent Activity */}
             <div className="bg-white rounded-xl shadow-lg p-8">
@@ -635,7 +862,12 @@ export default function TrainerDashboard() {
                 <h2 className="text-2xl font-bold text-gray-900">Your Clients</h2>
                 <p className="text-gray-500 mt-1">Manage and track your clients' progress</p>
               </div>
-              <button className="flex items-center px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
+              <button 
+                onClick={() => {
+                  // Add logic to open add client modal
+                }}
+                className="flex items-center px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
+              >
                 <FiPlus className="w-5 h-5 mr-2" />
                 Add New Client
               </button>
@@ -657,10 +889,12 @@ export default function TrainerDashboard() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-8">
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Program</p>
-                          <p className="text-sm font-semibold text-gray-900">{client.program}</p>
-                        </div>
+                        <button
+                          onClick={() => handleClientSelect(client)}
+                          className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                          Manage Plans
+                        </button>
                         <div className="w-48">
                           <p className="text-sm font-medium text-gray-500 mb-2">Progress</p>
                           <div className="relative pt-1">
@@ -679,10 +913,11 @@ export default function TrainerDashboard() {
                             </div>
                           </div>
                         </div>
-                        <span className={`px-4 py-2 rounded-full text-sm font-medium ${client.status === 'Active'
+                        <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+                          client.status === 'Active'
                             ? 'bg-green-100 text-green-700'
                             : 'bg-gray-100 text-gray-700'
-                          }`}>
+                        }`}>
                           {client.status}
                         </span>
                       </div>
@@ -698,91 +933,6 @@ export default function TrainerDashboard() {
                   <p className="text-gray-400 text-sm mt-2">Start by adding your first client</p>
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'workouts' && (
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Workout Programs</h2>
-                <p className="text-gray-500 mt-1">Manage your training programs</p>
-              </div>
-              <button className="flex items-center px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
-                <FiPlus className="w-5 h-5 mr-2" />
-                Create Program
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  {
-                    name: 'Weight Loss Elite',
-                    type: 'Weight Loss',
-                    duration: '12 weeks',
-                    sessions: 36,
-                    intensity: 'High',
-                    equipment: ['Dumbbells', 'Resistance Bands', 'Treadmill'],
-                    activeClients: 8
-                  },
-                  {
-                    name: 'Strength Builder Pro',
-                    type: 'Muscle Gain',
-                    duration: '16 weeks',
-                    sessions: 48,
-                    intensity: 'High',
-                    equipment: ['Barbells', 'Power Rack', 'Free Weights'],
-                    activeClients: 6
-                  },
-                  {
-                    name: 'HIIT Transformation',
-                    type: 'Fat Loss',
-                    duration: '8 weeks',
-                    sessions: 24,
-                    intensity: 'Very High',
-                    equipment: ['Kettlebells', 'Jump Rope', 'Body Weight'],
-                    activeClients: 10
-                  }
-                ].map((program, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">{program.name}</h3>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                        {program.type}
-                      </span>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Duration</p>
-                          <p className="font-medium text-gray-900">{program.duration}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Sessions</p>
-                          <p className="font-medium text-gray-900">{program.sessions}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Equipment</p>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {program.equipment.map((item, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                              {item}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="pt-4 border-t border-gray-200">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">Active Clients</span>
-                          <span className="font-medium text-gray-900">{program.activeClients}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         )}
@@ -815,6 +965,487 @@ export default function TrainerDashboard() {
           </div>
         )}
       </main>
+
+      {/* Client Management Modal */}
+      {showPlanModal && selectedClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Plan Management - {selectedClient.name}
+                </h2>
+                <button
+                  onClick={() => setShowPlanModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <FiX className="w-6 h-6" />
+                </button>
+              </div>
+              
+              {/* Tab Navigation */}
+              <div className="flex space-x-4 mt-6">
+                <button
+                  onClick={() => setActiveModalTab('workout')}
+                  className={`px-4 py-2 rounded-lg ${
+                    activeModalTab === 'workout'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Workout Plan
+                </button>
+                <button
+                  onClick={() => setActiveModalTab('meal')}
+                  className={`px-4 py-2 rounded-lg ${
+                    activeModalTab === 'meal'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Meal Plan
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {activeModalTab === 'workout' ? (
+                <div className="space-y-6">
+                  {/* Plan Duration Selection */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Plan Duration
+                      </label>
+                      <div className="flex space-x-4">
+                        {[
+                          { id: '1month', label: '1 Month', weeks: 4 },
+                          { id: '2months', label: '2 Months', weeks: 8 },
+                          { id: '3months', label: '3 Months', weeks: 12 }
+                        ].map((option) => (
+                          <button
+                            key={option.id}
+                            onClick={() => {
+                              setSelectedDuration(option.id as '1month' | '2months' | '3months');
+                              setTotalWeeks(option.weeks);
+                            }}
+                            className={`flex-1 py-3 px-4 rounded-lg text-center transition-all duration-200 ${
+                              selectedDuration === option.id
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            <div className="font-medium">{option.label}</div>
+                            <div className="text-xs mt-1 opacity-80">{option.weeks} weeks</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Week Selection */}
+                    
+                  </div>
+
+                  {/* Weekly Schedule */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-4">Week {currentWeek} Schedule</h4>
+                    <div className="space-y-4">
+                      {weekDays.map((day) => (
+                        <div key={day} className="border rounded-lg overflow-hidden">
+                          <div 
+                            onClick={() => setExpandedDay(expandedDay === day ? null : day)}
+                            className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <h5 className="font-medium text-gray-900">{day}</h5>
+                              {/* Show indicator if workouts exist for this day */}
+                              {clientWorkouts.some(workout => workout.day === day) && (
+                                <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden="true"></span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center space-x-3">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedDay(day);
+                                  setCurrentWorkoutExercises([]);
+                                  setSelectedWorkoutType('');
+                                  setExpandedDay(day);
+                                }}
+                                className="text-sm text-blue-600 hover:text-blue-700"
+                              >
+                                + Add Workout
+                              </button>
+                              <svg 
+                                className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${expandedDay === day ? 'transform rotate-180' : ''}`} 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+                          </div>
+                          
+                          {/* Workout Form - Only show if expanded */}
+                          {expandedDay === day && (
+                            <div className="p-4 bg-gray-50 border-t">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Workout Type
+                                  </label>
+                                  <select
+                                    value={selectedWorkoutType}
+                                    onChange={(e) => setSelectedWorkoutType(e.target.value as keyof typeof workoutExercises)}
+                                    className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                  >
+                                    <option value="">Select Type</option>
+                                    {Object.keys(workoutExercises).map((type) => (
+                                      <option key={type} value={type}>{type}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
+                                    <input
+                                      type="time"
+                                      value={workoutTime}
+                                      onChange={(e) => setWorkoutTime(e.target.value)}
+                                      className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+                                    <input
+                                      type="number"
+                                      value={workoutDuration}
+                                      onChange={(e) => setWorkoutDuration(parseInt(e.target.value))}
+                                      className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                      min="15"
+                                      step="15"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {selectedWorkoutType && (
+                                <div className="mt-4">
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Exercises
+                                  </label>
+                                  
+                                  {/* Display already added exercises */}
+                                  {currentWorkoutExercises.length > 0 && (
+                                    <div className="mb-4 bg-white p-3 rounded-lg border">
+                                      <h6 className="text-sm font-medium text-gray-700 mb-2">Added Exercises:</h6>
+                                      <div className="space-y-2">
+                                        {currentWorkoutExercises.map((exercise, idx) => (
+                                          <div key={idx} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded border">
+                                            <span>{exercise.name} - {exercise.sets} sets × {exercise.reps} reps {exercise.weight && `(${exercise.weight} kg)`}</span>
+                                            <button 
+                                              onClick={() => {
+                                                const updatedExercises = [...currentWorkoutExercises];
+                                                updatedExercises.splice(idx, 1);
+                                                setCurrentWorkoutExercises(updatedExercises);
+                                              }}
+                                              className="text-red-500 hover:text-red-700 text-xs"
+                                            >
+                                              Remove
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="space-y-2">
+                                    <select
+                                      value={selectedExercise}
+                                      onChange={(e) => setSelectedExercise(e.target.value)}
+                                      className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                    >
+                                      <option value="">Select Exercise</option>
+                                      {workoutExercises[selectedWorkoutType as keyof typeof workoutExercises].map((exercise) => (
+                                        <option key={exercise} value={exercise}>{exercise}</option>
+                                      ))}
+                                    </select>
+                                    {selectedExercise && (
+                                      <div className="grid grid-cols-3 gap-4 mt-2">
+                                        <input
+                                          type="number"
+                                          value={exerciseDetails.sets}
+                                          onChange={(e) => setExerciseDetails({...exerciseDetails, sets: parseInt(e.target.value)})}
+                                          placeholder="Sets"
+                                          className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                        />
+                                        <input
+                                          type="number"
+                                          value={exerciseDetails.reps}
+                                          onChange={(e) => setExerciseDetails({...exerciseDetails, reps: parseInt(e.target.value)})}
+                                          placeholder="Reps"
+                                          className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                        />
+                                        <input
+                                          type="text"
+                                          value={exerciseDetails.weight}
+                                          onChange={(e) => setExerciseDetails({...exerciseDetails, weight: e.target.value})}
+                                          placeholder="Weight (kg)"
+                                          className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {selectedExercise && (
+                                    <div className="mt-3 flex justify-end">
+                                      <button
+                                        onClick={handleAddExercise}
+                                        className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+                                      >
+                                        Add Exercise
+                                      </button>
+                                    </div>
+                                  )}
+                                  
+                                  {currentWorkoutExercises.length > 0 && (
+                                    <div className="mt-4 flex justify-end">
+                                      <button
+                                        onClick={() => {
+                                          handleAddWorkout();
+                                          setExpandedDay(null);
+                                        }}
+                                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                                      >
+                                        Save Workout
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                         
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Save Plan Button */}
+                  <div className="flex justify-end space-x-4">
+                    <button
+                      onClick={() => {/* Add logic to submit plan */}}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Submit Plan
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Meal Plan Form - Organized by meal type */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Meal Plan</h3>
+                    
+                    {/* Meal Type Tabs */}
+                    <div className="flex space-x-2 mb-6">
+                      {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => {
+                            setActiveMealType(type as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack');
+                            setMealTime(
+                              type === 'Breakfast' ? '08:00' : 
+                              type === 'Lunch' ? '13:00' : 
+                              type === 'Dinner' ? '19:00' : '16:00'
+                            );
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            activeMealType === type
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Active Meal Type Section */}
+                    <div className="border rounded-lg p-5 bg-gray-50">
+                      <h4 className="font-medium text-gray-900 mb-4">{activeMealType} Meal</h4>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Time
+                          </label>
+                          <input
+                            type="time"
+                            className="w-full form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            value={mealTime}
+                            onChange={(e) => setMealTime(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Diet Category
+                          </label>
+                          <select 
+                            className="w-full form-select rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                            onChange={(e) => setMealCategory(e.target.value)}
+                            value={mealCategory}
+                          >
+                            <option value="Regular">Regular</option>
+                            <option value="Weight Loss">Weight Loss</option>
+                            <option value="Muscle Gain">Muscle Gain</option>
+                            <option value="Vegetarian">Vegetarian</option>
+                            <option value="Vegan">Vegan</option>
+                            <option value="Keto">Keto</option>
+                            <option value="Low Carb">Low Carb</option>
+                            <option value="Gluten Free">Gluten Free</option>
+                            <option value="High Protein">High Protein</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Food Items
+                        </label>
+                        <div className="space-y-2">
+                          {mealItems.map((item, index) => (
+                            <div key={index} className="grid grid-cols-3 gap-4">
+                              <input
+                                type="text"
+                                value={item.name}
+                                onChange={(e) => handleMealItemChange(index, 'name', e.target.value)}
+                                placeholder="Food item"
+                                className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              />
+                              <input
+                                type="text"
+                                value={item.portion}
+                                onChange={(e) => handleMealItemChange(index, 'portion', e.target.value)}
+                                placeholder="Portion"
+                                className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              />
+                              <input
+                                type="number"
+                                value={item.calories || ''}
+                                onChange={(e) => handleMealItemChange(index, 'calories', e.target.value)}
+                                placeholder="Calories"
+                                className="form-input rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              />
+                            </div>
+                          ))}
+                          <button
+                            onClick={handleAddMealItem}
+                            className="text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            + Add another item
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          onClick={handleAddMeal}
+                          disabled={!activeMealType || mealItems[0].name === '' || !mealTime}
+                          className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                            !activeMealType || mealItems[0].name === '' || !mealTime 
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-blue-600 hover:bg-blue-700'
+                          }`}
+                        >
+                          Add to {activeMealType} Plan
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Display Meal Plans */}
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Client Meal Plan Summary</h3>
+                    {clientMeals.length > 0 ? (
+                      <div className="space-y-4">
+                        {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((mealType) => {
+                          const meals = clientMeals.filter(meal => meal.mealType === mealType);
+                          
+                          return (
+                            <div key={mealType} className="border rounded-lg overflow-hidden">
+                              <div className={`px-4 py-3 border-b ${
+                                mealType === 'Breakfast' ? 'bg-yellow-50' : 
+                                mealType === 'Lunch' ? 'bg-green-50' : 
+                                mealType === 'Dinner' ? 'bg-blue-50' : 'bg-purple-50'
+                              }`}>
+                                <h4 className="font-medium text-gray-900">{mealType}</h4>
+                              </div>
+                              <div className="divide-y divide-gray-200">
+                                {meals.length > 0 ? (
+                                  meals.map((meal) => (
+                                    <div key={meal.id} className="p-4">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                          <span className="text-sm text-gray-500">Time: {meal.time}</span>
+                                          {meal.category && (
+                                            <span className="ml-3 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                              {meal.category}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <button 
+                                          onClick={() => handleDeleteMeal(meal.id)}
+                                          className="text-red-500 hover:text-red-700 text-sm"
+                                        >
+                                          Remove
+                                        </button>
+                                      </div>
+                                      <div className="space-y-2">
+                                        {meal.items.map((item, idx) => (
+                                          <div key={idx} className="flex justify-between text-sm">
+                                            <span>{item.name} ({item.portion})</span>
+                                            <span>{item.calories} cal</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="p-4 text-center text-gray-500">
+                                    No {mealType.toLowerCase()} meals added yet
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 bg-gray-50 border rounded-lg">
+                        <p className="text-gray-500">No meals added to plan yet</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Save Plan Button */}
+                  <div className="flex justify-end space-x-4 mt-6">
+                    <button
+                      onClick={() => {/* Add logic to save meal plan */ toast.success('Meal plan saved')}}
+                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Save Meal Plan
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

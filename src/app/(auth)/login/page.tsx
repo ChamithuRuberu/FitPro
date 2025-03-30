@@ -5,14 +5,20 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FiUser, FiLock, FiMail, FiCheckCircle, FiGithub, FiFacebook } from 'react-icons/fi';
-import { user_login } from '@/actions';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { userLogin } from '@/lib/api';
+
+
+interface LoginRequest {
+  email: string;
+  password: string;
+}
 
 export default function ClientLoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<LoginRequest>({
     email: '',
     password: ''
   });
@@ -22,66 +28,51 @@ export default function ClientLoginPage() {
     setLoading(true);
 
     try {
-      const result = await user_login(formData.email, formData.password);
-      
-      if (result.success && result.data) {
-        // Check if roles exist and are valid
-        if (!result.data.roles || !Array.isArray(result.data.roles) || result.data.roles.length === 0) {
-          console.error('Invalid roles data:', result.data);
-          toast.error('Invalid user role data');
-          return;
-        }
+      const result = await userLogin({
+        email: formData.email,
+        password: formData.password
+      });
 
-        // Log the entire roles array for debugging
-        console.log('Roles array:', result.data.roles);
-        
-        // Get the first role and log it
-        const userRole = result.data.roles[0];
-        console.log('First role object:', userRole);
-        console.log('Role name:', userRole.name);
-
-        toast.success('Login successful');
-        
-        // Store role for debugging
-        const roleName = userRole.name.toUpperCase(); // Normalize to uppercase
-        console.log('Normalized role name:', roleName);
-
-        // Navigate based on role
-        switch (roleName) {
-          case 'ROLE_TRAINER':
-            console.log('Redirecting to trainer dashboard...');
-            router.push('/dashboard/trainer-admin');
-            break;
-          case 'ROLE_GYM':
-            console.log('Redirecting to gym dashboard...');
-            router.push('/dashboard/gym-admin');
-            break;
-          case 'ROLE_SUPER_ADMIN':
-            console.log('Redirecting to admin dashboard...');
-            router.push('/dashboard/super-admin');
-            break;
-          case 'ROLE_USER':
-            console.log('Redirecting to client dashboard...');
-            router.push('/dashboard/client-dashboard');
-            break;
-          default:
-            console.log('Unknown role:', roleName);
-            console.log('Redirecting to client dashboard...');
-            router.push('/login');
-            break;
-        }
-      } else {
-        // Show specific error message from the server if available
+      if (!result.success) {
         toast.error(result.message || 'Login failed');
-        
-        if (result.message === 'Invalid session data') {
-          console.error('Session data validation failed');
-          router.push('/login');
-        }
+        return;
+      }
+
+      if (!result.data || !Array.isArray(result.data.roles) || result.data.roles.length === 0) {
+        toast.error('Invalid user role data');
+        return;
+      }
+
+      // Store role for debugging
+      const roleName = result.data.roles[0].name.toUpperCase(); // Normalize to uppercase
+      console.log('Normalized role name:', roleName);
+
+      // Navigate based on role
+      switch (roleName) {
+        case 'ROLE_TRAINER':
+          console.log('Redirecting to trainer dashboard...');
+          router.push('/dashboard/trainer-admin');
+          break;
+        case 'ROLE_GYM':
+          console.log('Redirecting to gym dashboard...');
+          router.push('/dashboard/gym-admin');
+          break;
+        case 'ROLE_SUPER_ADMIN':
+          console.log('Redirecting to admin dashboard...');
+          router.push('/dashboard/super-admin');
+          break;
+        case 'ROLE_USER':
+          console.log('Redirecting to client dashboard...');
+          router.push('/dashboard/client-dashboard');
+          break;
+       
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('An unexpected error occurred');
+      if (error instanceof Error) {
+
+        toast.error('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -98,7 +89,7 @@ export default function ClientLoginPage() {
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 to-indigo-50">
       <Toaster position="top-right" />
-      
+
       {/* Left side - Image and Content */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 to-indigo-900/90 z-10" />
@@ -163,7 +154,7 @@ export default function ClientLoginPage() {
                 Access your personalized dashboard
               </p>
             </div>
-            
+
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -233,9 +224,8 @@ export default function ClientLoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-base font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
-                    loading ? 'opacity-75 cursor-not-allowed' : ''
-                  }`}
+                  className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-base font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${loading ? 'opacity-75 cursor-not-allowed' : ''
+                    }`}
                 >
                   {loading ? (
                     <>
@@ -260,7 +250,7 @@ export default function ClientLoginPage() {
                 <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
-{/* 
+            {/* 
             <div className="grid grid-cols-2 gap-3">
               <button className="flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-xl shadow-sm bg-white hover:bg-gray-50 transition-all duration-200">
                 <FiGithub className="w-5 h-5 text-gray-700" />

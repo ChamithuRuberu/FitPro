@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { getSession, logoutUser } from '@/actions';
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -578,47 +577,8 @@ export default function ClientDashboard() {
   };
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const session = await getSession();
-        console.log("Session data", session);
-        if (!session.success || !session.data?.data?.user) {
-          console.error('Invalid session data:', session);
-          toast.error('Please log in to access the dashboard');
-          router.push('/login');
-          return;
-        }
 
-        const userData = session.data.data.user;
-        const trainerData = session.data.data.trainer_obj;
-
-        // Update user data with the new response structure
-        setUserData({
-          email: userData.username,
-          fullName: userData.full_name,
-          city: '',  // Will be updated when available
-          status: userData.status,
-          mobile: userData.mobile,
-          govId: userData.nic,
-        });
-
-        // If there's trainer data, you can use it here
-        if (trainerData) {
-          console.log('Trainer data:', trainerData);
-          // Update any trainer-specific UI elements
-        }
-
-        await fetchTabData(activeTab);
-      } catch (error) {
-        console.error('Session check error:', error);
-        toast.error('Failed to load dashboard data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-  }, [router, activeTab]);
+  }, []);
 
   const fetchTabData = async (tab: string) => {
     try {
@@ -646,18 +606,7 @@ export default function ClientDashboard() {
   };
 
   const handleLogout = async () => {
-    try {
-      const result = await logoutUser();
-      if (result.success) {
-        toast.success('Logged out successfully');
-        router.push('/login');
-      } else {
-        toast.error('Failed to logout');
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to logout');
-    }
+   
   };
 
   // Add filter functions
@@ -709,13 +658,7 @@ export default function ClientDashboard() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -734,7 +677,7 @@ export default function ClientDashboard() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-             
+
               <button
                 onClick={handleLogout}
                 className="flex items-center px-4 py-2 text-sm font-medium text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
@@ -753,11 +696,10 @@ export default function ClientDashboard() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab as any)}
-                    className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                      activeTab === tab
+                    className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${activeTab === tab
                         ? 'bg-white text-blue-600 shadow-md'
                         : 'text-white hover:bg-white hover:bg-opacity-20'
-                    }`}
+                      }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </button>
@@ -765,9 +707,9 @@ export default function ClientDashboard() {
               </div>
               <div className="flex items-center space-x-3 bg-white bg-opacity-20 px-4 py-2 rounded-full">
                 <span className="text-white text-sm"> <div className="flex items-center space-x-2  bg-opacity-20 px-4 py-2 rounded-full">
-                <FiUser className="w-5 h-5 text-white" />
-                <span className="text-white font-medium">{userData?.fullName}</span>
-              </div></span>
+                  <FiUser className="w-5 h-5 text-white" />
+                  <span className="text-white font-medium">{userData?.fullName}</span>
+                </div></span>
                 <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium">
                   {userData?.status}
                 </span>
@@ -830,8 +772,8 @@ export default function ClientDashboard() {
                 </div>
                 <div className="mt-4">
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-blue-600 h-3 rounded-full transition-all duration-500" 
+                    <div
+                      className="bg-blue-600 h-3 rounded-full transition-all duration-500"
                       style={{ width: `${progressData?.attendanceRate}%` }}
                     ></div>
                   </div>
@@ -858,8 +800,8 @@ export default function ClientDashboard() {
                 </div>
                 <div className="mt-4">
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-green-600 h-3 rounded-full transition-all duration-500" 
+                    <div
+                      className="bg-green-600 h-3 rounded-full transition-all duration-500"
                       style={{ width: `${(sampleBodyMetrics[0].weight / sampleBodyMetrics[sampleBodyMetrics.length - 1].weight) * 100}%` }}
                     ></div>
                   </div>
@@ -1062,11 +1004,10 @@ export default function ClientDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-gray-900">${payment.amount}</p>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          payment.status === 'paid' ? 'bg-green-100 text-green-800' :
-                          payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${payment.status === 'paid' ? 'bg-green-100 text-green-800' :
+                            payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                          }`}>
                           {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                         </span>
                       </div>
@@ -1120,11 +1061,10 @@ export default function ClientDashboard() {
                               <span className="text-sm font-medium text-gray-900">{workout.duration}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className={`text-sm px-3 py-1 rounded-full ${
-                                workout.completed 
-                                  ? 'bg-green-100 text-green-800' 
+                              <span className={`text-sm px-3 py-1 rounded-full ${workout.completed
+                                  ? 'bg-green-100 text-green-800'
                                   : 'bg-blue-100 text-blue-800'
-                              }`}>
+                                }`}>
                                 {workout.completed ? 'Completed' : 'Upcoming'}
                               </span>
                               <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">

@@ -4,13 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiUser, FiLock, FiCalendar, FiMapPin, FiActivity, FiCheckCircle } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
-import { completeUserProfile, getSession } from '@/actions';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { completeUserProfile, getCookie } from '@/lib/api';
 
 interface RegisterUserFormData {
   username: string;
-  name: string;
   profile: string;
   full_name: string;
   birth_of_date: string;
@@ -30,125 +29,62 @@ interface RegisterUserFormData {
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<RegisterUserFormData>({
-    username: '',
-    name: '',
-    profile: 'default',
-    full_name: '',
-    birth_of_date: '',
-    address_no: '',
-    address_street: '',
-    city: '',
-    password: '',
-    postalCode: '',
-    role_type: 'ROLE_USER',
-    servicePeriod: '0',
-    weight: '',
-    height: '',
-    injuries: '',
-    trainerId: '499763' // Default trainer ID
+   const [formData, setFormData] = useState<RegisterUserFormData>({
+    username: "",
+    profile: "",
+    full_name: "",
+    birth_of_date: "",
+    address_no: "",
+    address_street: "",
+    city: "",
+    password: "",
+    postalCode: "",
+    role_type: "ROLE_USER",
+    servicePeriod: "",
+    weight: "",
+    height: "",
+    injuries: "",
+    trainerId: "",
   });
 
   useEffect(() => {
     const checkSession = async () => {
-      const session = await getSession();
-      console.log('User profile session:', session);
-      
-      const username = session.success && session.data?.data?.user?.username;
+      const username = await getCookie("username");
+      console.log('User profile session:', username);
+
       if (username) {
         setFormData(prev => ({
           ...prev,
           username,
-          role_type: 'ROLE_USER'
         }));
       } else {
         toast.error('Session not found');
         router.replace('/login');
       }
     };
-    
+
     checkSession();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
+    setLoading(true); // Set loading to true at the start
+  
     try {
-      // Validate required fields
-      const requiredFields = [
-        'username',
-        'full_name',
-        'birth_of_date',
-        'address_no',
-        'address_street',
-        'city',
-        'password',
-        'postalCode',
-        'weight',
-        'height'
-      ];
-
-      const missingFields = requiredFields.filter(field => !formData[field as keyof RegisterUserFormData]);
-      if (missingFields.length > 0) {
-        toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
-        setLoading(false);
-        return;
-      }
-
-      // Validate password
-      if (formData.password.length < 6) {
-        toast.error('Password must be at least 6 characters long');
-        setLoading(false);
-        return;
-      }
-
-      // Validate numeric fields
-      if (isNaN(Number(formData.weight)) || isNaN(Number(formData.height))) {
-        toast.error('Weight and height must be valid numbers');
-        setLoading(false);
-        return;
-      }
-
-      const requestData = {
-        username: formData.username.trim(),
-        name: formData.full_name.trim(),
-        profile: formData.profile,
-        full_name: formData.full_name.trim(),
-        birth_of_date: formData.birth_of_date,
-        address_no: formData.address_no.trim(),
-        address_street: formData.address_street.trim(),
-        city: formData.city.trim(),
-        password: formData.password,
-        postalCode: formData.postalCode.trim(),
-        role_type: formData.role_type,
-        servicePeriod: formData.servicePeriod,
-        weight: formData.weight,
-        height: formData.height,
-        injuries: formData.injuries?.trim() || "None",
-        trainerId: formData.trainerId
-      };
-
-      console.log('Submitting profile data:', requestData);
-      const result = await completeUserProfile(requestData);
-      console.log('Profile completion response:', result);
-
-      if (result.success && result.data) {
-        toast.success('Profile created successfully!');
-        // Wait a moment for the session to be updated
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await completeUserProfile(formData);
+      if (result.success) {
         router.replace('/dashboard/client-dashboard');
       } else {
-        console.error('Profile completion failed:', result);
         toast.error(result.message || 'Failed to create profile. Please try again.');
       }
     } catch (error) {
       console.error('Error:', error);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset loading to false
     }
   };
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -161,7 +97,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 to-indigo-50">
       <Toaster position="top-right" />
-      
+
       {/* Left side - Form */}
       <div className="flex-1 flex flex-col justify-center py-4 px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -196,27 +132,6 @@ export default function RegisterPage() {
               <form id="user-profile-form" className="space-y-4" onSubmit={handleSubmit}>
                 {/* Basic Info Section */}
                 <div className="space-y-4">
-                  <div>
-                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                      Username (Email)
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiUser className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        id="username"
-                        name="username"
-                        type="email"
-                        required
-                        disabled
-                        className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                       Password
@@ -454,9 +369,8 @@ export default function RegisterPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full flex justify-center items-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
-                      loading ? 'opacity-75 cursor-not-allowed' : ''
-                    }`}
+                    className={`w-full flex justify-center items-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${loading ? 'opacity-75 cursor-not-allowed' : ''
+                      }`}
                   >
                     {loading ? (
                       <>

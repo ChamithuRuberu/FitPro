@@ -11,7 +11,11 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     };
 
     try {
-        const response = await fetch(url, { ...options, headers });
+        const response = await fetch(url, { 
+            ...options, 
+            headers,
+            credentials: 'include', // Always include credentials
+        });
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -58,6 +62,7 @@ export async function initializeRegistration(formData: {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify(formData),
         });
 
@@ -95,6 +100,7 @@ export async function verifyOTP(verifyRequest: {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify(verifyRequest),
         });
         const result = await response.json();
@@ -136,6 +142,7 @@ export async function trainerProfile(trainerProfileRequest: {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify(trainerProfileRequest),
         });
         const result = await response.json();
@@ -144,7 +151,6 @@ export async function trainerProfile(trainerProfileRequest: {
             return { success: false, message: result.message || 'Trainer profile failed' };
         }
 
-        // Stringify the result data before setting it as a cookie
         await setCookie("signup_data", JSON.stringify(result));
         console.log("Trainer profile result ->", result);
 

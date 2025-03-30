@@ -487,7 +487,9 @@ interface WorkoutResponse {
 
 interface GroupedWorkouts {
   [programName: string]: {
-    [weekNumber: string]: WorkoutResponse[];
+    [weekNumber: string]: {
+      [day: string]: WorkoutResponse[];
+    };
   };
 }
 
@@ -657,93 +659,110 @@ export default function ClientDashboard() {
       return <div className="text-center py-4">No workouts found</div>;
     }
 
-    // Group workouts by program name and week number
-    const groupedWorkouts = workouts.reduce<GroupedWorkouts>((acc, workout) => {
+    // Group workouts by program name, week number, and day
+    const groupedWorkouts = workouts.reduce<{
+      [programName: string]: {
+        [weekNumber: string]: {
+          [day: string]: WorkoutResponse[];
+        };
+      };
+    }>((acc, workout) => {
       const programName = workout.historyInfo.programName;
       const weekNumber = workout.weekNumber.toString();
+      const day = workout.day;
       
       if (!acc[programName]) {
-        acc[programName] = {} as { [key: string]: WorkoutResponse[] };
+        acc[programName] = {};
       }
       if (!acc[programName][weekNumber]) {
-        acc[programName][weekNumber] = [];
+        acc[programName][weekNumber] = {};
+      }
+      if (!acc[programName][weekNumber][day]) {
+        acc[programName][weekNumber][day] = [];
       }
       
-      acc[programName][weekNumber].push(workout);
+      acc[programName][weekNumber][day].push(workout);
       return acc;
-    }, {} as GroupedWorkouts);
+    }, {});
+
+    // Order days of the week
+    const daysOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-4">
         {Object.entries(groupedWorkouts).map(([programName, weeks]) => (
-          <div key={programName} className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-900">{programName}</h3>
+          <div key={programName} className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">{programName}</h3>
+              <span className="text-sm text-gray-500">
+                {Object.values(weeks).reduce((total, days) => 
+                  total + Object.values(days).reduce((dayTotal, workouts) => dayTotal + workouts.length, 0), 0)} workouts
+              </span>
             </div>
-            <div className="p-6 space-y-6">
-              {Object.entries(weeks).map(([weekNumber, workouts]) => (
-                <div key={weekNumber} className="space-y-4">
-                  <h4 className="text-lg font-medium text-gray-900">Week {weekNumber}</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {workouts.map((workout: WorkoutResponse) => (
-                      <div key={workout.id} className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            workout.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                            workout.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {workout.status}
-                          </span>
-                          <span className="text-sm font-medium text-gray-600">
-                            {workout.day}
-                          </span>
-                        </div>
+            <div className="p-4">
+              {Object.entries(weeks).map(([weekNumber, days]) => (
+                <div key={weekNumber} className="mb-6 last:mb-0">
+                  <h4 className="text-md font-medium text-gray-700 mb-3">Week {weekNumber}</h4>
+                  <div className="space-y-4">
+                    {daysOrder.map(day => days[day] && (
+                      <div key={day} className="bg-gray-50 rounded-lg p-3">
+                        <h5 className="text-sm font-medium text-gray-700 mb-2">{day.charAt(0) + day.slice(1).toLowerCase()}</h5>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                          {days[day].map((workout: WorkoutResponse) => (
+                            <div key={workout.id} className="bg-white rounded p-3 hover:shadow-sm transition-shadow border border-gray-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  workout.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                                  workout.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {workout.status}
+                                </span>
+                                <span className="text-xs text-gray-500">{workout.scheduleInfo.duration} mins</span>
+                              </div>
 
-                        <div className="space-y-3">
-                          <div>
-                            <h5 className="font-medium text-gray-900">{workout.exerciseDetails.name}</h5>
-                            <p className="text-sm text-gray-600">{workout.focusArea.replace(/_/g, ' ')}</p>
-                          </div>
+                              <div className="flex flex-col space-y-2">
+                                <div>
+                                  <h5 className="font-medium text-gray-900 text-sm">{workout.exerciseDetails.name}</h5>
+                                  <p className="text-xs text-gray-600">{workout.focusArea.replace(/_/g, ' ')}</p>
+                                </div>
 
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="bg-white p-2 rounded">
-                              <span className="text-gray-600">Sets:</span>
-                              <span className="ml-2 font-medium">{workout.exerciseDetails.sets}</span>
-                            </div>
-                            <div className="bg-white p-2 rounded">
-                              <span className="text-gray-600">Reps:</span>
-                              <span className="ml-2 font-medium">{workout.exerciseDetails.reps}</span>
-                            </div>
-                            <div className="bg-white p-2 rounded">
-                              <span className="text-gray-600">Weight:</span>
-                              <span className="ml-2 font-medium">{workout.exerciseDetails.weight}</span>
-                            </div>
-                            <div className="bg-white p-2 rounded">
-                              <span className="text-gray-600">Equipment:</span>
-                              <span className="ml-2 font-medium">{workout.exerciseDetails.equipment}</span>
-                            </div>
-                          </div>
+                                <div className="grid grid-cols-4 gap-1 text-xs">
+                                  <div className="bg-gray-50 px-2 py-1 rounded text-center">
+                                    <span className="block text-gray-500">Sets</span>
+                                    <span className="font-medium">{workout.exerciseDetails.sets}</span>
+                                  </div>
+                                  <div className="bg-gray-50 px-2 py-1 rounded text-center">
+                                    <span className="block text-gray-500">Reps</span>
+                                    <span className="font-medium">{workout.exerciseDetails.reps}</span>
+                                  </div>
+                                  <div className="bg-gray-50 px-2 py-1 rounded text-center">
+                                    <span className="block text-gray-500">Weight</span>
+                                    <span className="font-medium">{workout.exerciseDetails.weight}</span>
+                                  </div>
+                                  <div className="bg-gray-50 px-2 py-1 rounded text-center">
+                                    <span className="block text-gray-500">Equipment</span>
+                                    <span className="font-medium truncate" title={workout.exerciseDetails.equipment}>
+                                      {workout.exerciseDetails.equipment}
+                                    </span>
+                                  </div>
+                                </div>
 
-                          <div className="bg-white p-3 rounded">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-600">Schedule:</span>
-                              <span className="font-medium">
-                                {workout.scheduleInfo.startDateTime} - {workout.scheduleInfo.endDateTime}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm mt-1">
-                              <span className="text-gray-600">Duration:</span>
-                              <span className="font-medium">{workout.scheduleInfo.duration} mins</span>
-                            </div>
-                          </div>
+                                <div className="flex justify-between items-center text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                                  <span>{new Date(workout.scheduleInfo.startDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                  <span>to</span>
+                                  <span>{new Date(workout.scheduleInfo.endDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                </div>
 
-                          {workout.notes.warmup && (
-                            <div className="bg-yellow-50 p-3 rounded text-sm">
-                              <p className="font-medium text-yellow-800">Warmup:</p>
-                              <p className="text-yellow-700">{workout.notes.warmup}</p>
+                                {workout.notes.warmup && (
+                                  <div className="text-xs bg-yellow-50 px-2 py-1 rounded">
+                                    <span className="font-medium text-yellow-800">Warmup:</span>
+                                    <span className="text-yellow-700 ml-1">{workout.notes.warmup}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
+                          ))}
                         </div>
                       </div>
                     ))}
@@ -1140,7 +1159,13 @@ export default function ClientDashboard() {
                   Calendar view coming soon
                 </div>
               </div>
+              
             </div>
+                {/* Add this where you want to display the workouts */}
+        <div className="mt-6">
+          <h2 className="text-2xl font-semibold mb-4">My Workouts</h2>
+          {renderWorkouts()}
+        </div>
           </div>
         )}
 
@@ -1597,12 +1622,6 @@ export default function ClientDashboard() {
             </div>
           </div>
         )}
-
-        {/* Add this where you want to display the workouts */}
-        <div className="mt-6">
-          <h2 className="text-2xl font-semibold mb-4">My Workouts</h2>
-          {renderWorkouts()}
-        </div>
       </main>
     </div>
   );

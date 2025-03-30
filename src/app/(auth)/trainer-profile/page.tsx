@@ -22,7 +22,7 @@ interface TrainerProfileFormData {
   username: string;
 }
 
-export default function TrainerProfilePage() {
+export default function TraxinerProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +52,6 @@ export default function TrainerProfilePage() {
           router.push('/login');
           return;
         }
-        
         setFormData(prev => ({
           ...prev,
           trainerId: trainerId,

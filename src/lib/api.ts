@@ -145,7 +145,12 @@ export async function trainerProfile(trainerProfileRequest: {
         }
 
         // Stringify the result data before setting it as a cookie
-        await setCookie("signup_data", JSON.stringify(result));
+        setCookie("trainerId", result.data.user.trainer_id);
+        setCookie("fullName", result.data.user.full_name);
+        setCookie("city", result.data.user.city);
+        setCookie("status", result.data.user.status);
+        setCookie("role_type", "ROLE_TRAINER");
+        setCookie("session", result.data.token);
         console.log("Trainer profile result ->", result);
 
         return {
@@ -681,3 +686,19 @@ export async function createAdvancedWorkout(workoutProgram: AdvancedWorkoutProgr
         };
     }
 }   
+
+export async function getWorkouts(trainerId: string) {
+    const token = await getCookie('session');
+    const response = await fetch(`${API_BASE_URL}/workout/get-workouts`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            trainId: trainerId
+        })
+    });
+    const result = await response.json();
+    return result;
+}

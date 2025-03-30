@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 import { ApexOptions } from 'apexcharts';
+import { getCookie, getWorkouts } from '@/lib/api';
 
 // Extend Window interface to include ApexCharts
 declare global {
@@ -177,6 +178,28 @@ interface BodyMetrics {
   weight: number;
   height: number;
   bmi: number;
+}
+
+// Add new interface for API workout data
+interface APIWorkout {
+  workoutId: string;
+  workoutName: string;
+  startDate: string;
+  endDate: string;
+  workouts: {
+    type: string;
+    day: string;
+    startTime: string;
+    duration: number;
+    exercises: {
+      name: string;
+      sets: number;
+      reps: number;
+      weight: string;
+      notes: string;
+    }[];
+    notes: string;
+  }[];
 }
 
 // Add sample data
@@ -597,6 +620,8 @@ export default function ClientDashboard() {
     mealType: 'all',
     sortBy: 'date',
   });
+  const [workouts, setWorkouts] = useState<APIWorkout[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -606,8 +631,37 @@ export default function ClientDashboard() {
     return 'Good Night';
   };
 
-  useEffect(() => {
+  const fetchWorkouts = async () => {
+    try {
+      const token = await getCookie('session');
+      const trainerId = await getCookie('trainerId');
 
+      if (!token || !trainerId) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await getWorkouts(trainerId);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch workouts');
+      }
+
+      const data = await response.json();
+      if (data.code === '0000') {
+        setWorkouts(data.data.workouts || []);
+      } else {
+        throw new Error(data.message || 'Failed to fetch workouts');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch workouts');
+      toast.error('Failed to load workouts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWorkouts();
   }, []);
 
   const fetchTabData = async (tab: string) => {
@@ -688,7 +742,45 @@ export default function ClientDashboard() {
     });
   };
 
-  
+  const renderWorkouts = () => {
+    if (loading) {
+      return <div className="text-center py-4">Loading workouts...</div>;
+    }
+
+    if (error) {
+      return <div className="text-red-500 text-center py-4">{error}</div>;
+    }
+
+    if (!workouts.length) {
+      return <div className="text-center py-4">No workouts found</div>;
+    }
+
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {workouts.map((workout) => (
+          <div key={workout.workoutId} className="bg-white rounded-lg shadow-md p-4">
+            <h3 className="text-lg font-semibold mb-2">{workout.workoutName}</h3>
+            <div className="text-sm text-gray-600">
+              <p>Start Date: {new Date(workout.startDate).toLocaleDateString()}</p>
+              <p>End Date: {new Date(workout.endDate).toLocaleDateString()}</p>
+            </div>
+            <div className="mt-4">
+              <h4 className="font-medium mb-2">Workout Sessions:</h4>
+              {workout.workouts.map((session, index) => (
+                <div key={index} className="border-t pt-2 mt-2">
+                  <p className="font-medium">{session.type} - {session.day}</p>
+                  <p className="text-sm text-gray-600">
+                    Time: {session.startTime} ({session.duration} minutes)
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">{session.notes}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1732,6 +1824,12 @@ export default function ClientDashboard() {
             </div>
           </div>
         )}
+
+        {/* Add this where you want to display the workouts */}
+        <div className="mt-6">
+          <h2 className="text-2xl font-semibold mb-4">My Workouts</h2>
+          {renderWorkouts()}
+        </div>
       </main>
     </div>
   );

@@ -39,6 +39,10 @@ export async function getCookie(key: string): Promise<string | null> {
     return cookies().get(key)?.value || null;
 }
 
+export async function removeCookie(key: string) {
+    cookies().delete(key);
+}
+
 
 export async function initializeRegistration(formData: {
     nic: string;
@@ -183,6 +187,11 @@ export async function userLogin(loginRequest: {
         // Store session data in cookie if provided
         if (result.data?.token) {
             await setCookie("session", result.data.token);
+            await setCookie("refresh_token", result.data.refresh_token);
+            await setCookie("trainerId", result.data.user.gov_id?.toString() || '');
+            await setCookie("fullName", result.data.user.full_name || '');
+            await setCookie("city", result.data.user.city || '');
+            await setCookie("status", result.data.user.status || '');
         }
 
         return {
@@ -226,7 +235,7 @@ export async function completeUserProfile(formData: {
             },
             body: JSON.stringify({
                 ...formData,
-                password: btoa(formData.password), // Example: Encode password before sending
+                // password: btoa(formData.password), // Example: Encode password before sending
             }),
         });
 
@@ -288,3 +297,387 @@ export async function registerGym(gymForm: {
         return { success: false, message: 'Gym registration failed' };
     }
 }
+
+export async function getTrainerClients() {
+    try {
+        const token = await getCookie('session');
+
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required'
+            };
+        }
+
+        const response = await fetch(`${API_BASE_URL}/trainer/get-clients`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({})
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to fetch clients'
+            };
+        }
+
+        // Check if the response has the expected structure
+        if (result.code === "0000" && result.data && result.data.clients) {
+            return {
+                success: true,
+                data: result.data
+            };
+        }
+
+        return {
+            success: false,
+            message: 'Invalid response format'
+        };
+    } catch (error) {
+        console.error('Get trainer clients error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to fetch clients'
+        };
+    }
+}
+
+export async function addClientToTrainer(clientData: {
+    name: string;
+    email: string;
+    phone?: string;
+    age?: string;
+    weight?: string;
+    height?: string;
+    goal?: string;
+    medicalHistory?: string;
+    experience?: string;
+}) {
+    try {
+        const token = await getCookie('session');
+
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required'
+            };
+        }
+
+        const response = await fetch(`${API_BASE_URL}/trainer/add-client`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(clientData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to add client'
+            };
+        }
+
+        // Check if the response has the expected success code
+        if (result.code === "0000" && result.data) {
+            return {
+                success: true,
+                data: result.data
+            };
+        }
+
+        return {
+            success: false,
+            message: result.message || 'Failed to add client'
+        };
+    } catch (error) {
+        console.error('Add client error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to add client'
+        };
+    }
+}
+
+export async function toggleClientStatus(clientId: string, status: 'ACTIVE' | 'INACTIVE') {
+    try {
+        const token = await getCookie('session');
+
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required'
+            };
+        }
+
+        const response = await fetch(`${API_BASE_URL}/trainer/update-client-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                clientId,
+                status
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || `Failed to update client status`
+            };
+        }
+
+        // Check if the response has the expected success code
+        if (result.code === "0000") {
+            return {
+                success: true,
+                data: result.data
+            };
+        }
+
+        return {
+            success: false,
+            message: result.message || 'Failed to update client status'
+        };
+    } catch (error) {
+        console.error('Toggle client status error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to update client status'
+        };
+    }
+}
+
+export async function getTrainerList() {
+    try {
+
+        const response = await fetch(`${API_BASE_URL}/trainer/get-all-trainers`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to fetch trainers'
+            };
+        }
+        return {
+            success: true,
+            data: result.data
+        };
+    } catch (error) {
+        console.error('Get trainer list error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to fetch trainers'
+        };
+    }
+}
+
+export interface Exercise {
+    name: string;
+    sets: number;
+    reps: number;
+    weight: string;
+    notes: string;
+}
+
+export interface WorkoutSession {
+    type: string;
+    day: string;
+    startTime: string;
+    duration: number;
+    exercises: Exercise[];
+    notes: string;
+}
+
+export interface WorkoutPlan {
+    clientId: string;
+    workoutName: string;
+    startDate: string;
+    endDate: string;
+    workouts: WorkoutSession[];
+}
+
+export async function createWorkout(workoutPlan: WorkoutPlan) {
+    try {
+        const token = await getCookie('session');
+
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required'
+            };
+        }
+
+        const response = await fetch(`${API_BASE_URL}/workout/create-workouts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(workoutPlan)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to create workout plan'
+            };
+        }
+
+        return {
+            success: true,
+            data: result.data
+        };
+    } catch (error) {
+        console.error('Create workout error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to create workout plan'
+        };
+    }
+}
+
+export interface ExerciseDetails {
+    name: string;
+    sets: number;
+    reps: number;
+    weight: string;
+    equipment: string;
+    targetMuscles: string;
+    notes: string;
+    restBetweenSets: string;
+    tempo?: string;
+    isDropSet?: boolean;
+    isSuperSet?: boolean;
+    superSetGroup?: string;
+    progressionStrategy: string;
+}
+
+export interface WorkoutDay {
+    day: string;
+    focusArea: string;
+    startTime: string;
+    duration: number;
+    intensity: 'LOW' | 'MEDIUM' | 'HIGH';
+    warmupNotes?: string;
+    cooldownNotes?: string;
+    generalNotes?: string;
+    exercises: ExerciseDetails[];
+    isRestDay?: boolean;
+}
+
+export interface WorkoutWeek {
+    weekNumber: number;
+    weeklyGoal: string;
+    notes: string;
+    workoutDays: WorkoutDay[];
+}
+
+export interface AdvancedWorkoutProgram {
+    clientId: string;
+    programName: string;
+    programDescription: string;
+    startDate: string;
+    endDate: string;
+    difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+    goal: 'WEIGHT_LOSS' | 'STRENGTH_AND_HYPERTROPHY' | 'ENDURANCE' | 'FLEXIBILITY' | 'GENERAL_FITNESS';
+    weeks: WorkoutWeek[];
+}
+
+export async function createAdvancedWorkout(workoutProgram: AdvancedWorkoutProgram) {
+    try {
+        const token = await getCookie('session');
+
+        if (!token) {
+            console.log('Authentication failed: No token found');
+            return {
+                success: false,
+                message: 'Authentication required'
+            };
+        }
+
+        console.log('Creating advanced workout program:', {
+            programName: workoutProgram.programName,
+            clientId: workoutProgram.clientId,
+            weeks: workoutProgram.weeks.length,
+            startDate: workoutProgram.startDate,
+            endDate: workoutProgram.endDate
+        });
+
+        const response = await fetch(`${API_BASE_URL}/workout/create-workouts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(workoutProgram)
+        });
+
+        const result = await response.json();
+        
+        console.log('Server response:', {
+            status: response.status,
+            ok: response.ok,
+            result
+        });
+
+        if (!response.ok) {
+            console.error('Failed to create workout:', {
+                status: response.status,
+                error: result.message || 'Unknown error'
+            });
+            return {
+                success: false,
+                message: result.message || 'Failed to create advanced workout program'
+            };
+        }
+
+        console.log('Successfully created workout program:', {
+            programName: workoutProgram.programName,
+            clientId: workoutProgram.clientId,
+            responseData: result.data
+        });
+
+        return {
+            success: true,
+            data: result.data
+        };
+    } catch (error) {
+        console.error('Create advanced workout error:', {
+            error,
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            workoutProgram: {
+                programName: workoutProgram.programName,
+                clientId: workoutProgram.clientId
+            }
+        });
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to create advanced workout program'
+        };
+    }
+}   

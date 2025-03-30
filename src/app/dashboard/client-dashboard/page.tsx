@@ -6,8 +6,38 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
+import { ApexOptions } from 'apexcharts';
 
-const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
+// Extend Window interface to include ApexCharts
+declare global {
+  interface Window {
+    ApexCharts: any;
+  }
+}
+
+// Create a client-side only wrapper for ApexCharts
+const ApexChartsWrapper = dynamic(
+  () => import('react-apexcharts').then((mod) => {
+    // Force ApexCharts to be available globally for SSR
+    if (typeof window !== 'undefined') {
+      window.ApexCharts = require('apexcharts');
+    }
+    return mod;
+  }),
+  { ssr: false }
+);
+
+// Create a Chart component that uses the wrapper with proper types
+interface ChartProps {
+  type: 'line' | 'area' | 'bar' | 'pie' | 'donut' | 'scatter' | 'bubble';
+  width: number;
+  series: any[];
+  options: ApexOptions;
+}
+
+const Chart = ({ type, width, series, options }: ChartProps) => {
+  return <ApexChartsWrapper type={type} width={width} series={series} options={options} />;
+};
 
 interface UserData {
   email: string;

@@ -253,22 +253,7 @@ const sampleSupplements: Supplement[] = [
     benefits: ['Muscle recovery', 'Protein synthesis', 'Weight management'],
     recommended: true,
   },
-  {
-    id: 2,
-    name: 'BCAA',
-    timing: 'During workout',
-    dosage: '5g with water',
-    benefits: ['Muscle preservation', 'Energy boost', 'Recovery'],
-    recommended: true,
-  },
-  {
-    id: 3,
-    name: 'Creatine',
-    timing: 'Pre-workout',
-    dosage: '5g with water',
-    benefits: ['Strength increase', 'Muscle growth', 'Performance'],
-    recommended: false,
-  },
+  
 ];
 
 
@@ -308,56 +293,7 @@ const sampleMealPlan: MealPlan[] = [
           { name: 'Almonds', portion: '1 oz', calories: 164 },
         ],
       },
-      {
-        type: 'Lunch',
-        time: '12:30 PM',
-        foods: [
-          { name: 'Grilled Chicken', portion: '200g', calories: 330 },
-          { name: 'Brown Rice', portion: '1 cup', calories: 216 },
-          { name: 'Mixed Vegetables', portion: '1 cup', calories: 100 },
-        ],
-      },
-      {
-        type: 'Dinner',
-        time: '07:00 PM',
-        foods: [
-          { name: 'Salmon', portion: '200g', calories: 412 },
-          { name: 'Sweet Potato', portion: '1 medium', calories: 103 },
-          { name: 'Broccoli', portion: '1 cup', calories: 55 },
-        ],
-      },
-    ],
-  },
-  {
-    day: 'Tuesday',
-    meals: [
-      {
-        type: 'Breakfast',
-        time: '07:00 AM',
-        foods: [
-          { name: 'Greek Yogurt', portion: '1 cup', calories: 133 },
-          { name: 'Granola', portion: '1/2 cup', calories: 200 },
-          { name: 'Honey', portion: '1 tbsp', calories: 64 },
-        ],
-      },
-      {
-        type: 'Lunch',
-        time: '12:30 PM',
-        foods: [
-          { name: 'Tuna Salad', portion: '200g', calories: 280 },
-          { name: 'Whole Grain Bread', portion: '2 slices', calories: 160 },
-          { name: 'Apple', portion: '1 medium', calories: 95 },
-        ],
-      },
-      {
-        type: 'Dinner',
-        time: '07:00 PM',
-        foods: [
-          { name: 'Lean Beef', portion: '200g', calories: 340 },
-          { name: 'Quinoa', portion: '1 cup', calories: 222 },
-          { name: 'Green Salad', portion: '2 cups', calories: 50 },
-        ],
-      },
+      
     ],
   },
 ];
@@ -441,71 +377,7 @@ const sampleMealHistory: MealHistory[] = [
     totalCalories: 702,
     notes: 'Followed meal plan exactly',
   },
-  {
-    date: '2024-02-15',
-    mealType: 'Lunch',
-    time: '12:30 PM',
-    foods: [
-      { name: 'Grilled Chicken', portion: '200g', calories: 330 },
-      { name: 'Brown Rice', portion: '1 cup', calories: 216 },
-      { name: 'Mixed Vegetables', portion: '1 cup', calories: 100 },
-      { name: 'Olive Oil', portion: '1 tbsp', calories: 120 },
-    ],
-    totalCalories: 766,
-    notes: 'Added extra vegetables',
-  },
-  {
-    date: '2024-02-15',
-    mealType: 'Dinner',
-    time: '07:00 PM',
-    foods: [
-      { name: 'Salmon', portion: '200g', calories: 412 },
-      { name: 'Sweet Potato', portion: '1 medium', calories: 103 },
-      { name: 'Broccoli', portion: '1 cup', calories: 55 },
-      { name: 'Quinoa', portion: '1 cup', calories: 222 },
-    ],
-    totalCalories: 792,
-    notes: 'Post-workout meal',
-  },
-  {
-    date: '2024-02-14',
-    mealType: 'Breakfast',
-    time: '07:00 AM',
-    foods: [
-      { name: 'Protein Smoothie', portion: '1 serving', calories: 250 },
-      { name: 'Whole Grain Toast', portion: '2 slices', calories: 160 },
-      { name: 'Peanut Butter', portion: '2 tbsp', calories: 190 },
-      { name: 'Apple', portion: '1 medium', calories: 95 },
-    ],
-    totalCalories: 695,
-    notes: 'Pre-workout breakfast',
-  },
-  {
-    date: '2024-02-14',
-    mealType: 'Lunch',
-    time: '12:30 PM',
-    foods: [
-      { name: 'Tuna Salad', portion: '200g', calories: 280 },
-      { name: 'Whole Grain Bread', portion: '2 slices', calories: 160 },
-      { name: 'Mixed Greens', portion: '2 cups', calories: 50 },
-      { name: 'Avocado', portion: '1/2', calories: 160 },
-    ],
-    totalCalories: 650,
-    notes: 'Healthy lunch with good fats',
-  },
-  {
-    date: '2024-02-14',
-    mealType: 'Dinner',
-    time: '07:00 PM',
-    foods: [
-      { name: 'Lean Beef', portion: '200g', calories: 340 },
-      { name: 'Quinoa', portion: '1 cup', calories: 222 },
-      { name: 'Green Salad', portion: '2 cups', calories: 50 },
-      { name: 'Balsamic Dressing', portion: '2 tbsp', calories: 60 },
-    ],
-    totalCalories: 672,
-    notes: 'Balanced dinner with protein',
-  },
+  
 ];
 
 // Add sample data for new components

@@ -631,38 +631,48 @@ export default function ClientDashboard() {
     return 'Good Night';
   };
 
-  const fetchWorkouts = async () => {
-    try {
-      const token = await getCookie('session');
-      const trainerId = await getCookie('trainerId');
-
-      if (!token || !trainerId) {
-        throw new Error('Authentication required');
-      }
-
-      const response = await getWorkouts(trainerId);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch workouts');
-      }
-
-      const data = await response.json();
-      if (data.code === '0000') {
-        setWorkouts(data.data.workouts || []);
-      } else {
-        throw new Error(data.message || 'Failed to fetch workouts');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch workouts');
-      toast.error('Failed to load workouts');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchWorkouts();
-  }, []);
+    const fetchUserData = async () => {
+      try {
+        const trainerId = await getCookie('trainerId');
+        const fullName = await getCookie('fullName');
+        const city = await getCookie('city');
+        const status = await getCookie('status');
+
+        if (!trainerId) {
+          router.push('/login');
+          return;
+        }
+
+        setUserData({
+          email: '',
+          mobile: '',
+          govId: trainerId,
+          fullName: fullName || '',
+          city: city || '',
+          status: status || ''
+        });
+
+        // Fetch workouts for the client
+        const workoutsResult = await getWorkouts(trainerId);
+        if (workoutsResult.success && workoutsResult.data) {
+          setWorkouts(workoutsResult.data.workouts || []);
+        } else {
+          setError(workoutsResult.message || 'Failed to fetch workouts');
+          toast.error(workoutsResult.message || 'Failed to fetch workouts');
+        }
+
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load user data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [router]);
 
   const fetchTabData = async (tab: string) => {
     try {
@@ -690,7 +700,7 @@ export default function ClientDashboard() {
   };
 
   const handleLogout = async () => {
-   
+
   };
 
   // Add filter functions
@@ -819,8 +829,8 @@ export default function ClientDashboard() {
                     key={tab}
                     onClick={() => setActiveTab(tab as any)}
                     className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${activeTab === tab
-                        ? 'bg-white text-blue-600 shadow-md'
-                        : 'text-white hover:bg-white hover:bg-opacity-20'
+                      ? 'bg-white text-blue-600 shadow-md'
+                      : 'text-white hover:bg-white hover:bg-opacity-20'
                       }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -1127,8 +1137,8 @@ export default function ClientDashboard() {
                       <div className="text-right">
                         <p className="font-medium text-gray-900">${payment.amount}</p>
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${payment.status === 'paid' ? 'bg-green-100 text-green-800' :
-                            payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
+                          payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
                           }`}>
                           {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                         </span>
@@ -1184,8 +1194,8 @@ export default function ClientDashboard() {
                             </div>
                             <div className="flex items-center justify-between">
                               <span className={`text-sm px-3 py-1 rounded-full ${workout.completed
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-blue-100 text-blue-800'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-blue-100 text-blue-800'
                                 }`}>
                                 {workout.completed ? 'Completed' : 'Upcoming'}
                               </span>

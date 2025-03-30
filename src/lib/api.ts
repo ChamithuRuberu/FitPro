@@ -250,7 +250,12 @@ export async function completeUserProfile(formData: {
         if (!response.ok) {
             throw new Error(result.message || 'Profile completion failed');
         }
-
+        setCookie("trainerId", result.data.user.trainer_id);
+        setCookie("fullName", result.data.user.full_name);
+        setCookie("city", result.data.user.city);
+        setCookie("status", result.data.user.status);
+        setCookie("role_type", "ROLE_USER");
+        setCookie("session", result.data.token);
         return {
             success: true,
             message: result.message,
@@ -688,17 +693,52 @@ export async function createAdvancedWorkout(workoutProgram: AdvancedWorkoutProgr
 }   
 
 export async function getWorkouts(trainerId: string) {
-    const token = await getCookie('session');
-    const response = await fetch(`${API_BASE_URL}/workout/get-workouts`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-            trainId: trainerId
-        })
-    });
-    const result = await response.json();
-    return result;
+    try {
+        const token = await getCookie('session');
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required',
+                code: "0001"
+            };
+        }
+
+        const response = await fetch(`${API_BASE_URL}/workout/get-workouts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                trainId: trainerId
+            })
+        });
+
+        if (!response.ok) {
+            console.log("Get workouts error ->", response);
+            const errorData = await response.json().catch(() => ({}));
+            return {
+                success: false,
+                message: errorData.message || `Failed to fetch workouts: ${response.status}`,
+                code: errorData.code || "0001"
+            };
+        }
+
+        const result = await response.json();
+        console.log("Get workouts result ->", result);
+        
+        return {
+            success: true,
+            data: result.data || {},
+            code: result.code || "0000",
+            message: result.message || "Success"
+        };
+    } catch (error) {
+        console.error('Error fetching workouts:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to fetch workouts',
+            code: "0001"
+        };
+    }
 }

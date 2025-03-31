@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["https://fiitproo.netlify.app/", "localhost:4100", "*"],
+    },
+  },
   async rewrites() {
     return [
       {

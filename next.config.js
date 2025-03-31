@@ -8,6 +8,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["https://fiitproo.netlify.app/", "localhost:4100", "*"],
+    },
+  },
   async rewrites() {
     if (process.env.NODE_ENV === 'development') {
       return [

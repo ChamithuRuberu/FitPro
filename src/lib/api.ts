@@ -5,9 +5,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}/${endpoint}`;
-    console.log("url ->", url);
-    console.log("options ->", options);
-    console.log("API_BASE_URL ->", API_BASE_URL);
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -173,6 +170,7 @@ export async function userLogin(loginRequest: {
     password: string;
 }) {
     try {
+        console.log("User login request ->", loginRequest);
         const response = await fetch(`${API_BASE_URL}/user/login`, {
             method: 'POST',
             headers: {

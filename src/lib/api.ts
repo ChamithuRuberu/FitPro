@@ -5,6 +5,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}/${endpoint}`;
+    console.log("url ->", url);
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,

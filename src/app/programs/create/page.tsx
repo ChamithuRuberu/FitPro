@@ -192,7 +192,7 @@ export default function CreateProgramPage() {
                                 {emojis[Math.min(emojis.length - 1, Math.floor((progress / 100) * emojis.length))]}
                             </div>
                             <div className="text-5xl mb-6 animate-pulse" style={{ animationDuration: '2s' }}>
-                                {requestBody.gender === 'male' ? '💪' : '✨'}
+                                {/* {requestBody.gender === 'male' ? '💪' : '✨'} */}
                             </div>
                         </div>
 

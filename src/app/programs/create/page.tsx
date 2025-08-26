@@ -1,10 +1,12 @@
 'use client';
 
+import Navbar from '@/components/Navbar';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-
+import { FiTarget, FiBook, FiTrendingUp, FiSearch, FiFilter } from 'react-icons/fi';
 
 export default function CreateProgramPage() {
+    const [activeTab, setActiveTab] = useState<'assessment' | 'nutrition' | 'exercise'>('assessment');
     const [requestBody, setRequestBody] = useState({
         age: 0,
         gender: 'male' as 'male' | 'female' | 'other',
@@ -32,6 +34,8 @@ export default function CreateProgramPage() {
         'Almost ready! Preparing your results...'
     ];
     const [loadingMsg, setLoadingMsg] = useState<string>(loadingMessages[0]);
+
+
 
     useEffect(() => {
         const saved = typeof window !== 'undefined' ? localStorage.getItem('programFormData') : null;
@@ -62,6 +66,13 @@ export default function CreateProgramPage() {
         }
         return () => { document.body.style.overflow = ''; };
     }, [view]);
+
+    // Switch back to assessment tab if user is on nutrition/exercise tab but no assessment data
+    useEffect(() => {
+        if (!assessment && (activeTab === 'nutrition' || activeTab === 'exercise')) {
+            setActiveTab('assessment');
+        }
+    }, [assessment, activeTab]);
 
     const submitAssessment = async (payload: any) => {
         try {
@@ -95,7 +106,6 @@ export default function CreateProgramPage() {
                         setAssessment(apiData);
                         setLoading(false);
                         setView('results');
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     }, 800);
                 }
             }, interval);
@@ -128,7 +138,6 @@ export default function CreateProgramPage() {
                         setAssessment(apiData);
                         setLoading(false);
                         setView('results');
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     }, 800);
                 }
 
@@ -150,7 +159,344 @@ export default function CreateProgramPage() {
         ? ['🏋️‍♀️','💃','🏃‍♀️','🚴‍♀️','🏊‍♀️','✨','🌟']
         : ['🏋️‍♂️','💪','🏃‍♂️','🚴‍♂️','🏊‍♂️','⚡','🔥'];
 
+    const tabs = [
+        { id: 'assessment', name: 'Assessment', icon: FiTarget, description: 'Get personalized recommendations' },
+        { id: 'nutrition', name: 'Nutrition Recommendations', icon: FiBook, description: 'Browse nutrition plans' },
+        { id: 'exercise', name: 'Exercise Recommendations', icon: FiTrendingUp, description: 'View exercise plans' },
+    ];
+
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case 'assessment':
+                return (
+
+                    <div className="space-y-4">
+                        
+                        {view === 'form' && (
+                            <div className="rounded-xl p-0 mb-0">
+
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-semibold text-gray-900">Comprehensive Assessment</h2>
+                                </div>
+
+                                <form
+                                    className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded mb-4"
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        submitAssessment(requestBody);
+                                    }}
+                                >
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">Age</label>
+                                        <input type="number" value={requestBody.age}
+                                               onChange={(e) => setRequestBody({ ...requestBody, age: Number(e.target.value) })}
+                                               className="w-full border rounded px-3 py-2 text-sm" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">Gender</label>
+                                        <select value={requestBody.gender}
+                                                onChange={(e) => setRequestBody({ ...requestBody, gender: e.target.value as any })}
+                                                className="w-full border rounded px-3 py-2 text-sm">
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">Height (cm)</label>
+                                        <input type="number" value={requestBody.height_cm}
+                                               onChange={(e) => setRequestBody({ ...requestBody, height_cm: Number(e.target.value) })}
+                                               className="w-full border rounded px-3 py-2 text-sm" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">Weight (kg)</label>
+                                        <input type="number" value={requestBody.weight_kg}
+                                               onChange={(e) => setRequestBody({ ...requestBody, weight_kg: Number(e.target.value) })}
+                                               className="w-full border rounded px-3 py-2 text-sm" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">Activity Level</label>
+                                        <select value={requestBody.activity_level}
+                                                onChange={(e) => setRequestBody({ ...requestBody, activity_level: e.target.value as any })}
+                                                className="w-full border rounded px-3 py-2 text-sm">
+                                            <option value="sedentary">Sedentary</option>
+                                            <option value="light">Light</option>
+                                            <option value="moderate">Moderate</option>
+                                            <option value="active">Active</option>
+                                            <option value="very_active">Very Active</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">Fitness Goal</label>
+                                        <select value={requestBody.fitness_goal}
+                                                onChange={(e) => setRequestBody({ ...requestBody, fitness_goal: e.target.value as any })}
+                                                className="w-full border rounded px-3 py-2 text-sm">
+                                            <option value="maintenance">Maintenance</option>
+                                            <option value="weight-loss">Weight Loss</option>
+                                            <option value="muscle-gain">Muscle Gain</option>
+                                            <option value="endurance">Endurance</option>
+                                            <option value="flexibility">Flexibility</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input id="has_diabetes" type="checkbox" checked={requestBody.has_diabetes}
+                                               onChange={(e) => setRequestBody({ ...requestBody, has_diabetes: e.target.checked })}
+                                               className="h-4 w-4" />
+                                        <label htmlFor="has_diabetes" className="text-sm text-gray-700">Has Diabetes</label>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input id="has_hypertension" type="checkbox" checked={requestBody.has_hypertension}
+                                               onChange={(e) => setRequestBody({ ...requestBody, has_hypertension: e.target.checked })}
+                                               className="h-4 w-4" />
+                                        <label htmlFor="has_hypertension" className="text-sm text-gray-700">Has Hypertension</label>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input id="is_vegetarian" type="checkbox" checked={requestBody.is_vegetarian}
+                                               onChange={(e) => setRequestBody({ ...requestBody, is_vegetarian: e.target.checked })}
+                                               className="h-4 w-4" />
+                                        <label htmlFor="is_vegetarian" className="text-sm text-gray-700">Vegetarian</label>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">Spice Tolerance</label>
+                                        <select value={requestBody.spice_tolerance}
+                                                onChange={(e) => setRequestBody({ ...requestBody, spice_tolerance: e.target.value as any })}
+                                                className="w-full border rounded px-3 py-2 text-sm">
+                                            <option value="low">Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </div>
+                                    <div className="md:col-span-2 flex justify-end">
+                                        <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                                            Let's go!   
+                                        </button>
+                                    </div>
+                                </form>
+
+                                {error && (
+                                    <div className="text-sm text-red-600">{error}</div>
+                                )}
+                            </div>
+                        )}
+
+                        {view === 'results' && assessment && (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-2xl font-bold text-gray-900">Assessment Results</h2>
+                                    <button
+                                        onClick={() => { setAssessment(null); setView('form'); }}
+                                        className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
+                                    >
+                                        New Assessment
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div className="p-3 bg-gray-50 rounded">
+                                        <p className="text-xs text-gray-500">BMI</p>
+                                        <p className="font-semibold">{assessment.health_metrics?.bmi}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-50 rounded">
+                                        <p className="text-xs text-gray-500">BMI Category</p>
+                                        <p className="font-semibold">{assessment.health_metrics?.bmi_category}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-50 rounded">
+                                        <p className="text-xs text-gray-500">Body Fat %</p>
+                                        <p className="font-semibold">{assessment.health_metrics?.body_fat_percentage}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-50 rounded">
+                                        <p className="text-xs text-gray-500">BMR</p>
+                                        <p className="font-semibold">{assessment.health_metrics?.bmr}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-50 rounded">
+                                        <p className="text-xs text-gray-500">TDEE</p>
+                                        <p className="font-semibold">{assessment.health_metrics?.tdee}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-50 rounded">
+                                        <p className="text-xs text-gray-500">Water Intake (ml)</p>
+                                        <p className="font-semibold">{assessment.health_metrics?.water_intake_ml}</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <h3 className="font-medium text-blue-900 mb-2">View Detailed Recommendations</h3>
+                                    <p className="text-sm text-blue-700 mb-3">
+                                        Your assessment is complete! Use the tabs above to view detailed nutrition and exercise recommendations.
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setActiveTab('nutrition')}
+                                            className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
+                                        >
+                                            View Nutrition
+                                        </button>
+                                        <button 
+                                            onClick={() => setActiveTab('exercise')}
+                                            className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
+                                        >
+                                            View Exercises
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+
+            case 'nutrition':
+                return (
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-bold text-gray-900">Nutrition Recommendations</h2>
+                            <div className="flex gap-2">
+                                <div className="relative">
+                                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search nutrition items..."
+                                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                                <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    <FiFilter className="w-5 h-5 text-gray-600" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {assessment && assessment.nutrition_recommendations ? (
+                            <div className="space-y-4">
+                                {assessment.nutrition_recommendations.map((item: any, idx: number) => (
+                                    <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
+                                                    <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                                        {item.category}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-gray-600 mb-3">{item.source}</p>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div className="text-center">
+                                                        <div className="text-lg font-bold text-blue-600">{item.calories}</div>
+                                                        <div className="text-xs text-gray-500">Calories</div>
+                                                    </div>
+                                                    {item.protein !== undefined && (
+                                                        <div className="text-center">
+                                                            <div className="text-lg font-bold text-green-600">{item.protein}g</div>
+                                                            <div className="text-xs text-gray-500">Protein</div>
+                                                        </div>
+                                                    )}
+                                                    {item.carbs !== undefined && (
+                                                        <div className="text-center">
+                                                            <div className="text-lg font-bold text-orange-600">{item.carbs}g</div>
+                                                            <div className="text-xs text-gray-500">Carbs</div>
+                                                        </div>
+                                                    )}
+                                                    {item.fat !== undefined && (
+                                                        <div className="text-center">
+                                                            <div className="text-lg font-bold text-red-600">{item.fat}g</div>
+                                                            <div className="text-xs text-gray-500">Fat</div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="text-6xl mb-4">🥗</div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Nutrition Data Available</h3>
+                                <p className="text-gray-600">Complete an assessment first to see personalized nutrition recommendations.</p>
+                            </div>
+                        )}
+                    </div>
+                );
+
+            case 'exercise':
+                return (
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-bold text-gray-900">Exercise Recommendations</h2>
+                            <div className="flex gap-2">
+                                <div className="relative">
+                                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search exercises..."
+                                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                                <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    <FiFilter className="w-5 h-5 text-gray-600" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {assessment && assessment.exercise_recommendations ? (
+                            <div className="space-y-4">
+                                {assessment.exercise_recommendations.map((ex: any, idx: number) => (
+                                    <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <h3 className="text-lg font-semibold text-gray-900">{ex.name}</h3>
+                                                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                                                        {ex.category}
+                                                    </span>
+                                                    <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">
+                                                        {ex.intensity}
+                                                    </span>
+                                                </div>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                                    <div className="text-center">
+                                                        <div className="text-lg font-bold text-purple-600">{ex.duration_min} min</div>
+                                                        <div className="text-xs text-gray-500">Duration</div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="text-lg font-bold text-green-600">~{ex.calories_per_min}</div>
+                                                        <div className="text-xs text-gray-500">kcal/min</div>
+                                                    </div>
+                                                    {ex.equipment && (
+                                                        <div className="text-center">
+                                                            <div className="text-lg font-bold text-blue-600">{ex.equipment}</div>
+                                                            <div className="text-xs text-gray-500">Equipment</div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {ex.instructions && (
+                                                    <div className="bg-gray-50 rounded-lg p-4">
+                                                        <h4 className="font-medium text-gray-900 mb-2">Instructions</h4>
+                                                        <p className="text-sm text-gray-700">{ex.instructions}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="text-6xl mb-4">🏋️‍♂️</div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Exercise Data Available</h3>
+                                <p className="text-gray-600">Complete an assessment first to see personalized exercise recommendations.</p>
+                            </div>
+                        )}
+                    </div>
+                );
+
+
+
+            default:
+                return null;
+        }
+    };
+
     return (
+        <>
+        <Navbar />
         <div className="min-h-screen bg-gray-50 py-8 relative">
             {/* Loading full-screen view */}
             {view === 'loading' && (
@@ -248,206 +594,53 @@ export default function CreateProgramPage() {
                 </div>
             )}
 
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Create Workout Program</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">Fitness Programs</h1>
                     <p className="mt-2 text-lg text-gray-600">
-                        Design comprehensive workout programs with detailed exercises, progressions, and schedules
+                        Create, track, and manage your fitness journey with personalized programs
                     </p>
                 </div>
 
-                {view === 'form' && (
-                <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-semibold text-gray-900">Comprehensive Assessment</h2>
-                        <button
-                            onClick={() => submitAssessment(requestBody)}
-                            className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
-                        >
-                            Generate
-                        </button>
-                    </div>
-
-                    <form
-                        className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded mb-4"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            submitAssessment(requestBody);
-                        }}
-                    >
-                        <div>
-                            <label className="block text-xs text-gray-600 mb-1">Age</label>
-                            <input type="number" value={requestBody.age}
-                                   onChange={(e) => setRequestBody({ ...requestBody, age: Number(e.target.value) })}
-                                   className="w-full border rounded px-3 py-2 text-sm" required />
+                {/* Tab Navigation - Only show if assessment is completed */}
+                {assessment ? (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
+                        <div className="border-b border-gray-200">
+                            <nav className="flex space-x-8 px-6" aria-label="Tabs">
+                                {tabs.map((tab) => {
+                                    const Icon = tab.icon;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id as any)}
+                                            className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
+                                                activeTab === tab.id
+                                                    ? 'border-blue-500 text-blue-600'
+                                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <Icon className="w-5 h-5" />
+                                            {tab.name}
+                                        </button>
+                                    );
+                                })}
+                            </nav>
                         </div>
-                        <div>
-                            <label className="block text-xs text-gray-600 mb-1">Gender</label>
-                            <select value={requestBody.gender}
-                                    onChange={(e) => setRequestBody({ ...requestBody, gender: e.target.value as any })}
-                                    className="w-full border rounded px-3 py-2 text-sm">
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs text-gray-600 mb-1">Height (cm)</label>
-                            <input type="number" value={requestBody.height_cm}
-                                   onChange={(e) => setRequestBody({ ...requestBody, height_cm: Number(e.target.value) })}
-                                   className="w-full border rounded px-3 py-2 text-sm" required />
-                        </div>
-                        <div>
-                            <label className="block text-xs text-gray-600 mb-1">Weight (kg)</label>
-                            <input type="number" value={requestBody.weight_kg}
-                                   onChange={(e) => setRequestBody({ ...requestBody, weight_kg: Number(e.target.value) })}
-                                   className="w-full border rounded px-3 py-2 text-sm" required />
-                        </div>
-                        <div>
-                            <label className="block text-xs text-gray-600 mb-1">Activity Level</label>
-                            <select value={requestBody.activity_level}
-                                    onChange={(e) => setRequestBody({ ...requestBody, activity_level: e.target.value as any })}
-                                    className="w-full border rounded px-3 py-2 text-sm">
-                                <option value="sedentary">Sedentary</option>
-                                <option value="light">Light</option>
-                                <option value="moderate">Moderate</option>
-                                <option value="active">Active</option>
-                                <option value="very_active">Very Active</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs text-gray-600 mb-1">Fitness Goal</label>
-                            <select value={requestBody.fitness_goal}
-                                    onChange={(e) => setRequestBody({ ...requestBody, fitness_goal: e.target.value as any })}
-                                    className="w-full border rounded px-3 py-2 text-sm">
-                                <option value="maintenance">Maintenance</option>
-                                <option value="weight-loss">Weight Loss</option>
-                                <option value="muscle-gain">Muscle Gain</option>
-                                <option value="endurance">Endurance</option>
-                                <option value="flexibility">Flexibility</option>
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <input id="has_diabetes" type="checkbox" checked={requestBody.has_diabetes}
-                                   onChange={(e) => setRequestBody({ ...requestBody, has_diabetes: e.target.checked })}
-                                   className="h-4 w-4" />
-                            <label htmlFor="has_diabetes" className="text-sm text-gray-700">Has Diabetes</label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <input id="has_hypertension" type="checkbox" checked={requestBody.has_hypertension}
-                                   onChange={(e) => setRequestBody({ ...requestBody, has_hypertension: e.target.checked })}
-                                   className="h-4 w-4" />
-                            <label htmlFor="has_hypertension" className="text-sm text-gray-700">Has Hypertension</label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <input id="is_vegetarian" type="checkbox" checked={requestBody.is_vegetarian}
-                                   onChange={(e) => setRequestBody({ ...requestBody, is_vegetarian: e.target.checked })}
-                                   className="h-4 w-4" />
-                            <label htmlFor="is_vegetarian" className="text-sm text-gray-700">Vegetarian</label>
-                        </div>
-                        <div>
-                            <label className="block text-xs text-gray-600 mb-1">Spice Tolerance</label>
-                            <select value={requestBody.spice_tolerance}
-                                    onChange={(e) => setRequestBody({ ...requestBody, spice_tolerance: e.target.value as any })}
-                                    className="w-full border rounded px-3 py-2 text-sm">
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                            </select>
-                        </div>
-                        <div className="md:col-span-2 flex justify-end">
-                            <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
-                                Submit
-                            </button>
-                        </div>
-                    </form>
-
-                    {error && (
-                        <div className="text-sm text-red-600">{error}</div>
-                    )}
-                </div>
-                )}
-
-                {view === 'results' && assessment && (
-                <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-bold text-gray-900">Assessment Results</h2>
-                        <button
-                            onClick={() => { setAssessment(null); setView('form'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                            className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
-                        >
-                            New Assessment
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div className="p-3 bg-gray-50 rounded">
-                            <p className="text-xs text-gray-500">BMI</p>
-                            <p className="font-semibold">{assessment.health_metrics?.bmi}</p>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded">
-                            <p className="text-xs text-gray-500">BMI Category</p>
-                            <p className="font-semibold">{assessment.health_metrics?.bmi_category}</p>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded">
-                            <p className="text-xs text-gray-500">Body Fat %</p>
-                            <p className="font-semibold">{assessment.health_metrics?.body_fat_percentage}</p>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded">
-                            <p className="text-xs text-gray-500">BMR</p>
-                            <p className="font-semibold">{assessment.health_metrics?.bmr}</p>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded">
-                            <p className="text-xs text-gray-500">TDEE</p>
-                            <p className="font-semibold">{assessment.health_metrics?.tdee}</p>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded">
-                            <p className="text-xs text-gray-500">Water Intake (ml)</p>
-                            <p className="font-semibold">{assessment.health_metrics?.water_intake_ml}</p>
+                        
+                        {/* Tab Content */}
+                        <div className="p-6">
+                            {renderTabContent()}
                         </div>
                     </div>
-
-                    <div>
-                        <h3 className="font-medium text-gray-900 mb-2">Nutrition Recommendations</h3>
-                        <div className="space-y-3">
-                            {(assessment.nutrition_recommendations || []).map((item: any, idx: number) => (
-                                <div key={idx} className="p-4 bg-gray-50 rounded flex items-center justify-between">
-                                    <div>
-                                        <p className="font-semibold text-gray-900">{item.name}</p>
-                                        <p className="text-xs text-gray-600">{item.category} • {item.source}</p>
-                                    </div>
-                                    <div className="text-right text-sm text-gray-700">
-                                        <div>Calories: {item.calories}</div>
-                                        {item.protein !== undefined && <div>Protein: {item.protein}</div>}
-                                        {item.carbs !== undefined && <div>Carbs: {item.carbs}</div>}
-                                        {item.fat !== undefined && <div>Fat: {item.fat}</div>}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                ) : (
+                    /* Assessment Form - No tabs visible */
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8 p-6">
+                        {renderTabContent()}
                     </div>
-
-                    <div>
-                        <h3 className="font-medium text-gray-900 mb-2">Exercise Recommendations</h3>
-                        <div className="space-y-3">
-                            {(assessment.exercise_recommendations || []).map((ex: any, idx: number) => (
-                                <div key={idx} className="p-4 bg-gray-50 rounded">
-                                    <div className="flex items-center justify-between">
-                                        <p className="font-semibold text-gray-900">{ex.name}</p>
-                                        <span className="text-xs text-gray-600">{ex.intensity} • {ex.category}</span>
-                                    </div>
-                                    <div className="mt-1 text-sm text-gray-700">
-                                        <div>Duration: {ex.duration_min} min • ~{ex.calories_per_min} kcal/min</div>
-                                        {ex.equipment && <div>Equipment: {ex.equipment}</div>}
-                                        {ex.instructions && <div className="text-gray-600">{ex.instructions}</div>}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
                 )}
             </div>
         </div>
+        </>
     );
 } 

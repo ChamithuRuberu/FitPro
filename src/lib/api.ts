@@ -688,3 +688,100 @@ export async function getWorkouts(trainerId: string) {
         };
     }
 }
+
+// Advanced Workout Program Types
+export interface AdvancedExercise {
+    name: string;
+    sets: number;
+    reps: number;
+    weight: string;
+    equipment: string;
+    targetMuscles: string;
+    notes: string;
+    restBetweenSets: string;
+    tempo: string;
+    isDropSet: boolean;
+    isSuperSet: boolean;
+    superSetGroup?: string;
+    progressionStrategy: string;
+}
+
+export interface AdvancedWorkoutDay {
+    day: string;
+    focusArea: string;
+    startTime: string;
+    duration: number;
+    intensity: string;
+    warmupNotes?: string;
+    cooldownNotes?: string;
+    generalNotes?: string;
+    exercises: AdvancedExercise[];
+    isRestDay?: boolean;
+}
+
+export interface AdvancedWorkoutWeek {
+    weekNumber: number;
+    weeklyGoal: string;
+    notes: string;
+    workoutDays: AdvancedWorkoutDay[];
+}
+
+export interface AdvancedWorkoutProgram {
+    clientId: string;
+    programName: string;
+    programDescription: string;
+    startDate: string;
+    endDate: string;
+    difficulty: string;
+    goal: string;
+    weeks: AdvancedWorkoutWeek[];
+}
+
+export async function createAdvancedWorkout(workoutProgram: AdvancedWorkoutProgram) {
+    try {
+        const token = await getCookie('session');
+
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required'
+            };
+        }
+
+        console.log("=== Create Advanced Workout Request ===");
+        console.log("Workout Program:", JSON.stringify(workoutProgram, null, 2));
+
+        const response = await fetch(`${API_BASE_URL}/workout/create-workouts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(workoutProgram)
+        });
+
+        const result = await response.json();
+        
+        console.log("=== Create Advanced Workout Response ===");
+        console.log(JSON.stringify(result, null, 2));
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to create advanced workout program'
+            };
+        }
+
+        return {
+            success: true,
+            data: result.data,
+            message: result.message || 'Advanced workout program created successfully'
+        };
+    } catch (error) {
+        console.error('Create advanced workout error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to create advanced workout program'
+        };
+    }
+}

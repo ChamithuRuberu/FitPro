@@ -4,12 +4,14 @@ import Navbar from '@/components/Navbar';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { FiTarget, FiBook, FiTrendingUp, FiSearch, FiFilter } from 'react-icons/fi';
+import { calculateHealthMetrics, generateMealPlan } from '@/lib/api';
+import { HealthMetricsResponse, MealPlanResponse } from '@/types/dashboard';
 
 export default function CreateProgramPage() {
     const [activeTab, setActiveTab] = useState<'assessment' | 'nutrition' | 'exercise'>('assessment');
     const [requestBody, setRequestBody] = useState({
         age: 0,
-        gender: 'male' as 'male' | 'female' | 'other',
+        gender: 'Male' as 'Male' | 'Female',
         height_cm: 0,
         weight_kg: 0,
         activity_level: 'moderate' as 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active',
@@ -19,7 +21,10 @@ export default function CreateProgramPage() {
         is_vegetarian: false,
         spice_tolerance: 'medium' as 'low' | 'medium' | 'high',
     });
-    const [assessment, setAssessment] = useState<any>(null);
+    const [assessment, setAssessment] = useState<HealthMetricsResponse | null>(null);
+    const [mealPlan, setMealPlan] = useState<MealPlanResponse | null>(null);
+    const [mealPlanLoading, setMealPlanLoading] = useState<boolean>(false);
+    const [selectedDays, setSelectedDays] = useState<number>(3);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [view, setView] = useState<'form' | 'loading' | 'results'>('form');
@@ -35,8 +40,6 @@ export default function CreateProgramPage() {
     ];
     const [loadingMsg, setLoadingMsg] = useState<string>(loadingMessages[0]);
 
-
-
     useEffect(() => {
         const saved = typeof window !== 'undefined' ? localStorage.getItem('programFormData') : null;
         if (saved) {
@@ -45,7 +48,7 @@ export default function CreateProgramPage() {
             const dietaryRestrictions = (parsed.dietaryRestrictions || '').toLowerCase();
             setRequestBody({
                 age: Number(parsed.age) || 0,
-                gender: (parsed.gender || 'male') as any,
+                gender: (parsed.gender === 'male' ? 'Male' : parsed.gender === 'female' ? 'Female' : 'Male') as any,
                 height_cm: Number(parsed.height) || 0,
                 weight_kg: Number(parsed.weight) || 0,
                 activity_level: (parsed.activityLevel || 'moderate') as any,
@@ -74,6 +77,13 @@ export default function CreateProgramPage() {
         }
     }, [assessment, activeTab]);
 
+    // Generate meal plan when nutrition tab is accessed
+    useEffect(() => {
+        if (activeTab === 'nutrition' && assessment && !mealPlan && !mealPlanLoading) {
+            generateMealPlanData(selectedDays);
+        }
+    }, [activeTab, assessment, mealPlan, mealPlanLoading, selectedDays]);
+
     const submitAssessment = async (payload: any) => {
         try {
             setAssessment(null);
@@ -83,12 +93,12 @@ export default function CreateProgramPage() {
             setProgress(0);
             setLoadingMsg(loadingMessages[0]);
 
-            const totalDuration = 8000; // 20s
+            const totalDuration = 8000; // 8s
             const interval = 1000;
             const total = totalDuration / interval;
             let tick = 0;
             let apiCompleted = false;
-            let apiData: any = null;
+            let apiData: HealthMetricsResponse | null = null;
 
             const timer = setInterval(() => {
                 tick++;
@@ -112,19 +122,13 @@ export default function CreateProgramPage() {
 
             // Actual API call (runs in parallel)
             try {
-                const res = await fetch('http://localhost:8000/comprehensive-assessment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', accept: 'application/json' },
-                    body: JSON.stringify(payload),
-                    mode: 'cors',
-                });
-
-                if (!res.ok) {
-                    const err = await res.text();
-                    throw new Error(err || `Request failed with status ${res.status}`);
+                const result = await calculateHealthMetrics(payload);
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to calculate health metrics');
                 }
 
-                apiData = await res.json();
+                apiData = result.data;
                 apiCompleted = true;
 
                 // If timer is still running, let it complete naturally
@@ -143,21 +147,45 @@ export default function CreateProgramPage() {
 
             } catch (apiError: any) {
                 clearInterval(timer);
-                setError(apiError?.message || 'Failed to fetch assessment');
+                setError(apiError?.message || 'Failed to calculate health metrics');
                 setLoading(false);
                 setView('form');
             }
 
         } catch (e: any) {
-            setError(e?.message || 'Failed to fetch assessment');
+            setError(e?.message || 'Failed to calculate health metrics');
             setLoading(false);
             setView('form');
         }
     };
 
-    const emojis = requestBody.gender === 'female'
+    const emojis = requestBody.gender === 'Female'
         ? ['🏋️‍♀️','💃','🏃‍♀️','🚴‍♀️','🏊‍♀️','✨','🌟']
         : ['🏋️‍♂️','💪','🏃‍♂️','🚴‍♂️','🏊‍♂️','⚡','🔥'];
+
+    const generateMealPlanData = async (days: number = selectedDays) => {
+        if (!assessment) return;
+        
+        try {
+            setMealPlanLoading(true);
+            const result = await generateMealPlan({
+                user_id: 'user_' + Date.now(), // Generate a unique user ID
+                target_calories: assessment.daily_calories,
+                n_days: days,
+                meal_plan_type: 'traditional'
+            });
+
+            if (result.success) {
+                setMealPlan(result.data);
+            } else {
+                console.error('Failed to generate meal plan:', result.message);
+            }
+        } catch (error) {
+            console.error('Error generating meal plan:', error);
+        } finally {
+            setMealPlanLoading(false);
+        }
+    };
 
     const tabs = [
         { id: 'assessment', name: 'Assessment', icon: FiTarget, description: 'Get personalized recommendations' },
@@ -183,6 +211,19 @@ export default function CreateProgramPage() {
                                     className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded mb-4"
                                     onSubmit={(e) => {
                                         e.preventDefault();
+                                        // Validate form before submitting
+                                        if (requestBody.height_cm < 100) {
+                                            setError('Height must be at least 100cm');
+                                            return;
+                                        }
+                                        if (requestBody.weight_kg < 30) {
+                                            setError('Weight must be at least 30kg');
+                                            return;
+                                        }
+                                        if (requestBody.age < 1) {
+                                            setError('Please enter a valid age');
+                                            return;
+                                        }
                                         submitAssessment(requestBody);
                                     }}
                                 >
@@ -197,22 +238,33 @@ export default function CreateProgramPage() {
                                         <select value={requestBody.gender}
                                                 onChange={(e) => setRequestBody({ ...requestBody, gender: e.target.value as any })}
                                                 className="w-full border rounded px-3 py-2 text-sm">
-                                            <option value="male">Male</option>
-                                            <option value="female">Female</option>
-                                            <option value="other">Other</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label className="block text-xs text-gray-600 mb-1">Height (cm)</label>
                                         <input type="number" value={requestBody.height_cm}
                                                onChange={(e) => setRequestBody({ ...requestBody, height_cm: Number(e.target.value) })}
-                                               className="w-full border rounded px-3 py-2 text-sm" required />
+                                               className="w-full border rounded px-3 py-2 text-sm" 
+                                               min="100" 
+                                               max="250"
+                                               required />
+                                        {requestBody.height_cm > 0 && requestBody.height_cm < 100 && (
+                                            <p className="text-xs text-red-500 mt-1">Height must be at least 100cm</p>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-xs text-gray-600 mb-1">Weight (kg)</label>
                                         <input type="number" value={requestBody.weight_kg}
                                                onChange={(e) => setRequestBody({ ...requestBody, weight_kg: Number(e.target.value) })}
-                                               className="w-full border rounded px-3 py-2 text-sm" required />
+                                               className="w-full border rounded px-3 py-2 text-sm" 
+                                               min="30" 
+                                               max="300"
+                                               required />
+                                        {requestBody.weight_kg > 0 && requestBody.weight_kg < 30 && (
+                                            <p className="text-xs text-red-500 mt-1">Weight must be at least 30kg</p>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-xs text-gray-600 mb-1">Activity Level</label>
@@ -294,27 +346,39 @@ export default function CreateProgramPage() {
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     <div className="p-3 bg-gray-50 rounded">
                                         <p className="text-xs text-gray-500">BMI</p>
-                                        <p className="font-semibold">{assessment.health_metrics?.bmi}</p>
+                                        <p className="font-semibold">{assessment.bmi}</p>
                                     </div>
                                     <div className="p-3 bg-gray-50 rounded">
                                         <p className="text-xs text-gray-500">BMI Category</p>
-                                        <p className="font-semibold">{assessment.health_metrics?.bmi_category}</p>
+                                        <p className="font-semibold">{assessment.bmi_category}</p>
                                     </div>
                                     <div className="p-3 bg-gray-50 rounded">
                                         <p className="text-xs text-gray-500">Body Fat %</p>
-                                        <p className="font-semibold">{assessment.health_metrics?.body_fat_percentage}</p>
+                                        <p className="font-semibold">{assessment.body_fat_percentage}%</p>
                                     </div>
                                     <div className="p-3 bg-gray-50 rounded">
                                         <p className="text-xs text-gray-500">BMR</p>
-                                        <p className="font-semibold">{assessment.health_metrics?.bmr}</p>
+                                        <p className="font-semibold">{assessment.bmr} kcal</p>
                                     </div>
                                     <div className="p-3 bg-gray-50 rounded">
                                         <p className="text-xs text-gray-500">TDEE</p>
-                                        <p className="font-semibold">{assessment.health_metrics?.tdee}</p>
+                                        <p className="font-semibold">{assessment.tdee} kcal</p>
                                     </div>
                                     <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">Water Intake (ml)</p>
-                                        <p className="font-semibold">{assessment.health_metrics?.water_intake_ml}</p>
+                                        <p className="text-xs text-gray-500">Ideal Weight</p>
+                                        <p className="font-semibold">{assessment.ideal_weight_kg} kg</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-50 rounded">
+                                        <p className="text-xs text-gray-500">Daily Calories</p>
+                                        <p className="font-semibold">{assessment.daily_calories} kcal</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-50 rounded">
+                                        <p className="text-xs text-gray-500">Health Risk Score</p>
+                                        <p className="font-semibold">{assessment.health_risk_score}/100</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-50 rounded">
+                                        <p className="text-xs text-gray-500">Water Intake</p>
+                                        <p className="font-semibold">{assessment.water_intake_ml} ml</p>
                                     </div>
                                 </div>
 
@@ -346,70 +410,168 @@ export default function CreateProgramPage() {
             case 'nutrition':
                 return (
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold text-gray-900">Nutrition Recommendations</h2>
-                            <div className="flex gap-2">
-                                <div className="relative">
-                                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search nutrition items..."
-                                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <h2 className="text-2xl font-bold text-gray-900">Personalized Meal Plan</h2>
+                            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                                <div className="flex items-center gap-2">
+                                    <label htmlFor="days-select" className="text-sm font-medium text-gray-700">
+                                        Days:
+                                    </label>
+                                    <select
+                                        id="days-select"
+                                        value={selectedDays}
+                                        onChange={(e) => setSelectedDays(Number(e.target.value))}
+                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={mealPlanLoading}
+                                    >
+                                        {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                            <option key={day} value={day}>
+                                                {day} {day === 1 ? 'Day' : 'Days'}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                                    <FiFilter className="w-5 h-5 text-gray-600" />
+                                <button 
+                                    onClick={() => {
+                                        setMealPlan(null);
+                                        if (assessment) generateMealPlanData(selectedDays);
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg w-full sm:w-auto"
+                                    disabled={mealPlanLoading}
+                                >
+                                    {mealPlanLoading ? 'Generating...' : 'Generate Plan'}
                                 </button>
                             </div>
                         </div>
 
-                        {assessment && assessment.nutrition_recommendations ? (
-                            <div className="space-y-4">
-                                {assessment.nutrition_recommendations.map((item: any, idx: number) => (
-                                    <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
-                                                    <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                                                        {item.category}
-                                                    </span>
+                        {assessment && (
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Nutrition Profile</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                                        <p className="text-2xl font-bold text-blue-600">{assessment.daily_calories}</p>
+                                        <p className="text-sm text-blue-700">Target Calories</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                                        <p className="text-2xl font-bold text-green-600">{assessment.water_intake_ml}ml</p>
+                                        <p className="text-sm text-green-700">Water Intake</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-orange-50 rounded-lg">
+                                        <p className="text-2xl font-bold text-orange-600">{assessment.ideal_weight_kg}kg</p>
+                                        <p className="text-sm text-orange-700">Ideal Weight</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                                        <p className="text-2xl font-bold text-purple-600">{assessment.health_risk_score}/100</p>
+                                        <p className="text-sm text-purple-700">Health Score</p>
                                                 </div>
-                                                <p className="text-sm text-gray-600 mb-3">{item.source}</p>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                    <div className="text-center">
-                                                        <div className="text-lg font-bold text-blue-600">{item.calories}</div>
-                                                        <div className="text-xs text-gray-500">Calories</div>
                                                     </div>
-                                                    {item.protein !== undefined && (
-                                                        <div className="text-center">
-                                                            <div className="text-lg font-bold text-green-600">{item.protein}g</div>
-                                                            <div className="text-xs text-gray-500">Protein</div>
                                                         </div>
                                                     )}
-                                                    {item.carbs !== undefined && (
+
+                        {mealPlanLoading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Generating Your Meal Plan</h3>
+                                <p className="text-gray-600">Creating personalized nutrition recommendations based on your health profile...</p>
+                            </div>
+                        ) : mealPlan ? (
+                            <div className="space-y-6">
+                                <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{mealPlan.plan_duration_days}-Day Meal Plan</h3>
+                                    <p className="text-gray-600">Target: {mealPlan.target_calories_per_day} calories per day • Plan Type: {mealPlan.plan_type}</p>
+                                </div>
+
+                                {Object.entries(mealPlan.meal_plan).map(([dayKey, dayPlan], dayIndex) => (
+                                    <div key={dayKey} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <h4 className="text-xl font-semibold text-gray-900 mb-4">Day {dayIndex + 1}</h4>
+                                        
+                                        {/* Daily Nutrition Summary */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
                                                         <div className="text-center">
-                                                            <div className="text-lg font-bold text-orange-600">{item.carbs}g</div>
-                                                            <div className="text-xs text-gray-500">Carbs</div>
+                                                <p className="text-lg font-bold text-blue-600">{Math.round(dayPlan.daily_nutrition.total_calories)}</p>
+                                                <p className="text-xs text-gray-500">Calories</p>
                                                         </div>
-                                                    )}
-                                                    {item.fat !== undefined && (
                                                         <div className="text-center">
-                                                            <div className="text-lg font-bold text-red-600">{item.fat}g</div>
-                                                            <div className="text-xs text-gray-500">Fat</div>
+                                                <p className="text-lg font-bold text-green-600">{Math.round(dayPlan.daily_nutrition.total_protein)}g</p>
+                                                <p className="text-xs text-gray-500">Protein</p>
                                                         </div>
-                                                    )}
+                                            <div className="text-center">
+                                                <p className="text-lg font-bold text-orange-600">{Math.round(dayPlan.daily_nutrition.total_carbs)}g</p>
+                                                <p className="text-xs text-gray-500">Carbs</p>
                                                 </div>
+                                            <div className="text-center">
+                                                <p className="text-lg font-bold text-red-600">{Math.round(dayPlan.daily_nutrition.total_fat)}g</p>
+                                                <p className="text-xs text-gray-500">Fat</p>
                                             </div>
+                                        </div>
+
+                                        {/* Meals */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {Object.entries(dayPlan.meals).map(([mealType, mealItems]) => (
+                                                <div key={mealType} className="space-y-3">
+                                                    <h5 className="font-semibold text-gray-900 capitalize flex items-center gap-2">
+                                                        {mealType === 'breakfast' && '🌅'}
+                                                        {mealType === 'lunch' && '☀️'}
+                                                        {mealType === 'dinner' && '🌙'}
+                                                        {mealType === 'snack' && '🍎'}
+                                                        {mealType}
+                                                    </h5>
+                                                    <div className="space-y-2">
+                                                        {mealItems.map((item: any, itemIndex: number) => (
+                                                            <div key={itemIndex} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                                <div className="flex-1">
+                                                                    <p className="font-medium text-gray-900">{item.name}</p>
+                                                                    <p className="text-sm text-gray-500">{item.portion_g}g • {item.category}</p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="font-semibold text-blue-600">{Math.round(item.calories)} cal</p>
+                                                                    <p className="text-xs text-gray-500">
+                                                                        P: {Math.round(item.protein)}g • C: {Math.round(item.carbs)}g • F: {Math.round(item.fat)}g
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 ))}
                             </div>
+                        ) : assessment ? (
+                            <div className="text-center py-12">
+                                <div className="text-6xl mb-4">🍽️</div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Generate Your Meal Plan</h3>
+                                <p className="text-gray-600 mb-4">Select the number of days and click "Generate Plan" to create your personalized meal plan.</p>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                                    <label htmlFor="days-select-ready" className="text-sm font-medium text-gray-700">
+                                        Days:
+                                    </label>
+                                    <select
+                                        id="days-select-ready"
+                                        value={selectedDays}
+                                        onChange={(e) => setSelectedDays(Number(e.target.value))}
+                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                            <option key={day} value={day}>
+                                                {day} {day === 1 ? 'Day' : 'Days'}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <button 
+                                    onClick={() => generateMealPlanData(selectedDays)}
+                                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                                >
+                                    Generate {selectedDays}-Day Meal Plan
+                                </button>
+                            </div>
                         ) : (
                             <div className="text-center py-12">
                                 <div className="text-6xl mb-4">🥗</div>
-                                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Nutrition Data Available</h3>
-                                <p className="text-gray-600">Complete an assessment first to see personalized nutrition recommendations.</p>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Complete Assessment First</h3>
+                                <p className="text-gray-600">Complete your health assessment to get personalized meal plans.</p>
                             </div>
                         )}
                     </div>
@@ -435,47 +597,111 @@ export default function CreateProgramPage() {
                             </div>
                         </div>
 
-                        {assessment && assessment.exercise_recommendations ? (
-                            <div className="space-y-4">
-                                {assessment.exercise_recommendations.map((ex: any, idx: number) => (
-                                    <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <h3 className="text-lg font-semibold text-gray-900">{ex.name}</h3>
-                                                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                                                        {ex.category}
-                                                    </span>
-                                                    <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">
-                                                        {ex.intensity}
-                                                    </span>
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                                    <div className="text-center">
-                                                        <div className="text-lg font-bold text-purple-600">{ex.duration_min} min</div>
-                                                        <div className="text-xs text-gray-500">Duration</div>
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <div className="text-lg font-bold text-green-600">~{ex.calories_per_min}</div>
-                                                        <div className="text-xs text-gray-500">kcal/min</div>
-                                                    </div>
-                                                    {ex.equipment && (
-                                                        <div className="text-center">
-                                                            <div className="text-lg font-bold text-blue-600">{ex.equipment}</div>
-                                                            <div className="text-xs text-gray-500">Equipment</div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                {ex.instructions && (
-                                                    <div className="bg-gray-50 rounded-lg p-4">
-                                                        <h4 className="font-medium text-gray-900 mb-2">Instructions</h4>
-                                                        <p className="text-sm text-gray-700">{ex.instructions}</p>
-                                                    </div>
-                                                )}
+                        {assessment ? (
+                            <div className="space-y-6">
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Exercise Guidelines</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-blue-50 rounded-lg">
+                                                <h4 className="font-medium text-blue-900 mb-2">Calorie Burn Target</h4>
+                                                <p className="text-2xl font-bold text-blue-600">{Math.round(assessment.tdee - assessment.bmr)} kcal</p>
+                                                <p className="text-sm text-blue-700">Daily activity calories to burn</p>
+                                            </div>
+                                            <div className="p-4 bg-green-50 rounded-lg">
+                                                <h4 className="font-medium text-green-900 mb-2">Activity Level</h4>
+                                                <p className="text-lg font-bold text-green-600 capitalize">{requestBody.activity_level}</p>
+                                                <p className="text-sm text-green-700">Current activity level</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-orange-50 rounded-lg">
+                                                <h4 className="font-medium text-orange-900 mb-2">Fitness Goal</h4>
+                                                <p className="text-lg font-bold text-orange-600 capitalize">{requestBody.fitness_goal.replace('-', ' ')}</p>
+                                                <p className="text-sm text-orange-700">Your primary fitness objective</p>
+                                            </div>
+                                            <div className="p-4 bg-purple-50 rounded-lg">
+                                                <h4 className="font-medium text-purple-900 mb-2">Health Status</h4>
+                                                <p className="text-lg font-bold text-purple-600">{assessment.bmi_category}</p>
+                                                <p className="text-sm text-purple-700">BMI Category: {assessment.bmi}</p>
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                </div>
+                                
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Exercise Recommendations</h3>
+                            <div className="space-y-4">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                            <div>
+                                                <p className="font-medium text-gray-900">Cardiovascular Exercise</p>
+                                                <p className="text-sm text-gray-600">Aim for 150-300 minutes of moderate-intensity cardio per week to support your {requestBody.fitness_goal.replace('-', ' ')} goals</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                            <div>
+                                                <p className="font-medium text-gray-900">Strength Training</p>
+                                                <p className="text-sm text-gray-600">Include 2-3 strength training sessions per week focusing on major muscle groups</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                                            <div>
+                                                <p className="font-medium text-gray-900">Flexibility & Mobility</p>
+                                                <p className="text-sm text-gray-600">Dedicate 10-15 minutes daily to stretching and mobility work</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                                            <div>
+                                                <p className="font-medium text-gray-900">Progressive Overload</p>
+                                                <p className="text-sm text-gray-600">Gradually increase intensity, duration, or frequency of your workouts over time</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                                            <div>
+                                                <p className="font-medium text-gray-900">Recovery</p>
+                                                <p className="text-sm text-gray-600">Ensure adequate rest between workouts and prioritize sleep for optimal recovery</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Health Considerations</h3>
+                                    <div className="space-y-3">
+                                        {requestBody.has_diabetes && (
+                                            <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
+                                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                                <div>
+                                                    <p className="font-medium text-yellow-900">Diabetes Management</p>
+                                                    <p className="text-sm text-yellow-700">Monitor blood sugar levels before, during, and after exercise. Consult your healthcare provider for specific guidelines.</p>
+                                                </div>
+                                                        </div>
+                                                    )}
+                                        {requestBody.has_hypertension && (
+                                            <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                                <div>
+                                                    <p className="font-medium text-red-900">Blood Pressure Management</p>
+                                                    <p className="text-sm text-red-700">Start with low to moderate intensity exercises and gradually increase. Monitor your blood pressure regularly.</p>
+                                                </div>
+                                                    </div>
+                                                )}
+                                        {requestBody.is_vegetarian && (
+                                            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                <div>
+                                                    <p className="font-medium text-green-900">Vegetarian Nutrition</p>
+                                                    <p className="text-sm text-green-700">Ensure adequate protein intake from plant sources to support muscle development and recovery.</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <div className="text-center py-12">
@@ -486,8 +712,6 @@ export default function CreateProgramPage() {
                         )}
                     </div>
                 );
-
-
 
             default:
                 return null;
@@ -556,11 +780,11 @@ export default function CreateProgramPage() {
                         {/* Enhanced loading message with white theme */}
                         <div className="mb-10">
                             <h2 className="text-4xl font-bold text-gray-800 mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                {requestBody.gender === 'male' ? 'Building Your Fitness Plan' : 'Creating Your Wellness Journey'}
+                                {requestBody.gender === 'Male' ? 'Building Your Fitness Plan' : 'Creating Your Wellness Journey'}
                             </h2>
                             <p className="text-xl text-gray-700 mb-3 font-medium">{loadingMsg}</p>
                             <p className="text-gray-600 text-lg">
-                                {requestBody.gender === 'male' 
+                                {requestBody.gender === 'Male' 
                                     ? "We're crafting the perfect workout and nutrition plan for your goals!" 
                                     : "We're designing a personalized wellness program just for you!"
                                 }

@@ -785,3 +785,99 @@ export async function createAdvancedWorkout(workoutProgram: AdvancedWorkoutProgr
         };
     }
 }
+
+export async function calculateHealthMetrics(healthData: {
+    age: number;
+    gender: string;
+    height_cm: number;
+    weight_kg: number;
+    activity_level: string;
+    fitness_goal: string;
+    has_diabetes: boolean;
+    has_hypertension: boolean;
+    is_vegetarian: boolean;
+    spice_tolerance: string;
+}) {
+    try {
+        console.log("=== Calculate Health Metrics Request ===");
+        console.log("Health Data:", JSON.stringify(healthData, null, 2));
+
+        const response = await fetch('http://localhost:8000/calculate-health-metrics', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            body: JSON.stringify(healthData)
+        });
+
+        const result = await response.json();
+        
+        console.log("=== Calculate Health Metrics Response ===");
+        console.log(JSON.stringify(result, null, 2));
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to calculate health metrics'
+            };
+        }
+
+        return {
+            success: true,
+            data: result,
+            message: 'Health metrics calculated successfully'
+        };
+    } catch (error) {
+        console.error('Calculate health metrics error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to calculate health metrics'
+        };
+    }
+}
+
+export async function generateMealPlan(mealPlanData: {
+    user_id: string;
+    target_calories: number;
+    n_days: number;
+    meal_plan_type: string;
+}) {
+    try {
+        console.log("=== Generate Meal Plan Request ===");
+        console.log("Meal Plan Data:", JSON.stringify(mealPlanData, null, 2));
+
+        const response = await fetch('http://localhost:8000/generate-meal-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            body: JSON.stringify(mealPlanData)
+        });
+
+        const result = await response.json();
+        
+        console.log("=== Generate Meal Plan Response ===");
+        console.log(JSON.stringify(result, null, 2));
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to generate meal plan'
+            };
+        }
+
+        return {
+            success: true,
+            data: result,
+            message: 'Meal plan generated successfully'
+        };
+    } catch (error) {
+        console.error('Generate meal plan error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to generate meal plan'
+        };
+    }
+}

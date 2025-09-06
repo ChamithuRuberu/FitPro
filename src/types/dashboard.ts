@@ -49,4 +49,70 @@ export interface DashboardStats {
   averageRating: number;
   pendingPayments: number;
   newRegistrations: number;
+}
+
+export interface HealthMetricsRequest {
+  age: number;
+  gender: 'Male' | 'Female';
+  height_cm: number;
+  weight_kg: number;
+  activity_level: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+  fitness_goal: 'maintenance' | 'weight-loss' | 'muscle-gain' | 'endurance' | 'flexibility';
+  has_diabetes: boolean;
+  has_hypertension: boolean;
+  is_vegetarian: boolean;
+  spice_tolerance: 'low' | 'medium' | 'high';
+}
+
+export interface HealthMetricsResponse {
+  bmi: number;
+  bmi_category: string;
+  body_fat_percentage: number;
+  bmr: number;
+  tdee: number;
+  ideal_weight_kg: number;
+  daily_calories: number;
+  health_risk_score: number;
+  water_intake_ml: number;
+}
+
+export interface MealItem {
+  food_id: string;
+  name: string;
+  portion_g: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  category: string;
+}
+
+export interface DailyNutrition {
+  total_calories: number;
+  total_protein: number;
+  total_carbs: number;
+  total_fat: number;
+}
+
+export interface DayMeals {
+  breakfast: MealItem[];
+  lunch: MealItem[];
+  dinner: MealItem[];
+  snack: MealItem[];
+}
+
+export interface DayPlan {
+  meals: DayMeals;
+  daily_nutrition: DailyNutrition;
+}
+
+export interface MealPlanResponse {
+  meal_plan: {
+    day_1: DayPlan;
+    day_2: DayPlan;
+    day_3: DayPlan;
+  };
+  plan_duration_days: number;
+  target_calories_per_day: number;
+  plan_type: string;
 } 

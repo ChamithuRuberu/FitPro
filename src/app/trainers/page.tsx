@@ -5,6 +5,7 @@ import { FiUser, FiMapPin, FiClock, FiActivity, FiSearch, FiFilter, FiStar, FiCo
 import { getTrainerList } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
+import Navbar from '@/components/Navbar';
 
 interface Trainer {
   id: number;
@@ -122,6 +123,7 @@ export default function TrainersPage() {
   }
 
   return (
+    <>        <Navbar />
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <Toaster position="top-right" />
       
@@ -318,5 +320,7 @@ export default function TrainersPage() {
         )}
       </div>
     </div>
+</>
+
   );
 } 

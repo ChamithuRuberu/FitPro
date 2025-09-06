@@ -881,3 +881,48 @@ export async function generateMealPlan(mealPlanData: {
         };
     }
 }
+
+export async function generateWorkoutPlan(workoutPlanData: {
+    user_id: string;
+    duration_minutes: number;
+    workout_type: string;
+    n_days: number;
+}) {
+    try {
+        console.log("=== Generate Workout Plan Request ===");
+        console.log("Workout Plan Data:", JSON.stringify(workoutPlanData, null, 2));
+
+        const response = await fetch('http://localhost:8000/generate-workout-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            body: JSON.stringify(workoutPlanData)
+        });
+
+        const result = await response.json();
+        
+        console.log("=== Generate Workout Plan Response ===");
+        console.log(JSON.stringify(result, null, 2));
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to generate workout plan'
+            };
+        }
+
+        return {
+            success: true,
+            data: result,
+            message: 'Workout plan generated successfully'
+        };
+    } catch (error) {
+        console.error('Generate workout plan error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to generate workout plan'
+        };
+    }
+}

@@ -115,4 +115,63 @@ export interface MealPlanResponse {
   plan_duration_days: number;
   target_calories_per_day: number;
   plan_type: string;
+}
+
+export interface Exercise {
+  name: string;
+  duration: string;
+}
+
+export interface ExerciseWithDetails {
+  name: string;
+  duration_minutes: number;
+  sets: {
+    sets?: number;
+    reps?: string;
+    rest_seconds?: number;
+    duration?: string;
+    intensity?: string;
+  };
+  calories_burned: number;
+  instructions: string;
+  difficulty: number;
+}
+
+export interface WorkoutSection {
+  duration_minutes: number;
+  exercises: Exercise[];
+}
+
+export interface MainWorkoutSection {
+  duration_minutes: number;
+  exercises: ExerciseWithDetails[];
+}
+
+export interface RestDay {
+  type: 'rest';
+  activities: string[];
+  duration_minutes: number;
+  notes: string;
+}
+
+export interface WorkoutDay {
+  type: 'cardio' | 'strength' | 'flexibility';
+  total_duration_minutes: number;
+  warm_up: WorkoutSection;
+  main_workout: MainWorkoutSection;
+  cool_down: WorkoutSection;
+  estimated_calories_burned: number;
+  notes: string;
+}
+
+export interface WorkoutPlanResponse {
+  workout_plan: {
+    [key: string]: WorkoutDay | RestDay;
+  };
+  plan_duration_days: number;
+  total_workout_days: number;
+  total_rest_days: number;
+  estimated_weekly_calories_burned: number;
+  average_workout_duration: number;
+  workout_type: string;
 } 

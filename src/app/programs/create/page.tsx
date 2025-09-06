@@ -4,8 +4,8 @@ import Navbar from '@/components/Navbar';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { FiTarget, FiBook, FiTrendingUp, FiSearch, FiFilter } from 'react-icons/fi';
-import { calculateHealthMetrics, generateMealPlan } from '@/lib/api';
-import { HealthMetricsResponse, MealPlanResponse } from '@/types/dashboard';
+import { calculateHealthMetrics, generateMealPlan, generateWorkoutPlan } from '@/lib/api';
+import { HealthMetricsResponse, MealPlanResponse, WorkoutPlanResponse } from '@/types/dashboard';
 
 export default function CreateProgramPage() {
     const [activeTab, setActiveTab] = useState<'assessment' | 'nutrition' | 'exercise'>('assessment');
@@ -25,6 +25,11 @@ export default function CreateProgramPage() {
     const [mealPlan, setMealPlan] = useState<MealPlanResponse | null>(null);
     const [mealPlanLoading, setMealPlanLoading] = useState<boolean>(false);
     const [selectedDays, setSelectedDays] = useState<number>(3);
+    const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlanResponse | null>(null);
+    const [workoutPlanLoading, setWorkoutPlanLoading] = useState<boolean>(false);
+    const [selectedWorkoutDays, setSelectedWorkoutDays] = useState<number>(7);
+    const [selectedDuration, setSelectedDuration] = useState<number>(30);
+    const [selectedWorkoutType, setSelectedWorkoutType] = useState<string>('general');
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [view, setView] = useState<'form' | 'loading' | 'results'>('form');
@@ -83,6 +88,13 @@ export default function CreateProgramPage() {
             generateMealPlanData(selectedDays);
         }
     }, [activeTab, assessment, mealPlan, mealPlanLoading, selectedDays]);
+
+    // Generate workout plan when exercise tab is accessed
+    useEffect(() => {
+        if (activeTab === 'exercise' && assessment && !workoutPlan && !workoutPlanLoading) {
+            generateWorkoutPlanData(selectedWorkoutDays, selectedDuration, selectedWorkoutType);
+        }
+    }, [activeTab, assessment, workoutPlan, workoutPlanLoading, selectedWorkoutDays, selectedDuration, selectedWorkoutType]);
 
     const submitAssessment = async (payload: any) => {
         try {
@@ -184,6 +196,30 @@ export default function CreateProgramPage() {
             console.error('Error generating meal plan:', error);
         } finally {
             setMealPlanLoading(false);
+        }
+    };
+
+    const generateWorkoutPlanData = async (days: number = selectedWorkoutDays, duration: number = selectedDuration, workoutType: string = selectedWorkoutType) => {
+        if (!assessment) return;
+        
+        try {
+            setWorkoutPlanLoading(true);
+            const result = await generateWorkoutPlan({
+                user_id: 'user_' + Date.now(), // Generate a unique user ID
+                duration_minutes: duration,
+                workout_type: workoutType,
+                n_days: days
+            });
+
+            if (result.success) {
+                setWorkoutPlan(result.data);
+            } else {
+                console.error('Failed to generate workout plan:', result.message);
+            }
+        } catch (error) {
+            console.error('Error generating workout plan:', error);
+        } finally {
+            setWorkoutPlanLoading(false);
         }
     };
 
@@ -447,7 +483,7 @@ export default function CreateProgramPage() {
                         {assessment && (
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Nutrition Profile</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div className="text-center p-3 bg-blue-50 rounded-lg">
                                         <p className="text-2xl font-bold text-blue-600">{assessment.daily_calories}</p>
                                         <p className="text-sm text-blue-700">Target Calories</p>
@@ -487,23 +523,23 @@ export default function CreateProgramPage() {
                                         
                                         {/* Daily Nutrition Summary */}
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                                                        <div className="text-center">
+                                                    <div className="text-center">
                                                 <p className="text-lg font-bold text-blue-600">{Math.round(dayPlan.daily_nutrition.total_calories)}</p>
                                                 <p className="text-xs text-gray-500">Calories</p>
-                                                        </div>
+                                                    </div>
                                                         <div className="text-center">
                                                 <p className="text-lg font-bold text-green-600">{Math.round(dayPlan.daily_nutrition.total_protein)}g</p>
                                                 <p className="text-xs text-gray-500">Protein</p>
                                                         </div>
-                                            <div className="text-center">
+                                                        <div className="text-center">
                                                 <p className="text-lg font-bold text-orange-600">{Math.round(dayPlan.daily_nutrition.total_carbs)}g</p>
                                                 <p className="text-xs text-gray-500">Carbs</p>
-                                                </div>
-                                            <div className="text-center">
+                                                        </div>
+                                                        <div className="text-center">
                                                 <p className="text-lg font-bold text-red-600">{Math.round(dayPlan.daily_nutrition.total_fat)}g</p>
                                                 <p className="text-xs text-gray-500">Fat</p>
-                                            </div>
-                                        </div>
+                                                        </div>
+                                                </div>
 
                                         {/* Meals */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -522,15 +558,15 @@ export default function CreateProgramPage() {
                                                                 <div className="flex-1">
                                                                     <p className="font-medium text-gray-900">{item.name}</p>
                                                                     <p className="text-sm text-gray-500">{item.portion_g}g • {item.category}</p>
-                                                                </div>
+                                            </div>
                                                                 <div className="text-right">
                                                                     <p className="font-semibold text-blue-600">{Math.round(item.calories)} cal</p>
                                                                     <p className="text-xs text-gray-500">
                                                                         P: {Math.round(item.protein)}g • C: {Math.round(item.carbs)}g • F: {Math.round(item.fat)}g
                                                                     </p>
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                        </div>
+                                    </div>
+                                ))}
                                                     </div>
                                                 </div>
                                             ))}
@@ -580,134 +616,322 @@ export default function CreateProgramPage() {
             case 'exercise':
                 return (
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold text-gray-900">Exercise Recommendations</h2>
-                            <div className="flex gap-2">
-                                <div className="relative">
-                                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search exercises..."
-                                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <h2 className="text-2xl font-bold text-gray-900">Personalized Workout Plan</h2>
+                            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                                <div className="flex items-center gap-2">
+                                    <label htmlFor="workout-days-select" className="text-sm font-medium text-gray-700">
+                                        Days:
+                                    </label>
+                                    <select
+                                        id="workout-days-select"
+                                        value={selectedWorkoutDays}
+                                        onChange={(e) => setSelectedWorkoutDays(Number(e.target.value))}
+                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={workoutPlanLoading}
+                                    >
+                                        {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                            <option key={day} value={day}>
+                                                {day} {day === 1 ? 'Day' : 'Days'}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                                    <FiFilter className="w-5 h-5 text-gray-600" />
+                                <div className="flex items-center gap-2">
+                                    <label htmlFor="duration-select" className="text-sm font-medium text-gray-700">
+                                        Duration:
+                                    </label>
+                                    <select
+                                        id="duration-select"
+                                        value={selectedDuration}
+                                        onChange={(e) => setSelectedDuration(Number(e.target.value))}
+                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={workoutPlanLoading}
+                                    >
+                                        <option value={15}>15 min</option>
+                                        <option value={30}>30 min</option>
+                                        <option value={45}>45 min</option>
+                                        <option value={60}>60 min</option>
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label htmlFor="workout-type-select" className="text-sm font-medium text-gray-700">
+                                        Type:
+                                    </label>
+                                    <select
+                                        id="workout-type-select"
+                                        value={selectedWorkoutType}
+                                        onChange={(e) => setSelectedWorkoutType(e.target.value)}
+                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={workoutPlanLoading}
+                                    >
+                                        <option value="general">General</option>
+                                        <option value="cardio">Cardio</option>
+                                        <option value="strength">Strength</option>
+                                        <option value="flexibility">Flexibility</option>
+                                    </select>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        setWorkoutPlan(null);
+                                        if (assessment) generateWorkoutPlanData(selectedWorkoutDays, selectedDuration, selectedWorkoutType);
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg w-full sm:w-auto"
+                                    disabled={workoutPlanLoading}
+                                >
+                                    {workoutPlanLoading ? 'Generating...' : 'Generate Plan'}
                                 </button>
                             </div>
                         </div>
 
-                        {assessment ? (
-                            <div className="space-y-6">
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Exercise Guidelines</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-4">
-                                            <div className="p-4 bg-blue-50 rounded-lg">
-                                                <h4 className="font-medium text-blue-900 mb-2">Calorie Burn Target</h4>
-                                                <p className="text-2xl font-bold text-blue-600">{Math.round(assessment.tdee - assessment.bmr)} kcal</p>
-                                                <p className="text-sm text-blue-700">Daily activity calories to burn</p>
-                                            </div>
-                                            <div className="p-4 bg-green-50 rounded-lg">
-                                                <h4 className="font-medium text-green-900 mb-2">Activity Level</h4>
-                                                <p className="text-lg font-bold text-green-600 capitalize">{requestBody.activity_level}</p>
-                                                <p className="text-sm text-green-700">Current activity level</p>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="p-4 bg-orange-50 rounded-lg">
-                                                <h4 className="font-medium text-orange-900 mb-2">Fitness Goal</h4>
-                                                <p className="text-lg font-bold text-orange-600 capitalize">{requestBody.fitness_goal.replace('-', ' ')}</p>
-                                                <p className="text-sm text-orange-700">Your primary fitness objective</p>
-                                            </div>
-                                            <div className="p-4 bg-purple-50 rounded-lg">
-                                                <h4 className="font-medium text-purple-900 mb-2">Health Status</h4>
-                                                <p className="text-lg font-bold text-purple-600">{assessment.bmi_category}</p>
-                                                <p className="text-sm text-purple-700">BMI Category: {assessment.bmi}</p>
-                                            </div>
-                                        </div>
+                        {assessment && (
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Fitness Profile</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                                        <p className="text-2xl font-bold text-blue-600">{Math.round(assessment.tdee - assessment.bmr)}</p>
+                                        <p className="text-sm text-blue-700">Daily Activity Calories</p>
+                                                </div>
+                                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                                        <p className="text-2xl font-bold text-green-600 capitalize">{requestBody.activity_level}</p>
+                                        <p className="text-sm text-green-700">Activity Level</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-orange-50 rounded-lg">
+                                        <p className="text-2xl font-bold text-orange-600 capitalize">{requestBody.fitness_goal.replace('-', ' ')}</p>
+                                        <p className="text-sm text-orange-700">Fitness Goal</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                                        <p className="text-2xl font-bold text-purple-600">{assessment.bmi_category}</p>
+                                        <p className="text-sm text-purple-700">BMI Category</p>
                                     </div>
                                 </div>
-                                
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Exercise Recommendations</h3>
-                            <div className="space-y-4">
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Cardiovascular Exercise</p>
-                                                <p className="text-sm text-gray-600">Aim for 150-300 minutes of moderate-intensity cardio per week to support your {requestBody.fitness_goal.replace('-', ' ')} goals</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Strength Training</p>
-                                                <p className="text-sm text-gray-600">Include 2-3 strength training sessions per week focusing on major muscle groups</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Flexibility & Mobility</p>
-                                                <p className="text-sm text-gray-600">Dedicate 10-15 minutes daily to stretching and mobility work</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Progressive Overload</p>
-                                                <p className="text-sm text-gray-600">Gradually increase intensity, duration, or frequency of your workouts over time</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Recovery</p>
-                                                <p className="text-sm text-gray-600">Ensure adequate rest between workouts and prioritize sleep for optimal recovery</p>
-                                            </div>
+                            </div>
+                        )}
+
+                        {workoutPlanLoading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Generating Your Workout Plan</h3>
+                                <p className="text-gray-600">Creating personalized exercise recommendations based on your fitness profile...</p>
+                            </div>
+                        ) : workoutPlan ? (
+                            <div className="space-y-6">
+                                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{workoutPlan.plan_duration_days}-Day Workout Plan</h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                                    <div className="text-center">
+                                            <p className="text-2xl font-bold text-blue-600">{workoutPlan.total_workout_days}</p>
+                                            <p className="text-sm text-gray-600">Workout Days</p>
+                                                    </div>
+                                                    <div className="text-center">
+                                            <p className="text-2xl font-bold text-green-600">{workoutPlan.total_rest_days}</p>
+                                            <p className="text-sm text-gray-600">Rest Days</p>
+                                                    </div>
+                                                        <div className="text-center">
+                                            <p className="text-2xl font-bold text-orange-600">{workoutPlan.estimated_weekly_calories_burned}</p>
+                                            <p className="text-sm text-gray-600">Weekly Calories</p>
+                                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-2xl font-bold text-purple-600">{workoutPlan.average_workout_duration}min</p>
+                                            <p className="text-sm text-gray-600">Avg Duration</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Health Considerations</h3>
-                                    <div className="space-y-3">
-                                        {requestBody.has_diabetes && (
-                                            <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-                                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                                <div>
-                                                    <p className="font-medium text-yellow-900">Diabetes Management</p>
-                                                    <p className="text-sm text-yellow-700">Monitor blood sugar levels before, during, and after exercise. Consult your healthcare provider for specific guidelines.</p>
-                                                </div>
-                                                        </div>
+                                {Object.entries(workoutPlan.workout_plan).map(([dayKey, dayPlan], dayIndex) => (
+                                    <div key={dayKey} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h4 className="text-xl font-semibold text-gray-900">Day {dayIndex + 1}</h4>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                                    dayPlan.type === 'rest' 
+                                                        ? 'bg-gray-100 text-gray-800' 
+                                                        : dayPlan.type === 'cardio'
+                                                        ? 'bg-red-100 text-red-800'
+                                                        : dayPlan.type === 'strength'
+                                                        ? 'bg-blue-100 text-blue-800'
+                                                        : 'bg-green-100 text-green-800'
+                                                }`}>
+                                                    {dayPlan.type === 'rest' ? '🛌 Rest' : 
+                                                     dayPlan.type === 'cardio' ? '❤️ Cardio' :
+                                                     dayPlan.type === 'strength' ? '💪 Strength' : '🤸 Flexibility'}
+                                                </span>
+                                                {dayPlan.type !== 'rest' && 'estimated_calories_burned' in dayPlan && (
+                                                    <span className="text-sm text-gray-600">
+                                                        {dayPlan.estimated_calories_burned} cal
+                                                    </span>
                                                     )}
-                                        {requestBody.has_hypertension && (
-                                            <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
-                                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                                <div>
-                                                    <p className="font-medium text-red-900">Blood Pressure Management</p>
-                                                    <p className="text-sm text-red-700">Start with low to moderate intensity exercises and gradually increase. Monitor your blood pressure regularly.</p>
                                                 </div>
+                                        </div>
+
+                                        {dayPlan.type === 'rest' ? (
+                                            <div className="space-y-4">
+                                                <div className="p-4 bg-gray-50 rounded-lg">
+                                                    <h5 className="font-medium text-gray-900 mb-2">Rest Day Activities</h5>
+                                                    <ul className="space-y-1">
+                                                        {dayPlan.activities.map((activity, idx) => (
+                                                            <li key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                                                                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                                                                {activity}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                                <p className="text-sm text-gray-600 italic">{dayPlan.notes}</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-6">
+                                                {/* Warm Up */}
+                                                <div className="space-y-3">
+                                                    <h5 className="font-semibold text-gray-900 flex items-center gap-2">
+                                                        🔥 Warm Up ({dayPlan.warm_up.duration_minutes} min)
+                                                    </h5>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                        {dayPlan.warm_up.exercises.map((exercise, idx) => (
+                                                            <div key={idx} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                                                                <span className="text-sm font-medium text-gray-900">{exercise.name}</span>
+                                                                <span className="text-xs text-gray-600">{exercise.duration}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Main Workout */}
+                                                <div className="space-y-3">
+                                                    <h5 className="font-semibold text-gray-900 flex items-center gap-2">
+                                                        💪 Main Workout ({dayPlan.main_workout.duration_minutes} min)
+                                                    </h5>
+                                                    <div className="space-y-3">
+                                                        {dayPlan.main_workout.exercises.map((exercise, idx) => (
+                                                            <div key={idx} className="p-4 bg-blue-50 rounded-lg">
+                                                                <div className="flex items-start justify-between mb-2">
+                                                                    <h6 className="font-medium text-gray-900">{exercise.name}</h6>
+                                                                    <div className="text-right text-sm">
+                                                                        <p className="text-blue-600 font-semibold">{exercise.calories_burned} cal</p>
+                                                                        <p className="text-gray-500">Difficulty: {exercise.difficulty}/5</p>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-sm text-gray-600 mb-3">{exercise.instructions}</p>
+                                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                                                    <div className="bg-white p-2 rounded">
+                                                                        <p className="font-medium text-gray-700">Duration</p>
+                                                                        <p className="text-gray-600">{exercise.duration_minutes} min</p>
+                                                                    </div>
+                                                                    {exercise.sets.sets && (
+                                                                        <div className="bg-white p-2 rounded">
+                                                                            <p className="font-medium text-gray-700">Sets</p>
+                                                                            <p className="text-gray-600">{exercise.sets.sets}</p>
                                                     </div>
                                                 )}
-                                        {requestBody.is_vegetarian && (
-                                            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                                <div>
-                                                    <p className="font-medium text-green-900">Vegetarian Nutrition</p>
-                                                    <p className="text-sm text-green-700">Ensure adequate protein intake from plant sources to support muscle development and recovery.</p>
+                                                                    {exercise.sets.reps && (
+                                                                        <div className="bg-white p-2 rounded">
+                                                                            <p className="font-medium text-gray-700">Reps</p>
+                                                                            <p className="text-gray-600">{exercise.sets.reps}</p>
+                                            </div>
+                                                                    )}
+                                                                    {exercise.sets.rest_seconds && (
+                                                                        <div className="bg-white p-2 rounded">
+                                                                            <p className="font-medium text-gray-700">Rest</p>
+                                                                            <p className="text-gray-600">{exercise.sets.rest_seconds}s</p>
+                                                                        </div>
+                                                                    )}
+                                        </div>
+                                    </div>
+                                ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Cool Down */}
+                                                <div className="space-y-3">
+                                                    <h5 className="font-semibold text-gray-900 flex items-center gap-2">
+                                                        ❄️ Cool Down ({dayPlan.cool_down.duration_minutes} min)
+                                                    </h5>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                        {dayPlan.cool_down.exercises.map((exercise, idx) => (
+                                                            <div key={idx} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                                                <span className="text-sm font-medium text-gray-900">{exercise.name}</span>
+                                                                <span className="text-xs text-gray-600">{exercise.duration}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-3 bg-gray-50 rounded-lg">
+                                                    <p className="text-sm text-gray-600 italic">{dayPlan.notes}</p>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
+                                ))}
+                            </div>
+                        ) : assessment ? (
+                            <div className="text-center py-12">
+                                <div className="text-6xl mb-4">🏋️‍♂️</div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Generate Your Workout Plan</h3>
+                                <p className="text-gray-600 mb-4">Select your preferences and click "Generate Plan" to create your personalized workout routine.</p>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                                    <div className="flex items-center gap-2">
+                                        <label htmlFor="workout-days-ready" className="text-sm font-medium text-gray-700">
+                                            Days:
+                                        </label>
+                                        <select
+                                            id="workout-days-ready"
+                                            value={selectedWorkoutDays}
+                                            onChange={(e) => setSelectedWorkoutDays(Number(e.target.value))}
+                                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        >
+                                            {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                                <option key={day} value={day}>
+                                                    {day} {day === 1 ? 'Day' : 'Days'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <label htmlFor="duration-ready" className="text-sm font-medium text-gray-700">
+                                            Duration:
+                                        </label>
+                                        <select
+                                            id="duration-ready"
+                                            value={selectedDuration}
+                                            onChange={(e) => setSelectedDuration(Number(e.target.value))}
+                                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        >
+                                            <option value={15}>15 min</option>
+                                            <option value={30}>30 min</option>
+                                            <option value={45}>45 min</option>
+                                            <option value={60}>60 min</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <label htmlFor="workout-type-ready" className="text-sm font-medium text-gray-700">
+                                            Type:
+                                        </label>
+                                        <select
+                                            id="workout-type-ready"
+                                            value={selectedWorkoutType}
+                                            onChange={(e) => setSelectedWorkoutType(e.target.value)}
+                                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        >
+                                            <option value="general">General</option>
+                                            <option value="cardio">Cardio</option>
+                                            <option value="strength">Strength</option>
+                                            <option value="flexibility">Flexibility</option>
+                                        </select>
+                                    </div>
                                 </div>
+                                <button 
+                                    onClick={() => generateWorkoutPlanData(selectedWorkoutDays, selectedDuration, selectedWorkoutType)}
+                                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                                >
+                                    Generate {selectedWorkoutDays}-Day Workout Plan
+                                </button>
                             </div>
                         ) : (
                             <div className="text-center py-12">
                                 <div className="text-6xl mb-4">🏋️‍♂️</div>
-                                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Exercise Data Available</h3>
-                                <p className="text-gray-600">Complete an assessment first to see personalized exercise recommendations.</p>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Complete Assessment First</h3>
+                                <p className="text-gray-600">Complete your health assessment to get personalized workout plans.</p>
                             </div>
                         )}
                     </div>

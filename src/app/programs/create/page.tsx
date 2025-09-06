@@ -85,9 +85,25 @@ export default function CreateProgramPage() {
         }
     }, [activeTab, assessment, mealPlan, mealPlanLoading, selectedDays]);
 
+    // Clear workout plan when meal plan changes to ensure it gets regenerated with correct duration
+    useEffect(() => {
+        if (mealPlan && workoutPlan) {
+            console.log('=== Meal Plan Changed - Clearing Workout Plan ===');
+            console.log('New Meal Plan Duration:', mealPlan.plan_duration_days);
+            console.log('Current Workout Plan Duration:', workoutPlan.plan_duration_days);
+            if (mealPlan.plan_duration_days !== workoutPlan.plan_duration_days) {
+                setWorkoutPlan(null);
+            }
+        }
+    }, [mealPlan]);
+
     // Generate workout plan when exercise tab is accessed
     useEffect(() => {
         if (activeTab === 'exercise' && assessment && mealPlan && !workoutPlan) {
+            console.log('=== Workout Plan Generation Trigger ===');
+            console.log('Meal Plan Duration:', mealPlan.plan_duration_days);
+            console.log('Assessment Available:', !!assessment);
+            console.log('Current Workout Plan:', workoutPlan);
             generateWorkoutPlanData();
         }
     }, [activeTab, assessment, mealPlan, workoutPlan]);
@@ -175,6 +191,11 @@ export default function CreateProgramPage() {
         if (!assessment) return;
         
         try {
+            console.log('=== Meal Plan Generation Debug ===');
+            console.log('Selected Days:', selectedDays);
+            console.log('Days Parameter:', days);
+            console.log('Assessment Daily Calories:', assessment.daily_calories);
+            
             setMealPlanLoading(true);
             const result = await generateMealPlan({
                 user_id: 'user_' + Date.now(), // Generate a unique user ID
@@ -184,6 +205,9 @@ export default function CreateProgramPage() {
             });
 
             if (result.success) {
+                console.log('=== Meal Plan Generated Successfully ===');
+                console.log('Meal Plan Data:', result.data);
+                console.log('Plan Duration Days:', result.data.plan_duration_days);
                 setMealPlan(result.data);
             } else {
                 console.error('Failed to generate meal plan:', result.message);
@@ -199,12 +223,18 @@ export default function CreateProgramPage() {
         if (!assessment || !mealPlan) return;
         
         try {
+            console.log('=== Workout Plan Generation Debug ===');
+            console.log('Meal Plan Duration Days:', mealPlan.plan_duration_days);
+            console.log('Using n_days:', mealPlan.plan_duration_days);
+            
             const result = await generateWorkoutPlan({
                 user_id: 'user_' + Date.now(), // Generate a unique user ID
                 duration_minutes: 30, // Fixed duration - determined by backend
                 workout_type: 'general', // Fixed workout type - determined internally
                 n_days: mealPlan.plan_duration_days // Use meal plan duration days
             });
+
+            console.log('Workout Plan API Response:', result);
 
             if (result.success) {
                 setWorkoutPlan(result.data);
@@ -846,7 +876,18 @@ export default function CreateProgramPage() {
                                     <p className="text-sm text-gray-600">AI-generated exercise routines tailored to your fitness profile</p>
                                 </div>
                             </div>
-                        </div>
+                            {mealPlan && (
+                                <button 
+                                    onClick={() => {
+                                        setWorkoutPlan(null);
+                                        generateWorkoutPlanData();
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                                >
+                                    Regenerate Plan
+                                </button>
+                            )}
+                            </div>
 
                         {assessment && (
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -855,7 +896,7 @@ export default function CreateProgramPage() {
                                     <div className="text-center p-3 bg-blue-50 rounded-lg">
                                         <p className="text-2xl font-bold text-blue-600">{Math.round(assessment.tdee - assessment.bmr)}</p>
                                         <p className="text-sm text-blue-700">Daily Activity Calories</p>
-                                                </div>
+                        </div>
                                     <div className="text-center p-3 bg-green-50 rounded-lg">
                                         <p className="text-2xl font-bold text-green-600 capitalize">{requestBody.activity_level}</p>
                                         <p className="text-sm text-green-700">Activity Level</p>
@@ -875,24 +916,24 @@ export default function CreateProgramPage() {
                         {workoutPlan ? (
                             <div className="space-y-6">
                                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{workoutPlan.plan_duration_days}-Day Workout Plan</h3>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{workoutPlan.plan_duration_days}-Day Fitness Plan ({workoutPlan.total_workout_days} Workout Days + {workoutPlan.total_rest_days} Rest Day{workoutPlan.total_rest_days > 1 ? 's' : ''})</h3>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                                                     <div className="text-center">
                                             <p className="text-2xl font-bold text-blue-600">{workoutPlan.total_workout_days}</p>
                                             <p className="text-sm text-gray-600">Workout Days</p>
-                                                    </div>
+                                                </div>
                                                     <div className="text-center">
                                             <p className="text-2xl font-bold text-green-600">{workoutPlan.total_rest_days}</p>
                                             <p className="text-sm text-gray-600">Rest Days</p>
                                                     </div>
-                                                        <div className="text-center">
+                                                    <div className="text-center">
                                             <p className="text-2xl font-bold text-orange-600">{workoutPlan.estimated_weekly_calories_burned}</p>
                                             <p className="text-sm text-gray-600">Weekly Calories</p>
-                                                        </div>
-                                        <div className="text-center">
+                                                    </div>
+                                                        <div className="text-center">
                                             <p className="text-2xl font-bold text-purple-600">{workoutPlan.average_workout_duration}min</p>
                                             <p className="text-sm text-gray-600">Avg Duration</p>
-                                        </div>
+                                                        </div>
                                     </div>
                                 </div>
 
@@ -1032,11 +1073,11 @@ export default function CreateProgramPage() {
                                 <p className="text-gray-600 mb-4">Select your preferences and click "Generate Plan" to create your personalized workout routine.</p>
                                 <div className="mb-6">
                                     <p className="text-sm text-gray-600">
-                                        Your workout plan will be generated for{' '}
+                                        Your fitness plan will be generated for{' '}
                                         <span className="font-semibold text-blue-600">
                                             {mealPlan.plan_duration_days} days
                                         </span>
-                                        {' '}based on your meal plan duration.
+                                        {' '}based on your meal plan duration. This includes workout days and rest days for optimal recovery.
                                     </p>
                                 </div>
                                 <button 
@@ -1044,7 +1085,7 @@ export default function CreateProgramPage() {
                                     className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                                     disabled={!mealPlan}
                                 >
-                                    Generate {mealPlan?.plan_duration_days || 3}-Day Workout Plan
+                                    Generate {mealPlan?.plan_duration_days || 3}-Day Fitness Plan
                                 </button>
                             </div>
                         ) : assessment ? (

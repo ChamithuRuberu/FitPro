@@ -26,8 +26,6 @@ export default function CreateProgramPage() {
     const [mealPlanLoading, setMealPlanLoading] = useState<boolean>(false);
     const [selectedDays, setSelectedDays] = useState<number>(3);
     const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlanResponse | null>(null);
-    const [workoutPlanLoading, setWorkoutPlanLoading] = useState<boolean>(false);
-    const [selectedDuration, setSelectedDuration] = useState<number>(30);
     const [selectedWorkoutType, setSelectedWorkoutType] = useState<string>('general');
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -90,10 +88,10 @@ export default function CreateProgramPage() {
 
     // Generate workout plan when exercise tab is accessed
     useEffect(() => {
-        if (activeTab === 'exercise' && assessment && mealPlan && !workoutPlan && !workoutPlanLoading) {
-            generateWorkoutPlanData(selectedDuration, selectedWorkoutType);
+        if (activeTab === 'exercise' && assessment && mealPlan && !workoutPlan) {
+            generateWorkoutPlanData(selectedWorkoutType);
         }
-    }, [activeTab, assessment, mealPlan, workoutPlan, workoutPlanLoading, selectedDuration, selectedWorkoutType]);
+    }, [activeTab, assessment, mealPlan, workoutPlan, selectedWorkoutType]);
 
     const submitAssessment = async (payload: any) => {
         try {
@@ -104,8 +102,8 @@ export default function CreateProgramPage() {
             setProgress(0);
             setLoadingMsg(loadingMessages[0]);
 
-            const totalDuration = 8000; // 8s
-            const interval = 1000;
+            const totalDuration = 3000; // 3s
+            const interval = 500;
             const total = totalDuration / interval;
             let tick = 0;
             let apiCompleted = false;
@@ -127,7 +125,7 @@ export default function CreateProgramPage() {
                         setAssessment(apiData);
                         setLoading(false);
                         setView('results');
-                    }, 800);
+                    }, 300);
                 }
             }, interval);
 
@@ -153,7 +151,7 @@ export default function CreateProgramPage() {
                         setAssessment(apiData);
                         setLoading(false);
                         setView('results');
-                    }, 800);
+                    }, 300);
                 }
 
             } catch (apiError: any) {
@@ -198,14 +196,13 @@ export default function CreateProgramPage() {
         }
     };
 
-    const generateWorkoutPlanData = async (duration: number = selectedDuration, workoutType: string = selectedWorkoutType) => {
+    const generateWorkoutPlanData = async (workoutType: string = selectedWorkoutType) => {
         if (!assessment || !mealPlan) return;
         
         try {
-            setWorkoutPlanLoading(true);
             const result = await generateWorkoutPlan({
                 user_id: 'user_' + Date.now(), // Generate a unique user ID
-                duration_minutes: duration,
+                duration_minutes: 30, // Fixed duration - determined by backend
                 workout_type: workoutType,
                 n_days: mealPlan.plan_duration_days // Use meal plan duration days
             });
@@ -217,8 +214,6 @@ export default function CreateProgramPage() {
             }
         } catch (error) {
             console.error('Error generating workout plan:', error);
-        } finally {
-            setWorkoutPlanLoading(false);
         }
     };
 
@@ -243,125 +238,261 @@ export default function CreateProgramPage() {
                                 </div>
 
                                 <form
-                                    className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded mb-4"
+                                    className="space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200"
                                     onSubmit={(e) => {
                                         e.preventDefault();
+                                        // Clear previous errors
+                                        setError(null);
+                                        
                                         // Validate form before submitting
-                                        if (requestBody.height_cm < 100) {
-                                            setError('Height must be at least 100cm');
+                                        if (!requestBody.age || requestBody.age < 1 || requestBody.age > 120) {
+                                            setError('Please enter a valid age between 1 and 120 years');
                                             return;
                                         }
-                                        if (requestBody.weight_kg < 30) {
-                                            setError('Weight must be at least 30kg');
+                                        if (!requestBody.height_cm || requestBody.height_cm < 100 || requestBody.height_cm > 250) {
+                                            setError('Please enter a valid height between 100cm and 250cm');
                                             return;
                                         }
-                                        if (requestBody.age < 1) {
-                                            setError('Please enter a valid age');
+                                        if (!requestBody.weight_kg || requestBody.weight_kg < 30 || requestBody.weight_kg > 300) {
+                                            setError('Please enter a valid weight between 30kg and 300kg');
                                             return;
                                         }
+                                        if (!requestBody.gender) {
+                                            setError('Please select your gender');
+                                            return;
+                                        }
+                                        if (!requestBody.activity_level) {
+                                            setError('Please select your activity level');
+                                            return;
+                                        }
+                                        if (!requestBody.fitness_goal) {
+                                            setError('Please select your fitness goal');
+                                            return;
+                                        }
+                                        if (!requestBody.spice_tolerance) {
+                                            setError('Please select your spice tolerance');
+                                            return;
+                                        }
+                                        
                                         submitAssessment(requestBody);
                                     }}
                                 >
-                                    <div>
-                                        <label className="block text-xs text-gray-600 mb-1">Age</label>
-                                        <input type="number" value={requestBody.age}
+                                    {/* Personal Information Section */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Personal Information</h3>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Age <span className="text-red-500">*</span>
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    value={requestBody.age || ''}
                                                onChange={(e) => setRequestBody({ ...requestBody, age: Number(e.target.value) })}
-                                               className="w-full border rounded px-3 py-2 text-sm" required />
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                                                    placeholder="Enter your age"
+                                                    min="1"
+                                                    max="120"
+                                                    required 
+                                                />
+                                                {requestBody.age > 0 && (requestBody.age < 1 || requestBody.age > 120) && (
+                                                    <p className="text-sm text-red-500">Age must be between 1 and 120 years</p>
+                                                )}
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-600 mb-1">Gender</label>
-                                        <select value={requestBody.gender}
+
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Gender <span className="text-red-500">*</span>
+                                                </label>
+                                                <select 
+                                                    value={requestBody.gender}
                                                 onChange={(e) => setRequestBody({ ...requestBody, gender: e.target.value as any })}
-                                                className="w-full border rounded px-3 py-2 text-sm">
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                                >
+                                                    <option value="">Select your gender</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
                                         </select>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-600 mb-1">Height (cm)</label>
-                                        <input type="number" value={requestBody.height_cm}
+
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Height (cm) <span className="text-red-500">*</span>
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    value={requestBody.height_cm || ''}
                                                onChange={(e) => setRequestBody({ ...requestBody, height_cm: Number(e.target.value) })}
-                                               className="w-full border rounded px-3 py-2 text-sm" 
-                                               min="100" 
-                                               max="250"
-                                               required />
-                                        {requestBody.height_cm > 0 && requestBody.height_cm < 100 && (
-                                            <p className="text-xs text-red-500 mt-1">Height must be at least 100cm</p>
-                                        )}
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                                                    placeholder="Enter your height in cm"
+                                                    min="100" 
+                                                    max="250"
+                                                    required 
+                                                />
+                                                {requestBody.height_cm > 0 && (requestBody.height_cm < 100 || requestBody.height_cm > 250) && (
+                                                    <p className="text-sm text-red-500">Height must be between 100cm and 250cm</p>
+                                                )}
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-600 mb-1">Weight (kg)</label>
-                                        <input type="number" value={requestBody.weight_kg}
+
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Weight (kg) <span className="text-red-500">*</span>
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    value={requestBody.weight_kg || ''}
                                                onChange={(e) => setRequestBody({ ...requestBody, weight_kg: Number(e.target.value) })}
-                                               className="w-full border rounded px-3 py-2 text-sm" 
-                                               min="30" 
-                                               max="300"
-                                               required />
-                                        {requestBody.weight_kg > 0 && requestBody.weight_kg < 30 && (
-                                            <p className="text-xs text-red-500 mt-1">Weight must be at least 30kg</p>
-                                        )}
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                                                    placeholder="Enter your weight in kg"
+                                                    min="30" 
+                                                    max="300"
+                                                    required 
+                                                />
+                                                {requestBody.weight_kg > 0 && (requestBody.weight_kg < 30 || requestBody.weight_kg > 300) && (
+                                                    <p className="text-sm text-red-500">Weight must be between 30kg and 300kg</p>
+                                                )}
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-600 mb-1">Activity Level</label>
-                                        <select value={requestBody.activity_level}
+                                        </div>
+                                    </div>
+
+                                    {/* Lifestyle & Goals Section */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Lifestyle & Goals</h3>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Activity Level <span className="text-red-500">*</span>
+                                                </label>
+                                                <select 
+                                                    value={requestBody.activity_level}
                                                 onChange={(e) => setRequestBody({ ...requestBody, activity_level: e.target.value as any })}
-                                                className="w-full border rounded px-3 py-2 text-sm">
-                                            <option value="sedentary">Sedentary</option>
-                                            <option value="light">Light</option>
-                                            <option value="moderate">Moderate</option>
-                                            <option value="active">Active</option>
-                                            <option value="very_active">Very Active</option>
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                                >
+                                                    <option value="">Select your activity level</option>
+                                                    <option value="sedentary">Sedentary - Little to no exercise</option>
+                                                    <option value="light">Light - Light exercise 1-3 days/week</option>
+                                                    <option value="moderate">Moderate - Moderate exercise 3-5 days/week</option>
+                                                    <option value="active">Active - Heavy exercise 6-7 days/week</option>
+                                                    <option value="very_active">Very Active - Very heavy exercise, physical job</option>
                                         </select>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-600 mb-1">Fitness Goal</label>
-                                        <select value={requestBody.fitness_goal}
+
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Fitness Goal <span className="text-red-500">*</span>
+                                                </label>
+                                                <select 
+                                                    value={requestBody.fitness_goal}
                                                 onChange={(e) => setRequestBody({ ...requestBody, fitness_goal: e.target.value as any })}
-                                                className="w-full border rounded px-3 py-2 text-sm">
-                                            <option value="maintenance">Maintenance</option>
-                                            <option value="weight-loss">Weight Loss</option>
-                                            <option value="muscle-gain">Muscle Gain</option>
-                                            <option value="endurance">Endurance</option>
-                                            <option value="flexibility">Flexibility</option>
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                                >
+                                                    <option value="">Select your fitness goal</option>
+                                                    <option value="maintenance">Maintain current fitness level</option>
+                                                    <option value="weight-loss">Weight loss and fat reduction</option>
+                                                    <option value="muscle-gain">Muscle building and strength</option>
+                                                    <option value="endurance">Improve endurance and stamina</option>
+                                                    <option value="flexibility">Increase flexibility and mobility</option>
                                         </select>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <input id="has_diabetes" type="checkbox" checked={requestBody.has_diabetes}
+                                        </div>
+                                    </div>
+
+                                    {/* Health Conditions Section */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Health Information</h3>
+                                        
+                                        <div className="space-y-4">
+                                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                                                <input 
+                                                    id="has_diabetes" 
+                                                    type="checkbox" 
+                                                    checked={requestBody.has_diabetes}
                                                onChange={(e) => setRequestBody({ ...requestBody, has_diabetes: e.target.checked })}
-                                               className="h-4 w-4" />
-                                        <label htmlFor="has_diabetes" className="text-sm text-gray-700">Has Diabetes</label>
+                                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                                />
+                                                <label htmlFor="has_diabetes" className="text-sm font-medium text-gray-700">
+                                                    I have diabetes or pre-diabetes
+                                                </label>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <input id="has_hypertension" type="checkbox" checked={requestBody.has_hypertension}
+
+                                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                                                <input 
+                                                    id="has_hypertension" 
+                                                    type="checkbox" 
+                                                    checked={requestBody.has_hypertension}
                                                onChange={(e) => setRequestBody({ ...requestBody, has_hypertension: e.target.checked })}
-                                               className="h-4 w-4" />
-                                        <label htmlFor="has_hypertension" className="text-sm text-gray-700">Has Hypertension</label>
+                                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                                />
+                                                <label htmlFor="has_hypertension" className="text-sm font-medium text-gray-700">
+                                                    I have high blood pressure or hypertension
+                                                </label>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <input id="is_vegetarian" type="checkbox" checked={requestBody.is_vegetarian}
+
+                                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                                                <input 
+                                                    id="is_vegetarian" 
+                                                    type="checkbox" 
+                                                    checked={requestBody.is_vegetarian}
                                                onChange={(e) => setRequestBody({ ...requestBody, is_vegetarian: e.target.checked })}
-                                               className="h-4 w-4" />
-                                        <label htmlFor="is_vegetarian" className="text-sm text-gray-700">Vegetarian</label>
+                                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                                />
+                                                <label htmlFor="is_vegetarian" className="text-sm font-medium text-gray-700">
+                                                    I follow a vegetarian or plant-based diet
+                                                </label>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-600 mb-1">Spice Tolerance</label>
-                                        <select value={requestBody.spice_tolerance}
+                                        </div>
+                                    </div>
+
+                                    {/* Dietary Preferences Section */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Dietary Preferences</h3>
+                                        
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Spice Tolerance <span className="text-red-500">*</span>
+                                            </label>
+                                            <select 
+                                                value={requestBody.spice_tolerance}
                                                 onChange={(e) => setRequestBody({ ...requestBody, spice_tolerance: e.target.value as any })}
-                                                className="w-full border rounded px-3 py-2 text-sm">
-                                            <option value="low">Low</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="high">High</option>
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                            >
+                                                <option value="">Select your spice tolerance</option>
+                                                <option value="low">Low - Mild flavors preferred</option>
+                                                <option value="medium">Medium - Moderate spice level</option>
+                                                <option value="high">High - Spicy foods preferred</option>
                                         </select>
                                     </div>
-                                    <div className="md:col-span-2 flex justify-end">
-                                        <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
-                                            Let's go!   
+                                    </div>
+
+                                    {/* Submit Button */}
+                                    <div className="pt-6 border-t border-gray-200">
+                                        <button 
+                                            type="submit" 
+                                            className="w-full md:w-auto px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-150"
+                                        >
+                                            Generate My Personalized Plan 🚀
                                         </button>
                                     </div>
                                 </form>
 
                                 {error && (
-                                    <div className="text-sm text-red-600">{error}</div>
+                                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                        <div className="flex items-center">
+                                            <div className="flex-shrink-0">
+                                                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
+                                            <div className="ml-3">
+                                                <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
+                                                <div className="mt-2 text-sm text-red-700">
+                                                    <p>{error}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -619,23 +750,6 @@ export default function CreateProgramPage() {
                             <h2 className="text-2xl font-bold text-gray-900">Personalized Workout Plan</h2>
                             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                                 <div className="flex items-center gap-2">
-                                    <label htmlFor="duration-select" className="text-sm font-medium text-gray-700">
-                                        Duration:
-                                    </label>
-                                    <select
-                                        id="duration-select"
-                                        value={selectedDuration}
-                                        onChange={(e) => setSelectedDuration(Number(e.target.value))}
-                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        disabled={workoutPlanLoading}
-                                    >
-                                        <option value={15}>15 min</option>
-                                        <option value={30}>30 min</option>
-                                        <option value={45}>45 min</option>
-                                        <option value={60}>60 min</option>
-                                    </select>
-                                </div>
-                                <div className="flex items-center gap-2">
                                     <label htmlFor="workout-type-select" className="text-sm font-medium text-gray-700">
                                         Type:
                                     </label>
@@ -644,7 +758,6 @@ export default function CreateProgramPage() {
                                         value={selectedWorkoutType}
                                         onChange={(e) => setSelectedWorkoutType(e.target.value)}
                                         className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        disabled={workoutPlanLoading}
                                     >
                                         <option value="general">General</option>
                                         <option value="cardio">Cardio</option>
@@ -655,12 +768,12 @@ export default function CreateProgramPage() {
                                 <button 
                                     onClick={() => {
                                         setWorkoutPlan(null);
-                                        if (assessment && mealPlan) generateWorkoutPlanData(selectedDuration, selectedWorkoutType);
+                                        if (assessment && mealPlan) generateWorkoutPlanData(selectedWorkoutType);
                                     }}
                                     className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg w-full sm:w-auto"
-                                    disabled={workoutPlanLoading || !mealPlan}
+                                    disabled={!mealPlan}
                                 >
-                                    {workoutPlanLoading ? 'Generating...' : 'Generate Plan'}
+                                    Generate Plan
                                 </button>
                             </div>
                         </div>
@@ -689,13 +802,7 @@ export default function CreateProgramPage() {
                             </div>
                         )}
 
-                        {workoutPlanLoading ? (
-                            <div className="text-center py-12">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Generating Your Workout Plan</h3>
-                                <p className="text-gray-600">Creating personalized exercise recommendations based on your fitness profile...</p>
-                            </div>
-                        ) : workoutPlan ? (
+                        {workoutPlan ? (
                             <div className="space-y-6">
                                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{workoutPlan.plan_duration_days}-Day Workout Plan</h3>
@@ -722,7 +829,14 @@ export default function CreateProgramPage() {
                                 {Object.entries(workoutPlan.workout_plan).map(([dayKey, dayPlan], dayIndex) => (
                                     <div key={dayKey} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                                         <div className="flex items-center justify-between mb-4">
-                                            <h4 className="text-xl font-semibold text-gray-900">Day {dayIndex + 1}</h4>
+                                            <div>
+                                                <h4 className="text-xl font-semibold text-gray-900">Day {dayIndex + 1}</h4>
+                                                {dayPlan.type !== 'rest' && 'total_duration_minutes' in dayPlan && (
+                                                    <p className="text-sm text-gray-600 mt-1">
+                                                        Total Duration: {dayPlan.total_duration_minutes} minutes
+                                                    </p>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-2">
                                                 <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                                                     dayPlan.type === 'rest' 
@@ -741,8 +855,8 @@ export default function CreateProgramPage() {
                                                     <span className="text-sm text-gray-600">
                                                         {dayPlan.estimated_calories_burned} cal
                                                     </span>
-                                                    )}
-                                                </div>
+                                                )}
+                                            </div>
                                         </div>
 
                                         {dayPlan.type === 'rest' ? (
@@ -765,7 +879,7 @@ export default function CreateProgramPage() {
                                                 {/* Warm Up */}
                                                 <div className="space-y-3">
                                                     <h5 className="font-semibold text-gray-900 flex items-center gap-2">
-                                                        🔥 Warm Up ({dayPlan.warm_up.duration_minutes} min)
+                                                        🔥 Warm Up
                                                     </h5>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                                         {dayPlan.warm_up.exercises.map((exercise, idx) => (
@@ -780,7 +894,7 @@ export default function CreateProgramPage() {
                                                 {/* Main Workout */}
                                                 <div className="space-y-3">
                                                     <h5 className="font-semibold text-gray-900 flex items-center gap-2">
-                                                        💪 Main Workout ({dayPlan.main_workout.duration_minutes} min)
+                                                        💪 Main Workout
                                                     </h5>
                                                     <div className="space-y-3">
                                                         {dayPlan.main_workout.exercises.map((exercise, idx) => (
@@ -793,11 +907,7 @@ export default function CreateProgramPage() {
                                                                     </div>
                                                                 </div>
                                                                 <p className="text-sm text-gray-600 mb-3">{exercise.instructions}</p>
-                                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                                                                    <div className="bg-white p-2 rounded">
-                                                                        <p className="font-medium text-gray-700">Duration</p>
-                                                                        <p className="text-gray-600">{exercise.duration_minutes} min</p>
-                                                                    </div>
+                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
                                                                     {exercise.sets.sets && (
                                                                         <div className="bg-white p-2 rounded">
                                                                             <p className="font-medium text-gray-700">Sets</p>
@@ -825,7 +935,7 @@ export default function CreateProgramPage() {
                                                 {/* Cool Down */}
                                                 <div className="space-y-3">
                                                     <h5 className="font-semibold text-gray-900 flex items-center gap-2">
-                                                        ❄️ Cool Down ({dayPlan.cool_down.duration_minutes} min)
+                                                        ❄️ Cool Down
                                                     </h5>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                                         {dayPlan.cool_down.exercises.map((exercise, idx) => (
@@ -861,22 +971,6 @@ export default function CreateProgramPage() {
                                 </div>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
                                     <div className="flex items-center gap-2">
-                                        <label htmlFor="duration-ready" className="text-sm font-medium text-gray-700">
-                                            Duration:
-                                        </label>
-                                        <select
-                                            id="duration-ready"
-                                            value={selectedDuration}
-                                            onChange={(e) => setSelectedDuration(Number(e.target.value))}
-                                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            <option value={15}>15 min</option>
-                                            <option value={30}>30 min</option>
-                                            <option value={45}>45 min</option>
-                                            <option value={60}>60 min</option>
-                                        </select>
-                                    </div>
-                                    <div className="flex items-center gap-2">
                                         <label htmlFor="workout-type-ready" className="text-sm font-medium text-gray-700">
                                             Type:
                                         </label>
@@ -894,7 +988,7 @@ export default function CreateProgramPage() {
                                     </div>
                                 </div>
                                 <button 
-                                    onClick={() => generateWorkoutPlanData(selectedDuration, selectedWorkoutType)}
+                                    onClick={() => generateWorkoutPlanData(selectedWorkoutType)}
                                     className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                                     disabled={!mealPlan}
                                 >

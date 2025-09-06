@@ -26,7 +26,6 @@ export default function CreateProgramPage() {
     const [mealPlanLoading, setMealPlanLoading] = useState<boolean>(false);
     const [selectedDays, setSelectedDays] = useState<number>(3);
     const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlanResponse | null>(null);
-    const [selectedWorkoutType, setSelectedWorkoutType] = useState<string>('general');
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [view, setView] = useState<'form' | 'loading' | 'results'>('form');
@@ -89,9 +88,9 @@ export default function CreateProgramPage() {
     // Generate workout plan when exercise tab is accessed
     useEffect(() => {
         if (activeTab === 'exercise' && assessment && mealPlan && !workoutPlan) {
-            generateWorkoutPlanData(selectedWorkoutType);
+            generateWorkoutPlanData();
         }
-    }, [activeTab, assessment, mealPlan, workoutPlan, selectedWorkoutType]);
+    }, [activeTab, assessment, mealPlan, workoutPlan]);
 
     const submitAssessment = async (payload: any) => {
         try {
@@ -196,14 +195,14 @@ export default function CreateProgramPage() {
         }
     };
 
-    const generateWorkoutPlanData = async (workoutType: string = selectedWorkoutType) => {
+    const generateWorkoutPlanData = async () => {
         if (!assessment || !mealPlan) return;
         
         try {
             const result = await generateWorkoutPlan({
                 user_id: 'user_' + Date.now(), // Generate a unique user ID
                 duration_minutes: 30, // Fixed duration - determined by backend
-                workout_type: workoutType,
+                workout_type: 'general', // Fixed workout type - determined internally
                 n_days: mealPlan.plan_duration_days // Use meal plan duration days
             });
 
@@ -749,32 +748,7 @@ export default function CreateProgramPage() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h2 className="text-2xl font-bold text-gray-900">Personalized Workout Plan</h2>
                             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                                <div className="flex items-center gap-2">
-                                    <label htmlFor="workout-type-select" className="text-sm font-medium text-gray-700">
-                                        Type:
-                                    </label>
-                                    <select
-                                        id="workout-type-select"
-                                        value={selectedWorkoutType}
-                                        onChange={(e) => setSelectedWorkoutType(e.target.value)}
-                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    >
-                                        <option value="general">General</option>
-                                        <option value="cardio">Cardio</option>
-                                        <option value="strength">Strength</option>
-                                        <option value="flexibility">Flexibility</option>
-                                    </select>
-                                </div>
-                                <button 
-                                    onClick={() => {
-                                        setWorkoutPlan(null);
-                                        if (assessment && mealPlan) generateWorkoutPlanData(selectedWorkoutType);
-                                    }}
-                                    className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg w-full sm:w-auto"
-                                    disabled={!mealPlan}
-                                >
-                                    Generate Plan
-                                </button>
+                              
                             </div>
                         </div>
 
@@ -835,8 +809,8 @@ export default function CreateProgramPage() {
                                                     <p className="text-sm text-gray-600 mt-1">
                                                         Total Duration: {dayPlan.total_duration_minutes} minutes
                                                     </p>
-                                                )}
-                                            </div>
+                                                    )}
+                                                </div>
                                             <div className="flex items-center gap-2">
                                                 <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                                                     dayPlan.type === 'rest' 
@@ -969,26 +943,8 @@ export default function CreateProgramPage() {
                                         {' '}based on your meal plan duration.
                                     </p>
                                 </div>
-                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-                                    <div className="flex items-center gap-2">
-                                        <label htmlFor="workout-type-ready" className="text-sm font-medium text-gray-700">
-                                            Type:
-                                        </label>
-                                        <select
-                                            id="workout-type-ready"
-                                            value={selectedWorkoutType}
-                                            onChange={(e) => setSelectedWorkoutType(e.target.value)}
-                                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            <option value="general">General</option>
-                                            <option value="cardio">Cardio</option>
-                                            <option value="strength">Strength</option>
-                                            <option value="flexibility">Flexibility</option>
-                                        </select>
-                                    </div>
-                                </div>
                                 <button 
-                                    onClick={() => generateWorkoutPlanData(selectedWorkoutType)}
+                                    onClick={() => generateWorkoutPlanData()}
                                     className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                                     disabled={!mealPlan}
                                 >

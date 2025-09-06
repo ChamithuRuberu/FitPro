@@ -27,7 +27,6 @@ export default function CreateProgramPage() {
     const [selectedDays, setSelectedDays] = useState<number>(3);
     const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlanResponse | null>(null);
     const [workoutPlanLoading, setWorkoutPlanLoading] = useState<boolean>(false);
-    const [selectedWorkoutDays, setSelectedWorkoutDays] = useState<number>(7);
     const [selectedDuration, setSelectedDuration] = useState<number>(30);
     const [selectedWorkoutType, setSelectedWorkoutType] = useState<string>('general');
     const [loading, setLoading] = useState<boolean>(false);
@@ -91,10 +90,10 @@ export default function CreateProgramPage() {
 
     // Generate workout plan when exercise tab is accessed
     useEffect(() => {
-        if (activeTab === 'exercise' && assessment && !workoutPlan && !workoutPlanLoading) {
-            generateWorkoutPlanData(selectedWorkoutDays, selectedDuration, selectedWorkoutType);
+        if (activeTab === 'exercise' && assessment && mealPlan && !workoutPlan && !workoutPlanLoading) {
+            generateWorkoutPlanData(selectedDuration, selectedWorkoutType);
         }
-    }, [activeTab, assessment, workoutPlan, workoutPlanLoading, selectedWorkoutDays, selectedDuration, selectedWorkoutType]);
+    }, [activeTab, assessment, mealPlan, workoutPlan, workoutPlanLoading, selectedDuration, selectedWorkoutType]);
 
     const submitAssessment = async (payload: any) => {
         try {
@@ -199,8 +198,8 @@ export default function CreateProgramPage() {
         }
     };
 
-    const generateWorkoutPlanData = async (days: number = selectedWorkoutDays, duration: number = selectedDuration, workoutType: string = selectedWorkoutType) => {
-        if (!assessment) return;
+    const generateWorkoutPlanData = async (duration: number = selectedDuration, workoutType: string = selectedWorkoutType) => {
+        if (!assessment || !mealPlan) return;
         
         try {
             setWorkoutPlanLoading(true);
@@ -208,7 +207,7 @@ export default function CreateProgramPage() {
                 user_id: 'user_' + Date.now(), // Generate a unique user ID
                 duration_minutes: duration,
                 workout_type: workoutType,
-                n_days: days
+                n_days: mealPlan.plan_duration_days // Use meal plan duration days
             });
 
             if (result.success) {
@@ -620,24 +619,6 @@ export default function CreateProgramPage() {
                             <h2 className="text-2xl font-bold text-gray-900">Personalized Workout Plan</h2>
                             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                                 <div className="flex items-center gap-2">
-                                    <label htmlFor="workout-days-select" className="text-sm font-medium text-gray-700">
-                                        Days:
-                                    </label>
-                                    <select
-                                        id="workout-days-select"
-                                        value={selectedWorkoutDays}
-                                        onChange={(e) => setSelectedWorkoutDays(Number(e.target.value))}
-                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        disabled={workoutPlanLoading}
-                                    >
-                                        {[1, 2, 3, 4, 5, 6, 7].map(day => (
-                                            <option key={day} value={day}>
-                                                {day} {day === 1 ? 'Day' : 'Days'}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="flex items-center gap-2">
                                     <label htmlFor="duration-select" className="text-sm font-medium text-gray-700">
                                         Duration:
                                     </label>
@@ -674,10 +655,10 @@ export default function CreateProgramPage() {
                                 <button 
                                     onClick={() => {
                                         setWorkoutPlan(null);
-                                        if (assessment) generateWorkoutPlanData(selectedWorkoutDays, selectedDuration, selectedWorkoutType);
+                                        if (assessment && mealPlan) generateWorkoutPlanData(selectedDuration, selectedWorkoutType);
                                     }}
                                     className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg w-full sm:w-auto"
-                                    disabled={workoutPlanLoading}
+                                    disabled={workoutPlanLoading || !mealPlan}
                                 >
                                     {workoutPlanLoading ? 'Generating...' : 'Generate Plan'}
                                 </button>
@@ -864,29 +845,21 @@ export default function CreateProgramPage() {
                                     </div>
                                 ))}
                             </div>
-                        ) : assessment ? (
+                        ) : assessment && mealPlan ? (
                             <div className="text-center py-12">
                                 <div className="text-6xl mb-4">🏋️‍♂️</div>
                                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Generate Your Workout Plan</h3>
                                 <p className="text-gray-600 mb-4">Select your preferences and click "Generate Plan" to create your personalized workout routine.</p>
+                                <div className="mb-6">
+                                    <p className="text-sm text-gray-600">
+                                        Your workout plan will be generated for{' '}
+                                        <span className="font-semibold text-blue-600">
+                                            {mealPlan.plan_duration_days} days
+                                        </span>
+                                        {' '}based on your meal plan duration.
+                                    </p>
+                                </div>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-                                    <div className="flex items-center gap-2">
-                                        <label htmlFor="workout-days-ready" className="text-sm font-medium text-gray-700">
-                                            Days:
-                                        </label>
-                                        <select
-                                            id="workout-days-ready"
-                                            value={selectedWorkoutDays}
-                                            onChange={(e) => setSelectedWorkoutDays(Number(e.target.value))}
-                                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            {[1, 2, 3, 4, 5, 6, 7].map(day => (
-                                                <option key={day} value={day}>
-                                                    {day} {day === 1 ? 'Day' : 'Days'}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
                                     <div className="flex items-center gap-2">
                                         <label htmlFor="duration-ready" className="text-sm font-medium text-gray-700">
                                             Duration:
@@ -921,11 +894,18 @@ export default function CreateProgramPage() {
                                     </div>
                                 </div>
                                 <button 
-                                    onClick={() => generateWorkoutPlanData(selectedWorkoutDays, selectedDuration, selectedWorkoutType)}
+                                    onClick={() => generateWorkoutPlanData(selectedDuration, selectedWorkoutType)}
                                     className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                                    disabled={!mealPlan}
                                 >
-                                    Generate {selectedWorkoutDays}-Day Workout Plan
+                                    Generate {mealPlan?.plan_duration_days || 3}-Day Workout Plan
                                 </button>
+                            </div>
+                        ) : assessment ? (
+                            <div className="text-center py-12">
+                                <div className="text-6xl mb-4">🍽️</div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Generate Meal Plan First</h3>
+                                <p className="text-gray-600">Please generate your meal plan first to determine the workout plan duration.</p>
                             </div>
                         ) : (
                             <div className="text-center py-12">

@@ -217,9 +217,9 @@ export default function CreateProgramPage() {
     };
 
     const tabs = [
-        { id: 'assessment', name: 'Assessment', icon: FiTarget, description: 'Get personalized recommendations' },
-        { id: 'nutrition', name: 'Nutrition Recommendations', icon: FiBook, description: 'Browse nutrition plans' },
-        { id: 'exercise', name: 'Exercise Recommendations', icon: FiTrendingUp, description: 'View exercise plans' },
+        { id: 'assessment', name: 'Health Assessment', icon: FiTarget, description: 'Complete your health profile', status: assessment ? 'completed' : 'pending' },
+        { id: 'nutrition', name: 'Nutrition Plan', icon: FiBook, description: 'Personalized meal recommendations', status: mealPlan ? 'completed' : assessment ? 'ready' : 'locked' },
+        { id: 'exercise', name: 'Workout Plan', icon: FiTrendingUp, description: 'Custom exercise routines', status: workoutPlan ? 'completed' : mealPlan ? 'ready' : 'locked' },
     ];
 
     const renderTabContent = () => {
@@ -232,12 +232,16 @@ export default function CreateProgramPage() {
                         {view === 'form' && (
                             <div className="rounded-xl p-0 mb-0">
 
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-semibold text-gray-900">Comprehensive Assessment</h2>
+                                <div className="text-center mb-6">
+                                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-900 rounded-2xl mb-4">
+                                        <FiTarget className="w-8 h-8 text-white" />
+                                    </div>
+                                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Comprehensive Health Assessment</h2>
+                                    <p className="text-gray-600 text-lg">Please provide accurate information to get personalized recommendations</p>
                                 </div>
 
                                 <form
-                                    className="space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200"
+                                    className="space-y-8 bg-white p-8 rounded-2xl shadow-lg border border-gray-200"
                                     onSubmit={(e) => {
                                         e.preventDefault();
                                         // Clear previous errors
@@ -277,8 +281,13 @@ export default function CreateProgramPage() {
                                     }}
                                 >
                                     {/* Personal Information Section */}
-                                    <div className="space-y-4">
-                                        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Personal Information</h3>
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+                                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                <span className="text-gray-700 font-semibold text-sm">1</span>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                                        </div>
                                         
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
@@ -356,8 +365,13 @@ export default function CreateProgramPage() {
                                     </div>
 
                                     {/* Lifestyle & Goals Section */}
-                                    <div className="space-y-4">
-                                        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Lifestyle & Goals</h3>
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+                                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                <span className="text-gray-700 font-semibold text-sm">2</span>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-900">Lifestyle & Goals</h3>
+                                        </div>
                                         
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
@@ -399,8 +413,13 @@ export default function CreateProgramPage() {
                                     </div>
 
                                     {/* Health Conditions Section */}
-                                    <div className="space-y-4">
-                                        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Health Information</h3>
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+                                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                <span className="text-gray-700 font-semibold text-sm">3</span>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-900">Health Information</h3>
+                                        </div>
                                         
                                         <div className="space-y-4">
                                             <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
@@ -445,8 +464,13 @@ export default function CreateProgramPage() {
                                     </div>
 
                                     {/* Dietary Preferences Section */}
-                                    <div className="space-y-4">
-                                        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Dietary Preferences</h3>
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+                                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                <span className="text-gray-700 font-semibold text-sm">4</span>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-900">Dietary Preferences</h3>
+                                        </div>
                                         
                                         <div className="space-y-2">
                                             <label className="block text-sm font-medium text-gray-700">
@@ -469,25 +493,38 @@ export default function CreateProgramPage() {
                                     <div className="pt-6 border-t border-gray-200">
                                         <button 
                                             type="submit" 
-                                            className="w-full md:w-auto px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-150"
+                                            className="w-full md:w-auto px-8 py-4 text-lg font-semibold text-white bg-gray-900 hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                            disabled={loading}
                                         >
-                                            Generate My Personalized Plan 🚀
+                                            {loading ? (
+                                                <div className="flex items-center justify-center gap-3">
+                                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                    Processing Assessment...
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <FiTarget className="w-5 h-5" />
+                                                    Generate My Personalized Plan 🚀
+                                                </div>
+                                            )}
                                         </button>
                                     </div>
                                 </form>
 
                                 {error && (
-                                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                                        <div className="flex items-center">
+                                    <div className="mt-6 p-6 bg-red-50 border border-red-200 rounded-xl shadow-sm">
+                                        <div className="flex items-start">
                                             <div className="flex-shrink-0">
-                                                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                                </svg>
+                                                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                                                    <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                                    </svg>
+                                                </div>
                                             </div>
-                                            <div className="ml-3">
-                                                <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
-                                                <div className="mt-2 text-sm text-red-700">
-                                                    <p>{error}</p>
+                                            <div className="ml-4">
+                                                <h3 className="text-lg font-semibold text-red-800 mb-2">Please fix the following errors:</h3>
+                                                <div className="text-red-700">
+                                                    <p className="text-base">{error}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -509,61 +546,102 @@ export default function CreateProgramPage() {
                                 </div>
 
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">BMI</p>
-                                        <p className="font-semibold">{assessment.bmi}</p>
+                                    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium text-blue-700">BMI</p>
+                                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     </div>
-                                    <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">BMI Category</p>
-                                        <p className="font-semibold">{assessment.bmi_category}</p>
+                                        <p className="text-2xl font-bold text-blue-900">{assessment.bmi}</p>
                                     </div>
-                                    <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">Body Fat %</p>
-                                        <p className="font-semibold">{assessment.body_fat_percentage}%</p>
+                                    <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200 hover:shadow-md transition-all duration-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium text-green-700">BMI Category</p>
+                                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                     </div>
-                                    <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">BMR</p>
-                                        <p className="font-semibold">{assessment.bmr} kcal</p>
+                                        <p className="text-lg font-bold text-green-900">{assessment.bmi_category}</p>
                                     </div>
-                                    <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">TDEE</p>
-                                        <p className="font-semibold">{assessment.tdee} kcal</p>
+                                    <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200 hover:shadow-md transition-all duration-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium text-orange-700">Body Fat %</p>
+                                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                                     </div>
-                                    <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">Ideal Weight</p>
-                                        <p className="font-semibold">{assessment.ideal_weight_kg} kg</p>
+                                        <p className="text-2xl font-bold text-orange-900">{assessment.body_fat_percentage}%</p>
                                     </div>
-                                    <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">Daily Calories</p>
-                                        <p className="font-semibold">{assessment.daily_calories} kcal</p>
+                                    <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium text-purple-700">BMR</p>
+                                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                        </div>
+                                        <p className="text-2xl font-bold text-purple-900">{assessment.bmr} kcal</p>
                                     </div>
-                                    <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">Health Risk Score</p>
-                                        <p className="font-semibold">{assessment.health_risk_score}/100</p>
+                                    <div className="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg border border-indigo-200 hover:shadow-md transition-all duration-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium text-indigo-700">TDEE</p>
+                                            <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                                        </div>
+                                        <p className="text-2xl font-bold text-indigo-900">{assessment.tdee} kcal</p>
                                     </div>
-                                    <div className="p-3 bg-gray-50 rounded">
-                                        <p className="text-xs text-gray-500">Water Intake</p>
-                                        <p className="font-semibold">{assessment.water_intake_ml} ml</p>
+                                    <div className="p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg border border-pink-200 hover:shadow-md transition-all duration-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium text-pink-700">Ideal Weight</p>
+                                            <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                                        </div>
+                                        <p className="text-2xl font-bold text-pink-900">{assessment.ideal_weight_kg} kg</p>
+                                    </div>
+                                    <div className="p-4 bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg border border-teal-200 hover:shadow-md transition-all duration-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium text-teal-700">Daily Calories</p>
+                                            <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                                        </div>
+                                        <p className="text-2xl font-bold text-teal-900">{assessment.daily_calories} kcal</p>
+                                    </div>
+                                    <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200 hover:shadow-md transition-all duration-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium text-red-700">Health Risk Score</p>
+                                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                        </div>
+                                        <p className="text-2xl font-bold text-red-900">{assessment.health_risk_score}/100</p>
+                                    </div>
+                                    <div className="p-4 bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg border border-cyan-200 hover:shadow-md transition-all duration-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium text-cyan-700">Water Intake</p>
+                                            <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                                        </div>
+                                        <p className="text-2xl font-bold text-cyan-900">{assessment.water_intake_ml} ml</p>
                                     </div>
                                 </div>
 
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <h3 className="font-medium text-blue-900 mb-2">View Detailed Recommendations</h3>
-                                    <p className="text-sm text-blue-700 mb-3">
-                                        Your assessment is complete! Use the tabs above to view detailed nutrition and exercise recommendations.
+                                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+                                            <FiTarget className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900">View Detailed Recommendations</h3>
+                                            <p className="text-sm text-gray-600">Your personalized health plan is ready!</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-gray-700 mb-4">
+                                        Your assessment is complete! Use the tabs above to view detailed nutrition and exercise recommendations tailored specifically for you.
                                     </p>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-wrap gap-3">
                                         <button 
                                             onClick={() => setActiveTab('nutrition')}
-                                            className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
+                                            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
                                         >
-                                            View Nutrition
+                                            <div className="flex items-center gap-2">
+                                                <FiBook className="w-4 h-4" />
+                                                View Nutrition Plan
+                                            </div>
                                         </button>
                                         <button 
                                             onClick={() => setActiveTab('exercise')}
-                                            className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
+                                            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
                                         >
-                                            View Exercises
+                                            <div className="flex items-center gap-2">
+                                                <FiTrendingUp className="w-4 h-4" />
+                                                View Workout Plan
+                                            </div>
                                         </button>
                                     </div>
                                 </div>
@@ -576,17 +654,25 @@ export default function CreateProgramPage() {
                 return (
                     <div className="space-y-6">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <h2 className="text-2xl font-bold text-gray-900">Personalized Meal Plan</h2>
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gray-900 rounded-lg">
+                                    <FiBook className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Nutrition Plan</h2>
+                                    <p className="text-sm text-gray-600">Personalized meal recommendations based on your health profile</p>
+                                </div>
+                            </div>
                             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                                 <div className="flex items-center gap-2">
                                     <label htmlFor="days-select" className="text-sm font-medium text-gray-700">
-                                        Days:
+                                        Duration:
                                     </label>
                                     <select
                                         id="days-select"
                                         value={selectedDays}
                                         onChange={(e) => setSelectedDays(Number(e.target.value))}
-                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all duration-200"
                                         disabled={mealPlanLoading}
                                     >
                                         {[1, 2, 3, 4, 5, 6, 7].map(day => (
@@ -601,10 +687,15 @@ export default function CreateProgramPage() {
                                         setMealPlan(null);
                                         if (assessment) generateMealPlanData(selectedDays);
                                     }}
-                                    className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg w-full sm:w-auto"
+                                    className="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg w-full sm:w-auto transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={mealPlanLoading}
                                 >
-                                    {mealPlanLoading ? 'Generating...' : 'Generate Plan'}
+                                    {mealPlanLoading ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Generating...
+                                        </div>
+                                    ) : 'Generate Plan'}
                                 </button>
                             </div>
                         </div>
@@ -746,9 +837,14 @@ export default function CreateProgramPage() {
                 return (
                     <div className="space-y-6">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <h2 className="text-2xl font-bold text-gray-900">Personalized Workout Plan</h2>
-                            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                              
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gray-900 rounded-lg">
+                                    <FiTrendingUp className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Personalized Workout Plan</h2>
+                                    <p className="text-sm text-gray-600">AI-generated exercise routines tailored to your fitness profile</p>
+                                </div>
                             </div>
                         </div>
 
@@ -1088,18 +1184,40 @@ export default function CreateProgramPage() {
                             <nav className="flex space-x-8 px-6" aria-label="Tabs">
                                 {tabs.map((tab) => {
                                     const Icon = tab.icon;
+                                    const isActive = activeTab === tab.id;
+                                    const isCompleted = tab.status === 'completed';
+                                    const isReady = tab.status === 'ready';
+                                    const isLocked = tab.status === 'locked';
+                                    
                                     return (
                                         <button
                                             key={tab.id}
-                                            onClick={() => setActiveTab(tab.id as any)}
-                                            className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
-                                                activeTab === tab.id
-                                                    ? 'border-blue-500 text-blue-600'
-                                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                            onClick={() => !isLocked && setActiveTab(tab.id as any)}
+                                            disabled={isLocked}
+                                            className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-all duration-200 relative ${
+                                                isActive
+                                                    ? 'border-gray-900 text-gray-900'
+                                                    : isCompleted
+                                                    ? 'border-gray-600 text-gray-600 hover:border-gray-700'
+                                                    : isReady
+                                                    ? 'border-gray-500 text-gray-500 hover:border-gray-600'
+                                                    : 'border-transparent text-gray-400 cursor-not-allowed'
                                             }`}
                                         >
+                                            <div className="relative">
                                             <Icon className="w-5 h-5" />
-                                            {tab.name}
+                                                {isCompleted && (
+                                                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gray-900 rounded-full flex items-center justify-center">
+                                                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-medium">{tab.name}</div>
+                                                <div className="text-xs opacity-75">{tab.description}</div>
+                                            </div>
                                         </button>
                                     );
                                 })}

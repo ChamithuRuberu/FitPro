@@ -271,7 +271,7 @@ export default function CreateProgramPage() {
                                 </div>
 
                                 <form
-                                    className="space-y-8 bg-white p-8 rounded-2xl shadow-lg border border-gray-200"
+                                    className="space-y-8"
                                     onSubmit={(e) => {
                                         e.preventDefault();
                                         // Clear previous errors
@@ -1205,16 +1205,10 @@ export default function CreateProgramPage() {
 
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Fitness Programs</h1>
-                    <p className="mt-2 text-lg text-gray-600">
-                        Create, track, and manage your fitness journey with personalized programs
-                    </p>
-                </div>
 
                 {/* Tab Navigation - Only show if assessment is completed */}
                 {assessment ? (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
+                    <div className="bg-white rounded-xl border-gray-200 mb-8">
                         <div className="border-b border-gray-200">
                             <div className="flex items-center justify-between px-6 py-4">
                                 <nav className="flex space-x-8" aria-label="Tabs">

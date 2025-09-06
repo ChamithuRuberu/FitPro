@@ -567,12 +567,6 @@ export default function CreateProgramPage() {
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <h2 className="text-2xl font-bold text-gray-900">Assessment Results</h2>
-                                    <button
-                                        onClick={() => { setAssessment(null); setView('form'); }}
-                                        className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded"
-                                    >
-                                        New Assessment
-                                    </button>
                                 </div>
 
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -1222,7 +1216,8 @@ export default function CreateProgramPage() {
                 {assessment ? (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
                         <div className="border-b border-gray-200">
-                            <nav className="flex space-x-8 px-6" aria-label="Tabs">
+                            <div className="flex items-center justify-between px-6 py-4">
+                                <nav className="flex space-x-8" aria-label="Tabs">
                                 {tabs.map((tab) => {
                                     const Icon = tab.icon;
                                     const isActive = activeTab === tab.id;
@@ -1263,6 +1258,42 @@ export default function CreateProgramPage() {
                                     );
                                 })}
                             </nav>
+                                <button
+                                    onClick={() => {
+                                        // Clear all data
+                                        setAssessment(null);
+                                        setMealPlan(null);
+                                        setWorkoutPlan(null);
+                                        setError(null);
+                                        setView('form');
+                                        
+                                        // Reset form to initial state
+                                        setRequestBody({
+                                            age: 0,
+                                            gender: 'Male' as 'Male' | 'Female',
+                                            height_cm: 0,
+                                            weight_kg: 0,
+                                            activity_level: 'moderate' as 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active',
+                                            fitness_goal: 'maintenance' as 'maintenance' | 'weight-loss' | 'muscle-gain' | 'endurance' | 'flexibility',
+                                            has_diabetes: false,
+                                            has_hypertension: false,
+                                            is_vegetarian: false,
+                                            spice_tolerance: 'medium' as 'low' | 'medium' | 'high',
+                                        });
+                                        
+                                        // Clear localStorage cache
+                                        if (typeof window !== 'undefined') {
+                                            localStorage.removeItem('programFormData');
+                                        }
+                                        
+                                        // Reset to assessment tab
+                                        setActiveTab('assessment');
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                                >
+                                    New Assessment
+                                </button>
+                            </div>
                         </div>
                         
                         {/* Tab Content */}

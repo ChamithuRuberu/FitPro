@@ -929,3 +929,40 @@ export async function activateTrainer(activationData: {
         };
     }
 }
+
+export async function getUpcomingPayments(trainerId: string) {
+    console.log('🔍 getUpcomingPayments called with trainerId:', trainerId);
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/user/upcoming/${trainerId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        console.log('📡 getUpcomingPayments API response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ getUpcomingPayments API error:', response.status, errorText);
+            throw new Error(`Failed to fetch upcoming payments: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('📊 getUpcomingPayments full API response:', JSON.stringify(result, null, 2));
+        console.log('📊 getUpcomingPayments number of payments:', result?.length || 0);
+        console.log('✅ getUpcomingPayments API call successful');
+        
+        return {
+            success: true,
+            data: result || []
+        };
+    } catch (error) {
+        console.error('❌ getUpcomingPayments error:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
+    }
+}

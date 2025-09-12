@@ -28,12 +28,13 @@ interface ClientSegment {
 }
 
 interface Payment {
-  id: string;
-  clientName: string;
+  id: number;
+  trainerId: number;
+  userEmail: string;
+  month: number;
+  lastPaymentDate: string;
+  nextPaymentDate: string;
   amount: number;
-  dueDate: string;
-  packageType: string;
-  status: string;
 }
 
 interface OverviewTabProps {
@@ -76,7 +77,7 @@ export default function OverviewTab({
         
         <StatsCard
           title="Monthly Revenue"
-          value={`$${trainerStats.monthlyRevenue}`}
+          value={`LKR ${trainerStats.monthlyRevenue.toLocaleString()}`}
           trend={{ value: "15%", isPositive: true }}
           trendLabel="vs last month"
           icon={<FiDollarSign className="w-8 h-8 text-purple-600" />}
@@ -149,22 +150,22 @@ export default function OverviewTab({
               {upcomingPayments.map((payment) => (
                 <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center space-x-4">
-                    <div className={`p-2 rounded-full ${payment.status === 'pending' ? 'bg-yellow-100' : 'bg-red-100'}`}>
-                      <FiDollarSign className={`w-5 h-5 ${payment.status === 'pending' ? 'text-yellow-600' : 'text-red-600'}`} />
+                    <div className="p-2 rounded-full bg-yellow-100">
+                      <FiDollarSign className="w-5 h-5 text-yellow-600" />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <p className="font-medium text-gray-900">{payment.clientName}</p>
-                        <span className={`px-2 py-1 text-xs rounded-full ${payment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                          {payment.status}
+                        <p className="font-medium text-gray-900">{payment.userEmail}</p>
+                        <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700">
+                          Month {payment.month}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-500">{payment.packageType}</p>
+                      <p className="text-sm text-gray-500">Last Payment: {new Date(payment.lastPaymentDate).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-green-600">${payment.amount}</p>
-                    <p className="text-sm text-gray-500">Due: {payment.dueDate}</p>
+                    <p className="font-medium text-green-600">${payment.amount.toFixed(2)}</p>
+                    <p className="text-sm text-gray-500">Due: {new Date(payment.nextPaymentDate).toLocaleDateString()}</p>
                   </div>
                 </div>
               ))}

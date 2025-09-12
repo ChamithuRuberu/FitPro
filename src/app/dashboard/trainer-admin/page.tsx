@@ -7,7 +7,7 @@ import DashboardHeader from '@/components/dashboard/trainer/DashboardHeader';
 import OverviewTab from '@/components/dashboard/trainer/OverviewTab';
 import ClientsTab from '@/components/dashboard/trainer/ClientsTab';
 import ClientPlanModal from '@/components/dashboard/trainer/ClientPlanModal';
-import { getTrainerClients } from '@/lib/api';
+import { getTrainerClients, getUpcomingPayments } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 interface ClientSummary {
@@ -68,6 +68,16 @@ interface MealPlan {
   category?: string;
 }
 
+interface Payment {
+  id: number;
+  trainerId: number;
+  userEmail: string;
+  month: number;
+  lastPaymentDate: string;
+  nextPaymentDate: string;
+  amount: number;
+}
+
 const workoutExercises = {
   Legs: ['Squat', 'Leg Press', 'Leg Extension', 'Leg Curls', 'Calf Raises'],
   Back: ['Pull-ups', 'Deadlifts', 'Bent Over Rows', 'Lat Pulldowns', 'Face Pulls'],
@@ -81,6 +91,7 @@ export default function TrainerDashboard() {
   const { loading, trainerData } = useAuthCheck();
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'nutrition' | 'progress'>('overview');
   const [isLoadingClients, setIsLoadingClients] = useState(false);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
   
   const [trainerStats, setTrainerStats] = useState({
     totalClients: 12,
@@ -116,17 +127,7 @@ export default function TrainerDashboard() {
     
   ]);
   
-  const [upcomingPayments] = useState([
-    {
-      id: '1',
-      clientName: 'Emma Wilson',
-      amount: 120,
-      dueDate: '2024-03-18',
-      packageType: 'Monthly Subscription',
-      status: 'pending'
-    },
-   
-  ]);
+  const [upcomingPayments, setUpcomingPayments] = useState<Payment[]>([]);
   
   const [clientSegments] = useState<ClientSegment[]>([
     { type: 'Weight Loss', count: 5, percentage: 42, trend: 'up', change: 8 },
@@ -194,6 +195,43 @@ export default function TrainerDashboard() {
     }
     
     fetchClients();
+  }, [trainerData.trainerId]);
+
+  // Fetch upcoming payments when component mounts or trainerId changes
+  useEffect(() => {
+    async function fetchUpcomingPayments() {
+      if (!trainerData.trainerId) return;
+      
+      setIsLoadingPayments(true);
+      try {
+        const result = await getUpcomingPayments(trainerData.trainerId);
+        console.log('Trainer Dashboard - getUpcomingPayments result:', result);
+
+        if (result.success && result.data) {
+          console.log('Trainer Dashboard - Raw payments data:', result.data);
+          console.log('Trainer Dashboard - Raw payments count:', result.data.length);
+          setUpcomingPayments(result.data);
+          
+          // Calculate total upcoming revenue
+          const totalRevenue = result.data.reduce((sum: number, payment: Payment) => sum + payment.amount, 0);
+          console.log('Trainer Dashboard - Total upcoming revenue:', totalRevenue);
+          
+          // Update monthly revenue in stats
+          setTrainerStats(prev => ({
+            ...prev,
+            monthlyRevenue: totalRevenue
+          }));
+        } else {
+          console.error('Failed to fetch upcoming payments:', result.error);
+        }
+      } catch (error) {
+        console.error('Error fetching upcoming payments:', error);
+      } finally {
+        setIsLoadingPayments(false);
+      }
+    }
+
+    fetchUpcomingPayments();
   }, [trainerData.trainerId]);
 
   const handleClientSelect = (client: ClientSummary) => {

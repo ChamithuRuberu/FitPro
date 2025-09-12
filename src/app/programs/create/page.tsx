@@ -16,6 +16,10 @@ export default function CreateProgramPage() {
         weight_kg: 0,
         activity_level: 'moderate' as 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active',
         fitness_goal: 'maintenance' as 'weight_loss' | 'maintenance' | 'muscle_gain',
+        has_diabetes: false,
+        has_hypertension: false,
+        is_vegetarian: false,
+        spice_tolerance: 'medium' as 'low' | 'medium' | 'high',
     });
     const [assessment, setAssessment] = useState<HealthMetricsResponse | null>(null);
     const [mealPlan, setMealPlan] = useState<MealPlanResponse | null>(null);
@@ -41,6 +45,8 @@ export default function CreateProgramPage() {
         const saved = typeof window !== 'undefined' ? localStorage.getItem('programFormData') : null;
         if (saved) {
             const parsed = JSON.parse(saved);
+            const healthConditions = (parsed.healthConditions || '').toLowerCase();
+            const dietaryRestrictions = (parsed.dietaryRestrictions || '').toLowerCase();
             setRequestBody({
                 age: Number(parsed.age) || 0,
                 gender: (parsed.gender === 'male' ? 'Male' : parsed.gender === 'female' ? 'Female' : parsed.gender === 'M' ? 'M' : parsed.gender === 'F' ? 'F' : 'Male') as any,
@@ -48,6 +54,10 @@ export default function CreateProgramPage() {
                 weight_kg: parseFloat(parsed.weight) || 0,
                 activity_level: (parsed.activityLevel || 'moderate') as any,
                 fitness_goal: (parsed.fitnessGoal === 'weight-loss' ? 'weight_loss' : parsed.fitnessGoal === 'muscle-gain' ? 'muscle_gain' : parsed.fitnessGoal || 'maintenance') as any,
+                has_diabetes: /diabet/.test(healthConditions),
+                has_hypertension: /hypertension|high blood pressure|bp/.test(healthConditions),
+                is_vegetarian: /vegetarian|vegan/.test(dietaryRestrictions),
+                spice_tolerance: ((dietaryRestrictions.match(/low|medium|high/)?.[0]) || 'medium') as any,
             });
         }
     }, []);
@@ -292,6 +302,10 @@ export default function CreateProgramPage() {
                                             setError('Please select your fitness goal');
                                             return;
                                         }
+                                        if (!requestBody.spice_tolerance) {
+                                            setError('Please select your spice tolerance');
+                                            return;
+                                        }
                                         
                                         submitAssessment(requestBody);
                                     }}
@@ -430,6 +444,82 @@ export default function CreateProgramPage() {
                                         </div>
                                     </div>
 
+                                    {/* Health Conditions Section */}
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+                                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                <span className="text-gray-700 font-semibold text-sm">3</span>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-900">Health Information</h3>
+                                        </div>
+                                        
+                                        <div className="space-y-4">
+                                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                                                <input 
+                                                    id="has_diabetes" 
+                                                    type="checkbox" 
+                                                    checked={requestBody.has_diabetes}
+                                               onChange={(e) => setRequestBody({ ...requestBody, has_diabetes: e.target.checked })}
+                                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                                />
+                                                <label htmlFor="has_diabetes" className="text-sm font-medium text-gray-700">
+                                                    I have diabetes or pre-diabetes
+                                                </label>
+                                    </div>
+
+                                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                                                <input 
+                                                    id="has_hypertension" 
+                                                    type="checkbox" 
+                                                    checked={requestBody.has_hypertension}
+                                               onChange={(e) => setRequestBody({ ...requestBody, has_hypertension: e.target.checked })}
+                                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                                />
+                                                <label htmlFor="has_hypertension" className="text-sm font-medium text-gray-700">
+                                                    I have high blood pressure or hypertension
+                                                </label>
+                                    </div>
+
+                                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                                                <input 
+                                                    id="is_vegetarian" 
+                                                    type="checkbox" 
+                                                    checked={requestBody.is_vegetarian}
+                                               onChange={(e) => setRequestBody({ ...requestBody, is_vegetarian: e.target.checked })}
+                                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
+                                                />
+                                                <label htmlFor="is_vegetarian" className="text-sm font-medium text-gray-700">
+                                                    I follow a vegetarian or plant-based diet
+                                                </label>
+                                    </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Dietary Preferences Section */}
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+                                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                <span className="text-gray-700 font-semibold text-sm">4</span>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-900">Dietary Preferences</h3>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Spice Tolerance <span className="text-red-500">*</span>
+                                            </label>
+                                            <select 
+                                                value={requestBody.spice_tolerance}
+                                                onChange={(e) => setRequestBody({ ...requestBody, spice_tolerance: e.target.value as any })}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                            >
+                                                <option value="">Select your spice tolerance</option>
+                                                <option value="low">Low - Mild flavors preferred</option>
+                                                <option value="medium">Medium - Moderate spice level</option>
+                                                <option value="high">High - Spicy foods preferred</option>
+                                        </select>
+                                    </div>
+                                    </div>
 
                                     {/* Submit Button */}
                                     <div className="pt-6 border-t border-gray-200">
@@ -1181,6 +1271,10 @@ export default function CreateProgramPage() {
                                             weight_kg: 0,
                                             activity_level: 'moderate' as 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active',
                                             fitness_goal: 'maintenance' as 'weight_loss' | 'maintenance' | 'muscle_gain',
+                                            has_diabetes: false,
+                                            has_hypertension: false,
+                                            is_vegetarian: false,
+                                            spice_tolerance: 'medium' as 'low' | 'medium' | 'high',
                                         });
                                         
                                         // Clear localStorage cache

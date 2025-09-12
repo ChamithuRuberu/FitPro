@@ -966,3 +966,47 @@ export async function getUpcomingPayments(trainerId: string) {
         };
     }
 }
+
+export async function getUpcomingWorkouts(days: number = 7) {
+    console.log('🔍 getUpcomingWorkouts called with days:', days);
+    
+    try {
+        // Get JWT token from cookies
+        const token = await getCookie('session');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        const response = await fetch(`${API_BASE_URL}/workout/upcoming?days=${days}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        console.log('📡 getUpcomingWorkouts API response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ getUpcomingWorkouts API error:', response.status, errorText);
+            throw new Error(`Failed to fetch upcoming workouts: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('📊 getUpcomingWorkouts full API response:', JSON.stringify(result, null, 2));
+        console.log('📊 getUpcomingWorkouts number of workouts:', result?.length || 0);
+        console.log('✅ getUpcomingWorkouts API call successful');
+        
+        return {
+            success: true,
+            data: result || []
+        };
+    } catch (error) {
+        console.error('❌ getUpcomingWorkouts error:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
+    }
+}

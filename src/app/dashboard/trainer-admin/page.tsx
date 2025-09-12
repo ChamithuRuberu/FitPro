@@ -7,7 +7,7 @@ import DashboardHeader from '@/components/dashboard/trainer/DashboardHeader';
 import OverviewTab from '@/components/dashboard/trainer/OverviewTab';
 import ClientsTab from '@/components/dashboard/trainer/ClientsTab';
 import ClientPlanModal from '@/components/dashboard/trainer/ClientPlanModal';
-import { getTrainerClients, getUpcomingPayments } from '@/lib/api';
+import { getTrainerClients, getUpcomingPayments, getUpcomingWorkouts } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 interface ClientSummary {
@@ -92,6 +92,7 @@ export default function TrainerDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'nutrition' | 'progress'>('overview');
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
+  const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(false);
   
   const [trainerStats, setTrainerStats] = useState({
     totalClients: 12,
@@ -114,18 +115,7 @@ export default function TrainerDashboard() {
    
   ]);
   
-  const [upcomingSessions] = useState<WorkoutSession[]>([
-    {
-      id: '1',
-      clientName: ' ',
-      type: ' ',
-      date: '',
-      time: '',
-      duration: '60 min',
-      status: 'upcoming'
-    },
-    
-  ]);
+  const [upcomingSessions, setUpcomingSessions] = useState<WorkoutSession[]>([]);
   
   const [upcomingPayments, setUpcomingPayments] = useState<Payment[]>([]);
   
@@ -233,6 +223,57 @@ export default function TrainerDashboard() {
 
     fetchUpcomingPayments();
   }, [trainerData.trainerId]);
+
+  // Fetch upcoming workouts when component mounts
+  useEffect(() => {
+    async function fetchUpcomingWorkouts() {
+      setIsLoadingWorkouts(true);
+      try {
+        const result = await getUpcomingWorkouts(7); // Fetch next 7 days
+        console.log('Trainer Dashboard - getUpcomingWorkouts result:', result);
+
+        if (result.success && result.data) {
+          console.log('Trainer Dashboard - Raw workouts data:', result.data);
+          console.log('Trainer Dashboard - Raw workouts count:', result.data.length);
+          
+          // Map API data to WorkoutSession format
+          const formattedWorkouts = result.data.map((workout: any, index: number) => {
+            console.log(`Trainer Dashboard - Processing workout ${index}:`, workout);
+            const formattedWorkout = {
+              id: workout.id?.toString() || `workout-${index}`,
+              clientName: workout.clientName || workout.client_name || workout.userName || 'Unknown Client',
+              type: workout.type || workout.workoutType || workout.exerciseType || 'General Workout',
+              date: workout.date || workout.scheduledDate || new Date().toISOString().split('T')[0],
+              time: workout.time || workout.scheduledTime || '10:00 AM',
+              duration: workout.duration || workout.durationMinutes ? `${workout.durationMinutes} min` : '60 min',
+              status: workout.status === 'completed' ? 'completed' : (workout.status === 'cancelled' ? 'cancelled' : 'upcoming')
+            };
+            console.log(`Trainer Dashboard - Formatted workout ${index}:`, formattedWorkout);
+            return formattedWorkout;
+          });
+
+          console.log('Trainer Dashboard - Formatted workouts:', formattedWorkouts);
+          console.log('Trainer Dashboard - Formatted workouts count:', formattedWorkouts.length);
+          setUpcomingSessions(formattedWorkouts);
+          
+          // Update active workouts count in stats
+          const activeWorkoutsCount = formattedWorkouts.filter((w: WorkoutSession) => w.status === 'upcoming').length;
+          setTrainerStats(prev => ({
+            ...prev,
+            activeWorkouts: activeWorkoutsCount
+          }));
+        } else {
+          console.error('Failed to fetch upcoming workouts:', result.error);
+        }
+      } catch (error) {
+        console.error('Error fetching upcoming workouts:', error);
+      } finally {
+        setIsLoadingWorkouts(false);
+      }
+    }
+
+    fetchUpcomingWorkouts();
+  }, []);
 
   const handleClientSelect = (client: ClientSummary) => {
     setSelectedClient(client);

@@ -46,6 +46,7 @@ export default function ClientsTab({
   const [selectedTrainerEmail, setSelectedTrainerEmail] = useState('');
   const [activationAmount, setActivationAmount] = useState('');
   const [isActivatingTrainer, setIsActivatingTrainer] = useState(false);
+  const [isDeactivatingTrainer, setIsDeactivatingTrainer] = useState(false);
 
   // Filter clients based on search query first
   const filteredClients = clients.filter(client =>
@@ -219,6 +220,39 @@ export default function ClientsTab({
     setShowTrainerActivationModal(true);
   };
 
+  // Function to deactivate trainer
+  const handleDeactivateTrainer = async (client: ClientSummary) => {
+    if (!confirm(`Are you sure you want to deactivate ${client.name}?`)) {
+      return;
+    }
+
+    setIsDeactivatingTrainer(true);
+
+    try {
+      // Update the client status from Active to Pending
+      const updatedClients = clients.map(c => {
+        if (c.id === client.id) {
+          console.log('Deactivating trainer - changing status from Active to Pending:', c);
+          return {
+            ...c,
+            status: 'Pending'
+          };
+        }
+        return c;
+      });
+
+      setClients(updatedClients);
+      console.log('Updated clients list after deactivation:', updatedClients);
+
+      toast.success(`${client.name} has been deactivated`);
+    } catch (error) {
+      console.error('Error deactivating trainer:', error);
+      toast.error('Failed to deactivate trainer');
+    } finally {
+      setIsDeactivatingTrainer(false);
+    }
+  };
+
   const renderClientsList = (clientsList: ClientSummary[]) => {
     console.log('renderClientsList called with:', clientsList.length, 'clients');
     console.log('clientsList:', clientsList);
@@ -273,20 +307,34 @@ export default function ClientsTab({
               {activeTabIndex === 0 ? 'Manage Plans' : 'Review Request'}
             </button>
 
-            {/* Trainer Activation Button - Only show for pending clients */}
-            {client.status === 'Pending' || client.status === 'PENDING' ? (
-              <button
-                onClick={() => openTrainerActivationModal(client)}
-                className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
-              >
-                <FiCheck className="w-4 h-4" />
-                <span>Activate Trainer</span>
-              </button>
-            ) : (
-              <span className="px-3 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-md">
-                Active
-              </span>
-            )}
+            {/* Trainer Status Toggle - Single Button */}
+            <button
+              onClick={() => {
+                if (client.status === 'Pending' || client.status === 'PENDING') {
+                  openTrainerActivationModal(client);
+                } else {
+                  handleDeactivateTrainer(client);
+                }
+              }}
+              disabled={isDeactivatingTrainer}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                client.status === 'Pending' || client.status === 'PENDING'
+                  ? 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                  : 'bg-red-50 text-red-700 hover:bg-red-100'
+              }`}
+            >
+              {client.status === 'Pending' || client.status === 'PENDING' ? (
+                <>
+                  <FiCheck className="w-4 h-4" />
+                  <span>Activate Trainer</span>
+                </>
+              ) : (
+                <>
+                  <FiToggleLeft className="w-4 h-4" />
+                  <span>{isDeactivatingTrainer ? 'Deactivating...' : 'Deactivate'}</span>
+                </>
+              )}
+            </button>
 
             
           </div>

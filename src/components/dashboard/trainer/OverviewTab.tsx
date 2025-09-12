@@ -164,7 +164,7 @@ export default function OverviewTab({
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-green-600">${payment.amount.toFixed(2)}</p>
+                    <p className="font-medium text-green-600">LKR {payment.amount.toLocaleString()}</p>
                     <p className="text-sm text-gray-500">Due: {new Date(payment.nextPaymentDate).toLocaleDateString()}</p>
                   </div>
                 </div>

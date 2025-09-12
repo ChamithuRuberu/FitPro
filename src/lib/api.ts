@@ -420,58 +420,7 @@ export async function addClientToTrainer(clientData: {
     }
 }
 
-export async function toggleClientStatus(clientId: string, status: 'ACTIVE' | 'INACTIVE') {
-    try {
-        const token = await getCookie('session');
 
-        if (!token) {
-            return {
-                success: false,
-                message: 'Authentication required'
-            };
-        }
-
-        const response = await fetch(`${API_BASE_URL}/trainer/update-client-status`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                clientId,
-                status
-            })
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            return {
-                success: false,
-                message: result.message || `Failed to update client status`
-            };
-        }
-
-        // Check if the response has the expected success code
-        if (result.code === "0000") {
-            return {
-                success: true,
-                data: result.data
-            };
-        }
-
-        return {
-            success: false,
-            message: result.message || 'Failed to update client status'
-        };
-    } catch (error) {
-        console.error('Toggle client status error:', error);
-        return {
-            success: false,
-            message: error instanceof Error ? error.message : 'Failed to update client status'
-        };
-    }
-}
 
 export async function getTrainerList() {
     try {
@@ -902,7 +851,7 @@ export async function generateWorkoutPlan(workoutPlanData: {
         });
 
         const result = await response.json();
-        
+
         console.log("=== Generate Workout Plan Response ===");
         console.log(JSON.stringify(result, null, 2));
 
@@ -923,6 +872,56 @@ export async function generateWorkoutPlan(workoutPlanData: {
         return {
             success: false,
             message: error instanceof Error ? error.message : 'Failed to generate workout plan'
+        };
+    }
+}
+
+export async function activateTrainer(activationData: {
+    email: string;
+    amount: number;
+}) {
+    try {
+        console.log("=== Trainer Activation Request ===");
+        console.log("Activation Data:", JSON.stringify(activationData, null, 2));
+
+        const response = await fetch(`${API_BASE_URL}/user/trainer-activate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(activationData)
+        });
+
+        const result = await response.json();
+
+        console.log("=== Trainer Activation Response ===");
+        console.log(JSON.stringify(result, null, 2));
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result.message || 'Failed to activate trainer'
+            };
+        }
+
+        // Check if the response has the expected success code
+        if (result.code === "0000") {
+            return {
+                success: true,
+                data: result.data,
+                message: result.message || 'User Activate Successfully'
+            };
+        }
+
+        return {
+            success: false,
+            message: result.message || 'Failed to activate trainer'
+        };
+    } catch (error) {
+        console.error('Trainer activation error:', error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to activate trainer'
         };
     }
 }

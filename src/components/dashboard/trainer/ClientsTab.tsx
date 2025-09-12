@@ -48,19 +48,30 @@ export default function ClientsTab({
   const [isActivatingTrainer, setIsActivatingTrainer] = useState(false);
 
   // Filter clients based on search query first
-  const filteredClients = clients.filter(client => 
+  const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Then filter by status
-  const activeClients = filteredClients.filter(client => 
-    client.status === 'Active' || client.status === 'ACTIVE'
-  );
-  
-  const pendingClients = filteredClients.filter(client => 
-    client.status === 'Pending' || client.status === 'PENDING'
-  );
+  const activeClients = filteredClients.filter(client => {
+    console.log('Filtering active clients - client:', client, 'status:', client.status);
+    const isActive = client.status === 'Active' || client.status === 'ACTIVE';
+    console.log('Is active?', isActive);
+    return isActive;
+  });
+
+  const pendingClients = filteredClients.filter(client => {
+    console.log('Filtering pending clients - client:', client, 'status:', client.status);
+    const isPending = client.status === 'Pending' || client.status === 'PENDING';
+    console.log('Is pending?', isPending);
+    return isPending;
+  });
+
+  console.log('ClientsTab - Total clients received:', clients.length);
+  console.log('ClientsTab - Filtered clients:', filteredClients.length);
+  console.log('ClientsTab - Active clients:', activeClients.length);
+  console.log('ClientsTab - Pending clients:', pendingClients.length);
 
   const handleAddClient = async () => {
     // Validate form data
@@ -194,6 +205,9 @@ export default function ClientsTab({
   };
 
   const renderClientsList = (clientsList: ClientSummary[]) => {
+    console.log('renderClientsList called with:', clientsList.length, 'clients');
+    console.log('clientsList:', clientsList);
+    
     if (clientsList.length === 0) {
       return (
         <div className="p-8 text-center">
@@ -220,7 +234,9 @@ export default function ClientsTab({
       );
     }
 
-    return clientsList.map((client) => (
+    return clientsList.map((client, index) => {
+      console.log(`Rendering client ${index}:`, client);
+      return (
       <div key={client.id} className="p-6 hover:bg-gray-50 transition-colors">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -255,7 +271,8 @@ export default function ClientsTab({
           </div>
         </div>
       </div>
-    ));
+      );
+    });
   };
 
   return (

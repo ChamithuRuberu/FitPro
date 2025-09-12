@@ -148,18 +148,30 @@ export default function TrainerDashboard() {
       setIsLoadingClients(true);
       try {
         const result = await getTrainerClients();
-        
+        console.log('Trainer Dashboard - getTrainerClients result:', result);
+
         if (result.success && result.data && result.data.clients) {
+          console.log('Trainer Dashboard - Raw clients data:', result.data.clients);
+          console.log('Trainer Dashboard - Raw clients count:', result.data.clients.length);
+
           // Map API data to ClientSummary format - clients are nested under data.clients
-          const formattedClients = result.data.clients.map((client: any) => ({
-            id: client.id?.toString() || client.govId?.toString(),
-            name: client.fullName || client.username,
-            email: client.email,
-            nextSession: 'Not scheduled',
-            program: 'General Fitness',
-            status: client.status === 'ACTIVE' ? 'Active' : 'Inactive'
-          }));
-          
+          const formattedClients = result.data.clients.map((client: any, index: number) => {
+            console.log(`Trainer Dashboard - Processing client ${index}:`, client);
+            const formattedClient = {
+              id: client.id?.toString() || client.govId?.toString() || `client-${index}`,
+              name: client.fullName || client.username || client.name || 'Unknown',
+              email: client.email || 'No email',
+              nextSession: 'Not scheduled',
+              program: 'General Fitness',
+              status: client.status === 'ACTIVE' ? 'Active' : (client.status === 'PENDING' ? 'Pending' : 'Inactive')
+            };
+            console.log(`Trainer Dashboard - Formatted client ${index}:`, formattedClient);
+            return formattedClient;
+          });
+
+          console.log('Trainer Dashboard - Formatted clients:', formattedClients);
+          console.log('Trainer Dashboard - Formatted clients count:', formattedClients.length);
+
           setClients(formattedClients);
           
           // Update stats

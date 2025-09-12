@@ -331,8 +331,10 @@ export async function getTrainerClients() {
         });
 
         const result = await response.json();
+        console.log('getTrainerClients - Full API Response:', JSON.stringify(result, null, 2));
 
         if (!response.ok) {
+            console.log('getTrainerClients - API Error:', result);
             return {
                 success: false,
                 message: result.message || 'Failed to fetch clients'
@@ -341,6 +343,8 @@ export async function getTrainerClients() {
 
         // Check if the response has the expected structure
         if (result.code === "0000" && result.data && result.data.clients) {
+            console.log('getTrainerClients - Success, clients array:', result.data.clients);
+            console.log('getTrainerClients - Number of clients:', result.data.clients.length);
             return {
                 success: true,
                 data: result.data

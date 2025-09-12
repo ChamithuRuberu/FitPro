@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FiPlus, FiUser, FiX, FiLoader, FiClock, FiSearch, FiToggleRight, FiToggleLeft, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { addClientToTrainer, toggleClientStatus as toggleClientStatusAPI, activateTrainer } from '@/lib/api';
+import { addClientToTrainer, activateTrainer } from '@/lib/api';
 
 interface ClientSummary {
   id: string;
@@ -149,38 +149,7 @@ export default function ClientsTab({
   };
 
   // Function to toggle client status
-  const toggleClientStatus = async (clientId: string, currentStatus: string) => {
-    setIsProcessing(clientId);
-    try {
-      // Convert to API status format
-      const newStatus = currentStatus === 'Active' ? 'INACTIVE' : 'ACTIVE';
-
-      // Call API to update status
-      const result = await toggleClientStatusAPI(clientId, newStatus as 'ACTIVE' | 'INACTIVE');
-
-      if (result.success) {
-        // Update clients array with new status
-        const displayStatus = newStatus === 'ACTIVE' ? 'Active' : 'Inactive';
-        const updatedClients = clients.map(client => {
-          if (client.id === clientId) {
-            return { ...client, status: displayStatus };
-          }
-          return client;
-        });
-
-        setClients(updatedClients);
-        toast.success(`Client ${displayStatus.toLowerCase()} successfully`);
-      } else {
-        toast.error(result.message || 'Failed to update client status');
-      }
-    } catch (error) {
-      console.error('Error toggling client status:', error);
-      toast.error('Failed to update client status');
-    } finally {
-      setIsProcessing(null);
-    }
-  };
-
+  
   // Function to activate trainer
   const handleTrainerActivation = async () => {
     if (!activationAmount || !selectedTrainerEmail) {
@@ -282,27 +251,7 @@ export default function ClientsTab({
               <span>Activate Trainer</span>
             </button>
 
-            <button
-              onClick={() => toggleClientStatus(
-                client.id,
-                client.status === 'Active' || client.status === 'ACTIVE' ? 'Active' : 'Inactive'
-              )}
-              disabled={isProcessing === client.id}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                client.status === 'Active' || client.status === 'ACTIVE'
-                  ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              {isProcessing === client.id ? (
-                <FiLoader className="w-4 h-4 animate-spin" />
-              ) : client.status === 'Active' || client.status === 'ACTIVE' ? (
-                <FiToggleRight className="w-5 h-5" />
-              ) : (
-                <FiToggleLeft className="w-5 h-5" />
-              )}
-              <span>{client.status === 'Active' || client.status === 'ACTIVE' ? 'Active' : 'Inactive'}</span>
-            </button>
+            
           </div>
         </div>
       </div>

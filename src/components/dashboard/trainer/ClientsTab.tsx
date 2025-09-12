@@ -183,6 +183,21 @@ export default function ClientsTab({
       });
 
       if (result.success) {
+        // Update the client status from Pending to Active
+        const updatedClients = clients.map(client => {
+          if (client.email === selectedTrainerEmail) {
+            console.log('Updating client status from Pending to Active:', client);
+            return {
+              ...client,
+              status: 'Active'
+            };
+          }
+          return client;
+        });
+
+        setClients(updatedClients);
+        console.log('Updated clients list:', updatedClients);
+
         toast.success('Trainer activated successfully');
         setShowTrainerActivationModal(false);
         setActivationAmount('');
@@ -258,14 +273,20 @@ export default function ClientsTab({
               {activeTabIndex === 0 ? 'Manage Plans' : 'Review Request'}
             </button>
 
-            {/* Trainer Activation Button */}
-            <button
-              onClick={() => openTrainerActivationModal(client)}
-              className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
-            >
-              <FiCheck className="w-4 h-4" />
-              <span>Activate Trainer</span>
-            </button>
+            {/* Trainer Activation Button - Only show for pending clients */}
+            {client.status === 'Pending' || client.status === 'PENDING' ? (
+              <button
+                onClick={() => openTrainerActivationModal(client)}
+                className="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+              >
+                <FiCheck className="w-4 h-4" />
+                <span>Activate Trainer</span>
+              </button>
+            ) : (
+              <span className="px-3 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-md">
+                Active
+              </span>
+            )}
 
             
           </div>

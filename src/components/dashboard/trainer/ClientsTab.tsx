@@ -300,12 +300,15 @@ export default function ClientsTab({
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => onClientSelect(client)}
-              className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              {activeTabIndex === 0 ? 'Manage Plans' : 'Review Request'}
-            </button>
+            {/* Only show Manage Plans button for active clients */}
+            {(client.status === 'Active' || client.status === 'ACTIVE') && (
+              <button
+                onClick={() => onClientSelect(client)}
+                className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                Manage Plans
+              </button>
+            )}
 
             {/* Trainer Status Toggle - Single Button */}
             <button

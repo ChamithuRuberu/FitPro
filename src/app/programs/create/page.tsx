@@ -11,15 +11,11 @@ export default function CreateProgramPage() {
     const [activeTab, setActiveTab] = useState<'assessment' | 'nutrition' | 'exercise'>('assessment');
     const [requestBody, setRequestBody] = useState({
         age: 0,
-        gender: 'Male' as 'Male' | 'Female',
+        gender: 'Male' as 'M' | 'F' | 'Male' | 'Female',
         height_cm: 0,
         weight_kg: 0,
         activity_level: 'moderate' as 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active',
-        fitness_goal: 'maintenance' as 'maintenance' | 'weight-loss' | 'muscle-gain' | 'endurance' | 'flexibility',
-        has_diabetes: false,
-        has_hypertension: false,
-        is_vegetarian: false,
-        spice_tolerance: 'medium' as 'low' | 'medium' | 'high',
+        fitness_goal: 'maintenance' as 'weight_loss' | 'maintenance' | 'muscle_gain',
     });
     const [assessment, setAssessment] = useState<HealthMetricsResponse | null>(null);
     const [mealPlan, setMealPlan] = useState<MealPlanResponse | null>(null);
@@ -45,19 +41,13 @@ export default function CreateProgramPage() {
         const saved = typeof window !== 'undefined' ? localStorage.getItem('programFormData') : null;
         if (saved) {
             const parsed = JSON.parse(saved);
-            const healthConditions = (parsed.healthConditions || '').toLowerCase();
-            const dietaryRestrictions = (parsed.dietaryRestrictions || '').toLowerCase();
             setRequestBody({
                 age: Number(parsed.age) || 0,
-                gender: (parsed.gender === 'male' ? 'Male' : parsed.gender === 'female' ? 'Female' : 'Male') as any,
-                height_cm: Number(parsed.height) || 0,
-                weight_kg: Number(parsed.weight) || 0,
+                gender: (parsed.gender === 'male' ? 'Male' : parsed.gender === 'female' ? 'Female' : parsed.gender === 'M' ? 'M' : parsed.gender === 'F' ? 'F' : 'Male') as any,
+                height_cm: parseFloat(parsed.height) || 0,
+                weight_kg: parseFloat(parsed.weight) || 0,
                 activity_level: (parsed.activityLevel || 'moderate') as any,
-                fitness_goal: (parsed.fitnessGoal === 'general-fitness' ? 'maintenance' : parsed.fitnessGoal) as any,
-                has_diabetes: /diabet/.test(healthConditions),
-                has_hypertension: /hypertension|high blood pressure|bp/.test(healthConditions),
-                is_vegetarian: /vegetarian|vegan/.test(dietaryRestrictions),
-                spice_tolerance: ((dietaryRestrictions.match(/low|medium|high/)?.[0]) || 'medium') as any,
+                fitness_goal: (parsed.fitnessGoal === 'weight-loss' ? 'weight_loss' : parsed.fitnessGoal === 'muscle-gain' ? 'muscle_gain' : parsed.fitnessGoal || 'maintenance') as any,
             });
         }
     }, []);
@@ -278,8 +268,8 @@ export default function CreateProgramPage() {
                                         setError(null);
                                         
                                         // Validate form before submitting
-                                        if (!requestBody.age || requestBody.age < 1 || requestBody.age > 120) {
-                                            setError('Please enter a valid age between 1 and 120 years');
+                                        if (!requestBody.age || requestBody.age < 16 || requestBody.age > 100) {
+                                            setError('Please enter a valid age between 16 and 100 years');
                                             return;
                                         }
                                         if (!requestBody.height_cm || requestBody.height_cm < 100 || requestBody.height_cm > 250) {
@@ -300,10 +290,6 @@ export default function CreateProgramPage() {
                                         }
                                         if (!requestBody.fitness_goal) {
                                             setError('Please select your fitness goal');
-                                            return;
-                                        }
-                                        if (!requestBody.spice_tolerance) {
-                                            setError('Please select your spice tolerance');
                                             return;
                                         }
                                         
@@ -330,12 +316,12 @@ export default function CreateProgramPage() {
                                                onChange={(e) => setRequestBody({ ...requestBody, age: Number(e.target.value) })}
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
                                                     placeholder="Enter your age"
-                                                    min="1"
-                                                    max="120"
+                                                    min="16"
+                                                    max="100"
                                                     required 
                                                 />
-                                                {requestBody.age > 0 && (requestBody.age < 1 || requestBody.age > 120) && (
-                                                    <p className="text-sm text-red-500">Age must be between 1 and 120 years</p>
+                                                {requestBody.age > 0 && (requestBody.age < 16 || requestBody.age > 100) && (
+                                                    <p className="text-sm text-red-500">Age must be between 16 and 100 years</p>
                                                 )}
                                     </div>
 
@@ -349,6 +335,8 @@ export default function CreateProgramPage() {
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                                 >
                                                     <option value="">Select your gender</option>
+                                                    <option value="M">M</option>
+                                                    <option value="F">F</option>
                                                     <option value="Male">Male</option>
                                                     <option value="Female">Female</option>
                                         </select>
@@ -360,8 +348,9 @@ export default function CreateProgramPage() {
                                                 </label>
                                                 <input 
                                                     type="number" 
+                                                    step="0.1"
                                                     value={requestBody.height_cm || ''}
-                                               onChange={(e) => setRequestBody({ ...requestBody, height_cm: Number(e.target.value) })}
+                                               onChange={(e) => setRequestBody({ ...requestBody, height_cm: parseFloat(e.target.value) || 0 })}
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
                                                     placeholder="Enter your height in cm"
                                                     min="100" 
@@ -379,8 +368,9 @@ export default function CreateProgramPage() {
                                                 </label>
                                                 <input 
                                                     type="number" 
+                                                    step="0.1"
                                                     value={requestBody.weight_kg || ''}
-                                               onChange={(e) => setRequestBody({ ...requestBody, weight_kg: Number(e.target.value) })}
+                                               onChange={(e) => setRequestBody({ ...requestBody, weight_kg: parseFloat(e.target.value) || 0 })}
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
                                                     placeholder="Enter your weight in kg"
                                                     min="30" 
@@ -414,11 +404,11 @@ export default function CreateProgramPage() {
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                                 >
                                                     <option value="">Select your activity level</option>
-                                                    <option value="sedentary">Sedentary - Little to no exercise</option>
-                                                    <option value="light">Light - Light exercise 1-3 days/week</option>
-                                                    <option value="moderate">Moderate - Moderate exercise 3-5 days/week</option>
-                                                    <option value="active">Active - Heavy exercise 6-7 days/week</option>
-                                                    <option value="very_active">Very Active - Very heavy exercise, physical job</option>
+                                                    <option value="sedentary">Sedentary</option>
+                                                    <option value="light">Light</option>
+                                                    <option value="moderate">Moderate</option>
+                                                    <option value="active">Active</option>
+                                                    <option value="very_active">Very Active</option>
                                         </select>
                                     </div>
 
@@ -432,92 +422,14 @@ export default function CreateProgramPage() {
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                                 >
                                                     <option value="">Select your fitness goal</option>
-                                                    <option value="maintenance">Maintain current fitness level</option>
-                                                    <option value="weight-loss">Weight loss and fat reduction</option>
-                                                    <option value="muscle-gain">Muscle building and strength</option>
-                                                    <option value="endurance">Improve endurance and stamina</option>
-                                                    <option value="flexibility">Increase flexibility and mobility</option>
+                                                    <option value="weight_loss">Weight Loss</option>
+                                                    <option value="maintenance">Maintenance</option>
+                                                    <option value="muscle_gain">Muscle Gain</option>
                                         </select>
                                     </div>
                                         </div>
                                     </div>
 
-                                    {/* Health Conditions Section */}
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
-                                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                <span className="text-gray-700 font-semibold text-sm">3</span>
-                                            </div>
-                                            <h3 className="text-lg font-semibold text-gray-900">Health Information</h3>
-                                        </div>
-                                        
-                                        <div className="space-y-4">
-                                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                                                <input 
-                                                    id="has_diabetes" 
-                                                    type="checkbox" 
-                                                    checked={requestBody.has_diabetes}
-                                               onChange={(e) => setRequestBody({ ...requestBody, has_diabetes: e.target.checked })}
-                                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
-                                                />
-                                                <label htmlFor="has_diabetes" className="text-sm font-medium text-gray-700">
-                                                    I have diabetes or pre-diabetes
-                                                </label>
-                                    </div>
-
-                                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                                                <input 
-                                                    id="has_hypertension" 
-                                                    type="checkbox" 
-                                                    checked={requestBody.has_hypertension}
-                                               onChange={(e) => setRequestBody({ ...requestBody, has_hypertension: e.target.checked })}
-                                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
-                                                />
-                                                <label htmlFor="has_hypertension" className="text-sm font-medium text-gray-700">
-                                                    I have high blood pressure or hypertension
-                                                </label>
-                                    </div>
-
-                                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                                                <input 
-                                                    id="is_vegetarian" 
-                                                    type="checkbox" 
-                                                    checked={requestBody.is_vegetarian}
-                                               onChange={(e) => setRequestBody({ ...requestBody, is_vegetarian: e.target.checked })}
-                                                    className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
-                                                />
-                                                <label htmlFor="is_vegetarian" className="text-sm font-medium text-gray-700">
-                                                    I follow a vegetarian or plant-based diet
-                                                </label>
-                                    </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Dietary Preferences Section */}
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
-                                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                <span className="text-gray-700 font-semibold text-sm">4</span>
-                                            </div>
-                                            <h3 className="text-lg font-semibold text-gray-900">Dietary Preferences</h3>
-                                        </div>
-                                        
-                                        <div className="space-y-2">
-                                            <label className="block text-sm font-medium text-gray-700">
-                                                Spice Tolerance <span className="text-red-500">*</span>
-                                            </label>
-                                            <select 
-                                                value={requestBody.spice_tolerance}
-                                                onChange={(e) => setRequestBody({ ...requestBody, spice_tolerance: e.target.value as any })}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                                            >
-                                                <option value="">Select your spice tolerance</option>
-                                                <option value="low">Low - Mild flavors preferred</option>
-                                                <option value="medium">Medium - Moderate spice level</option>
-                                                <option value="high">High - Spicy foods preferred</option>
-                                        </select>
-                                    </div>
-                                    </div>
 
                                     {/* Submit Button */}
                                     <div className="pt-6 border-t border-gray-200">
@@ -896,7 +808,7 @@ export default function CreateProgramPage() {
                                         <p className="text-sm text-green-700">Activity Level</p>
                                     </div>
                                     <div className="text-center p-3 bg-orange-50 rounded-lg">
-                                        <p className="text-2xl font-bold text-orange-600 capitalize">{requestBody.fitness_goal.replace('-', ' ')}</p>
+                                        <p className="text-2xl font-bold text-orange-600 capitalize">{requestBody.fitness_goal.replace('_', ' ')}</p>
                                         <p className="text-sm text-orange-700">Fitness Goal</p>
                                     </div>
                                     <div className="text-center p-3 bg-purple-50 rounded-lg">
@@ -1264,15 +1176,11 @@ export default function CreateProgramPage() {
                                         // Reset form to initial state
                                         setRequestBody({
                                             age: 0,
-                                            gender: 'Male' as 'Male' | 'Female',
+                                            gender: 'Male' as 'M' | 'F' | 'Male' | 'Female',
                                             height_cm: 0,
                                             weight_kg: 0,
                                             activity_level: 'moderate' as 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active',
-                                            fitness_goal: 'maintenance' as 'maintenance' | 'weight-loss' | 'muscle-gain' | 'endurance' | 'flexibility',
-                                            has_diabetes: false,
-                                            has_hypertension: false,
-                                            is_vegetarian: false,
-                                            spice_tolerance: 'medium' as 'low' | 'medium' | 'high',
+                                            fitness_goal: 'maintenance' as 'weight_loss' | 'maintenance' | 'muscle_gain',
                                         });
                                         
                                         // Clear localStorage cache

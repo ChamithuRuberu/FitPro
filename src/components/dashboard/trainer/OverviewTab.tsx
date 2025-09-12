@@ -1,4 +1,4 @@
-import { FiUser, FiActivity, FiDollarSign, FiTrendingUp, FiCalendar, FiBarChart2, FiClock, FiUsers } from 'react-icons/fi';
+import { FiUser, FiActivity, FiCreditCard, FiTrendingUp, FiCalendar, FiBarChart2, FiClock, FiUsers } from 'react-icons/fi';
 import StatsCard from './StatsCard';
 
 interface TrainerStats {
@@ -80,7 +80,7 @@ export default function OverviewTab({
           value={`LKR ${trainerStats.monthlyRevenue.toLocaleString()}`}
           trend={{ value: "15%", isPositive: true }}
           trendLabel="vs last month"
-          icon={<FiDollarSign className="w-8 h-8 text-purple-600" />}
+          icon={<FiCreditCard className="w-8 h-8 text-purple-600" />}
           iconBgColor="bg-purple-50"
           iconColor="text-purple-600"
           delay={0.2}
@@ -141,8 +141,8 @@ export default function OverviewTab({
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Upcoming Payments</h2>
             <button className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
-              <FiDollarSign className="w-4 h-4 mr-2" />
-              View All Transactions
+              <FiCreditCard className="w-4 h-4 mr-2" />
+              View All Payments
             </button>
           </div>
           <div className="h-80 overflow-y-auto pr-2 custom-scrollbar">
@@ -151,7 +151,7 @@ export default function OverviewTab({
                 <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center space-x-4">
                     <div className="p-2 rounded-full bg-yellow-100">
-                      <FiDollarSign className="w-5 h-5 text-yellow-600" />
+                      <FiCreditCard className="w-5 h-5 text-yellow-600" />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">

@@ -1,5 +1,7 @@
-import { FiUser, FiActivity, FiCreditCard, FiTrendingUp, FiCalendar, FiBarChart2, FiClock, FiUsers } from 'react-icons/fi';
+import { FiUser, FiActivity, FiCreditCard, FiTrendingUp, FiCalendar, FiBarChart2, FiClock, FiUsers, FiCheckCircle, FiDollarSign, FiTarget, FiPlus } from 'react-icons/fi';
 import StatsCard from './StatsCard';
+import { getActivityAudit, ActivityAuditItem } from '@/lib/api';
+import { useState, useEffect } from 'react';
 
 interface TrainerStats {
   totalClients: number;
@@ -51,8 +53,19 @@ export default function OverviewTab({
   clientSegments
 }: OverviewTabProps) {
   console.log('🏋️‍♂️ ===== OVERVIEW TAB RENDERED =====');
+  console.log('🏋️‍♂️ Render timestamp:', new Date().toISOString());
   console.log('🏋️‍♂️ OverviewTab received upcomingSessions:', upcomingSessions);
   console.log('🏋️‍♂️ OverviewTab upcomingSessions length:', upcomingSessions?.length || 0);
+  console.log('🏋️‍♂️ OverviewTab props summary:', {
+    hasTrainerStats: !!trainerStats,
+    upcomingSessionsCount: upcomingSessions?.length || 0,
+    upcomingPaymentsCount: upcomingPayments?.length || 0,
+    clientSegmentsCount: clientSegments?.length || 0
+  });
+  
+  // Activity audit state
+  const [recentActivities, setRecentActivities] = useState<ActivityAuditItem[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   
   // Show all upcoming sessions in Today's Schedule (more useful for trainers)
   const displayData = upcomingSessions || [];
@@ -75,6 +88,144 @@ export default function OverviewTab({
   
   const finalDisplayData = displayData.length > 0 ? displayData : testData;
   console.log('🏋️‍♂️ Final display data:', finalDisplayData);
+
+  // Fetch recent activities
+  useEffect(() => {
+    const fetchRecentActivities = async () => {
+      console.log('📊 ===== FETCHING RECENT ACTIVITIES =====');
+      console.log('📊 Component mount time:', new Date().toISOString());
+      console.log('📊 Trainer stats available:', !!trainerStats);
+      console.log('📊 Upcoming sessions count:', upcomingSessions?.length || 0);
+      
+      setIsLoadingActivities(true);
+      console.log('📊 Loading state set to true');
+      
+      try {
+        console.log('📊 Calling getActivityAudit with 7 days...');
+        const result = await getActivityAudit(7); // Fetch last 7 days
+        console.log('📊 Activity audit result received:', {
+          success: result.success,
+          hasData: !!result.data,
+          dataType: typeof result.data,
+          error: result.error
+        });
+        console.log('📊 Full activity audit result:', JSON.stringify(result, null, 2));
+        
+        if (result.success && result.data) {
+          console.log('📊 Raw activities data:', result.data);
+          console.log('📊 Data structure analysis:', {
+            isArray: Array.isArray(result.data),
+            hasActivities: !!result.data.activities,
+            activitiesLength: result.data.activities?.length || 0,
+            dataKeys: Object.keys(result.data || {}),
+            totalCount: result.data.totalCount,
+            days: result.data.days
+          });
+          
+          // Handle different response formats
+          let activities: ActivityAuditItem[] = [];
+          if (result.data.activities) {
+            activities = result.data.activities;
+            console.log('📊 Using activities array from data.activities');
+          } else if (Array.isArray(result.data)) {
+            activities = result.data;
+            console.log('📊 Using direct array from data');
+          } else {
+            activities = [];
+            console.log('📊 No activities found, using empty array');
+          }
+          
+          console.log('📊 Processed activities:', activities);
+          console.log('📊 Number of activities:', activities.length);
+          console.log('📊 Activities preview:', activities.slice(0, 3));
+          
+          // Log each activity for debugging
+          activities.forEach((activity: ActivityAuditItem, index: number) => {
+            console.log(`📊 Activity ${index + 1}:`, {
+              id: activity.id,
+              type: activity.type,
+              title: activity.title,
+              description: activity.description,
+              timestamp: activity.timestamp,
+              userName: activity.userName,
+              metadata: activity.metadata
+            });
+          });
+          
+          setRecentActivities(activities);
+          console.log('📊 Activities state updated with', activities.length, 'items');
+        } else {
+          console.error('📊 ❌ Failed to fetch activities:', result.error);
+          console.error('📊 ❌ Result details:', {
+            success: result.success,
+            error: result.error,
+            data: result.data
+          });
+          // Set fallback data
+          setRecentActivities([]);
+          console.log('📊 Set empty activities array as fallback');
+        }
+      } catch (error) {
+        console.error('📊 ❌ Error fetching activities:', error);
+        console.error('📊 ❌ Error details:', {
+          name: error instanceof Error ? error.name : 'Unknown',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : 'No stack trace'
+        });
+        setRecentActivities([]);
+        console.log('📊 Set empty activities array due to error');
+      } finally {
+        setIsLoadingActivities(false);
+        console.log('📊 Loading state set to false');
+        console.log('📊 Final activities count:', recentActivities.length);
+      }
+    };
+
+    console.log('📊 Starting activity fetch process...');
+    fetchRecentActivities();
+  }, []);
+
+  // Helper function to get activity icon and color
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'client_registration':
+        return { icon: FiUser, color: 'text-blue-600', bgColor: 'bg-blue-100' };
+      case 'workout_completed':
+        return { icon: FiCheckCircle, color: 'text-green-600', bgColor: 'bg-green-100' };
+      case 'payment_received':
+        return { icon: FiDollarSign, color: 'text-yellow-600', bgColor: 'bg-yellow-100' };
+      case 'program_created':
+        return { icon: FiActivity, color: 'text-purple-600', bgColor: 'bg-purple-100' };
+      case 'session_scheduled':
+        return { icon: FiCalendar, color: 'text-indigo-600', bgColor: 'bg-indigo-100' };
+      case 'goal_achieved':
+        return { icon: FiTarget, color: 'text-pink-600', bgColor: 'bg-pink-100' };
+      case 'client_action':
+        return { icon: FiUsers, color: 'text-cyan-600', bgColor: 'bg-cyan-100' };
+      case 'api_request':
+        return { icon: FiActivity, color: 'text-gray-600', bgColor: 'bg-gray-100' };
+      default:
+        return { icon: FiActivity, color: 'text-gray-600', bgColor: 'bg-gray-100' };
+    }
+  };
+
+  // Helper function to format timestamp
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffMs = now.getTime() - activityTime.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffDays > 0) {
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    } else if (diffHours > 0) {
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    } else {
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return diffMinutes > 0 ? `${diffMinutes} minutes ago` : 'Just now';
+    }
+  };
   
   return (
     <div className="space-y-8">
@@ -257,33 +408,72 @@ export default function OverviewTab({
 
       {/* Recent Activity */}
       <div className="bg-white rounded-xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <FiUser className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">New Client Registration</p>
-                <p className="text-sm text-gray-500">John Doe started their fitness journey</p>
-              </div>
-            </div>
-            <span className="text-sm text-gray-500">2 hours ago</span>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-green-100 rounded-full">
-                <FiActivity className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Workout Completed</p>
-                <p className="text-sm text-gray-500">Sarah completed her strength training session</p>
-              </div>
-            </div>
-            <span className="text-sm text-gray-500">5 hours ago</span>
-          </div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Recent Activity</h2>
+          <button className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+            <FiActivity className="w-4 h-4 mr-2" />
+            View All Activity
+          </button>
         </div>
+        
+        {isLoadingActivities ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            <span className="ml-3 text-gray-500">Loading activities...</span>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {(() => {
+              console.log('📊 ===== RENDERING ACTIVITIES =====');
+              console.log('📊 Loading state:', isLoadingActivities);
+              console.log('📊 Recent activities:', recentActivities);
+              console.log('📊 Activities length:', recentActivities?.length || 0);
+              console.log('📊 Activities type:', typeof recentActivities);
+              console.log('📊 Activities is array:', Array.isArray(recentActivities));
+              
+              if (recentActivities && recentActivities.length > 0) {
+                console.log('📊 Rendering', recentActivities.length, 'activities');
+                console.log('📊 Activities to display:', recentActivities.slice(0, 5));
+                
+                return recentActivities.slice(0, 5).map((activity, index) => {
+                  console.log(`📊 Rendering activity ${index + 1}:`, activity);
+                  const { icon: IconComponent, color, bgColor } = getActivityIcon(activity.type);
+                  console.log(`📊 Activity ${index + 1} icon config:`, { color, bgColor });
+                  
+                  const timeAgo = formatTimeAgo(activity.timestamp);
+                  console.log(`📊 Activity ${index + 1} time ago:`, timeAgo);
+                  
+                  return (
+                    <div key={activity.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-2 rounded-full ${bgColor}`}>
+                          <IconComponent className={`w-5 h-5 ${color}`} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{activity.title}</p>
+                          <p className="text-sm text-gray-500">
+                            {activity.description}
+                            {activity.actorName && ` by ${activity.actorName}`}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-sm text-gray-500">{timeAgo}</span>
+                    </div>
+                  );
+                });
+              } else {
+                console.log('📊 No activities to display, showing empty state');
+                return (
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+                    <FiActivity className="w-12 h-12 mb-4 text-gray-300" />
+                    <p className="text-lg font-medium">No recent activity</p>
+                    <p className="text-sm">Activity will appear here as clients interact with the platform</p>
+                  </div>
+                );
+              }
+            })()}
+          </div>
+        )}
       </div>
     </div>
   );

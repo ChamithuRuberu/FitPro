@@ -1030,3 +1030,302 @@ export async function getUpcomingWorkouts(days: number = 7) {
         };
     }
 }
+
+// Activity Audit Types
+export interface ActivityAuditItem {
+    id: string;
+    type: 'client_registration' | 'workout_completed' | 'payment_received' | 'program_created' | 'session_scheduled' | 'goal_achieved' | 'api_request' | 'client_action';
+    title: string;
+    description: string;
+    timestamp: string;
+    userId?: string;
+    userName?: string;
+    actorType?: string;
+    actorId?: string;
+    actorName?: string;
+    activityType?: string;
+    metadata?: {
+        programName?: string;
+        workoutType?: string;
+        amount?: number;
+        goalType?: string;
+        endpoint?: string;
+        method?: string;
+        [key: string]: any;
+    };
+}
+
+export interface ActivityAuditResponse {
+    activities: ActivityAuditItem[];
+    totalCount: number;
+    days: number;
+}
+
+// Raw API response structure
+interface RawActivityItem {
+    actorType: string;
+    actorId: string;
+    actorName: string;
+    activityType: string;
+    description: string;
+    occurredAt: string;
+}
+
+// Transform raw API data to user-friendly activities
+function transformActivityData(rawActivities: RawActivityItem[]): ActivityAuditItem[] {
+    console.log('📊 ===== TRANSFORMING ACTIVITY DATA =====');
+    console.log('📊 Raw activities count:', rawActivities.length);
+    
+    const transformedActivities: ActivityAuditItem[] = [];
+    
+    rawActivities.forEach((rawActivity, index) => {
+        console.log(`📊 Processing raw activity ${index + 1}:`, rawActivity);
+        
+        // Skip internal API requests and focus on user-relevant activities
+        if (rawActivity.description.includes('/api/activity/audit') || 
+            rawActivity.description.includes('/api/workout/upcoming')) {
+            console.log(`📊 Skipping internal API request: ${rawActivity.description}`);
+            return;
+        }
+        
+        // Map different activity types to user-friendly descriptions
+        let activityItem: ActivityAuditItem;
+        
+        if (rawActivity.description.includes('/api/trainer/get-clients')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'client_action',
+                title: 'Client Data Accessed',
+                description: 'Viewed client information and progress',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'GET'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/trainer/add-client')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'client_registration',
+                title: 'New Client Added',
+                description: 'Added a new client to the training program',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'POST'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/workout/create-workouts')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'program_created',
+                title: 'Workout Program Created',
+                description: 'Created a new workout program for a client',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'POST'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/user/upcoming/')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'payment_received',
+                title: 'Payment Information Accessed',
+                description: 'Checked upcoming payment information',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'GET'
+                }
+            };
+        } else {
+            // Generic activity for other API calls
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'api_request',
+                title: 'System Activity',
+                description: `Performed action: ${rawActivity.description}`,
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'API'
+                }
+            };
+        }
+        
+        console.log(`📊 Transformed activity ${index + 1}:`, activityItem);
+        transformedActivities.push(activityItem);
+    });
+    
+    console.log('📊 Total transformed activities:', transformedActivities.length);
+    console.log('📊 Transformed activities preview:', transformedActivities.slice(0, 3));
+    
+    return transformedActivities;
+}
+
+export async function getActivityAudit(days: number = 7) {
+    console.log('📊 ===== API: getActivityAudit =====');
+    console.log('📊 API called with days parameter:', days);
+    console.log('📊 API Base URL:', API_BASE_URL);
+    console.log('📊 Timestamp:', new Date().toISOString());
+    
+    try {
+        // Get JWT token from cookies
+        console.log('📊 Getting JWT token from session cookie...');
+        const token = await getCookie('session');
+        console.log('📊 Token found:', token ? 'Yes' : 'No');
+        console.log('📊 Token length:', token?.length || 0);
+        console.log('📊 Token preview:', token ? `${token.substring(0, 20)}...` : 'No token');
+        
+        if (!token) {
+            console.error('📊 ❌ No authentication token found');
+            console.error('📊 ❌ Available cookies check needed');
+            throw new Error('No authentication token found');
+        }
+
+        const apiUrl = `${API_BASE_URL}/activity/audit?days=${days}`;
+        console.log('📊 Making API request to:', apiUrl);
+        console.log('📊 Request headers:', {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token.substring(0, 20)}...` // Log only first 20 chars for security
+        });
+
+        const requestStartTime = Date.now();
+        console.log('📊 Request start time:', new Date(requestStartTime).toISOString());
+
+        const response = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        const requestEndTime = Date.now();
+        const requestDuration = requestEndTime - requestStartTime;
+        
+        console.log('📊 Request completed in:', requestDuration, 'ms');
+        console.log('📊 API response status:', response.status);
+        console.log('📊 API response ok:', response.ok);
+        console.log('📊 API response status text:', response.statusText);
+        console.log('📊 API response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('📊 Response URL:', response.url);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('📊 ❌ API error response:', response.status, errorText);
+            console.error('📊 ❌ Full error response:', {
+                status: response.status,
+                statusText: response.statusText,
+                url: response.url,
+                headers: Object.fromEntries(response.headers.entries()),
+                body: errorText
+            });
+            throw new Error(`Failed to fetch activity audit: ${response.status} - ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('📊 Raw API response type:', typeof result);
+        console.log('📊 Raw API response is array:', Array.isArray(result));
+        console.log('📊 Raw API response keys:', result ? Object.keys(result) : 'No keys');
+        console.log('📊 Raw API response:', JSON.stringify(result, null, 2));
+        
+        // Log specific data structure analysis
+        if (result && typeof result === 'object') {
+            if (result.data && result.data.activities) {
+                console.log('📊 Activities array found in data.activities, length:', result.data.activities.length);
+                console.log('📊 First activity:', result.data.activities[0]);
+                
+                // Transform the raw activities to user-friendly format
+                const transformedActivities = transformActivityData(result.data.activities);
+                
+                console.log('📊 ✅ API call successful with transformation');
+                console.log('📊 Returning transformed data:', {
+                    success: true,
+                    originalCount: result.data.activities.length,
+                    transformedCount: transformedActivities.length,
+                    hasActivities: transformedActivities.length > 0
+                });
+                
+                return {
+                    success: true,
+                    data: {
+                        activities: transformedActivities,
+                        totalCount: transformedActivities.length,
+                        days: days
+                    }
+                };
+            } else if (Array.isArray(result)) {
+                console.log('📊 Response is direct array, length:', result.length);
+                console.log('📊 First item:', result[0]);
+                
+                // Transform if it's a direct array
+                const transformedActivities = transformActivityData(result);
+                
+                return {
+                    success: true,
+                    data: {
+                        activities: transformedActivities,
+                        totalCount: transformedActivities.length,
+                        days: days
+                    }
+                };
+            } else {
+                console.log('📊 Response structure:', Object.keys(result));
+                console.log('📊 No activities found in response');
+                
+                return {
+                    success: true,
+                    data: {
+                        activities: [],
+                        totalCount: 0,
+                        days: days
+                    }
+                };
+            }
+        }
+        
+        console.log('📊 ✅ API call successful but no data structure recognized');
+        return {
+            success: true,
+            data: {
+                activities: [],
+                totalCount: 0,
+                days: days
+            }
+        };
+    } catch (error) {
+        console.error('📊 ❌ API error occurred at:', new Date().toISOString());
+        console.error('📊 ❌ Error type:', typeof error);
+        console.error('📊 ❌ Error name:', error instanceof Error ? error.name : 'Unknown');
+        console.error('📊 ❌ Error message:', error instanceof Error ? error.message : 'Unknown error');
+        console.error('📊 ❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+        console.error('📊 ❌ Full error object:', error);
+        
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
+    }
+}

@@ -87,8 +87,44 @@ const workoutExercises = {
   Core: ['Planks', 'Crunches', 'Russian Twists', 'Leg Raises', 'Wood Chops']
 };
 
+// Helper function to calculate duration between start and end time
+function calculateDuration(startTime: string, endTime: string): string {
+  const start = new Date(`2000-01-01T${startTime}:00`);
+  const end = new Date(`2000-01-01T${endTime}:00`);
+  const diffMs = end.getTime() - start.getTime();
+  const diffMinutes = Math.round(diffMs / (1000 * 60));
+  return `${diffMinutes} min`;
+}
+
+// Helper function to format time from 24-hour to 12-hour format
+function formatTime(time24: string): string {
+  const [hours, minutes] = time24.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
+}
+
+// Helper function to get next date for a given day of week
+function getNextDateForDay(day: string): string {
+  const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  const dayIndex = days.indexOf(day.toUpperCase());
+  if (dayIndex === -1) return new Date().toISOString().split('T')[0];
+  
+  const today = new Date();
+  const currentDay = today.getDay();
+  const daysUntilTarget = (dayIndex - currentDay + 7) % 7;
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + daysUntilTarget);
+  
+  return targetDate.toISOString().split('T')[0];
+}
+
 export default function TrainerDashboard() {
+  console.log('🏋️‍♂️ ===== TRAINER DASHBOARD COMPONENT LOADED =====');
   const { loading, trainerData } = useAuthCheck();
+  console.log('🏋️‍♂️ Auth check loading:', loading);
+  console.log('🏋️‍♂️ Trainer data:', trainerData);
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'nutrition' | 'progress'>('overview');
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
@@ -116,6 +152,16 @@ export default function TrainerDashboard() {
   ]);
   
   const [upcomingSessions, setUpcomingSessions] = useState<WorkoutSession[]>([]);
+  
+  // Debug upcomingSessions state changes
+  useEffect(() => {
+    console.log('🏋️‍♂️ ===== UPCOMING SESSIONS STATE CHANGED =====');
+    console.log('🏋️‍♂️ UpcomingSessions state changed:', upcomingSessions);
+    console.log('🏋️‍♂️ UpcomingSessions length:', upcomingSessions.length);
+    console.log('🏋️‍♂️ UpcomingSessions is array:', Array.isArray(upcomingSessions));
+    console.log('🏋️‍♂️ UpcomingSessions content:', JSON.stringify(upcomingSessions, null, 2));
+  }, [upcomingSessions]);
+
   
   const [upcomingPayments, setUpcomingPayments] = useState<Payment[]>([]);
   
@@ -226,52 +272,117 @@ export default function TrainerDashboard() {
 
   // Fetch upcoming workouts when component mounts
   useEffect(() => {
+    console.log('🏋️‍♂️ ===== USEEFFECT TRIGGERED =====');
+    console.log('🏋️‍♂️ Component mounted, starting workout fetch...');
+    
     async function fetchUpcomingWorkouts() {
+      console.log('🏋️‍♂️ ===== FETCHING UPCOMING WORKOUTS =====');
+      console.log('🏋️‍♂️ Loading workouts for next 7 days...');
+      
       setIsLoadingWorkouts(true);
       try {
+        console.log('🏋️‍♂️ About to call getUpcomingWorkouts API...');
         const result = await getUpcomingWorkouts(7); // Fetch next 7 days
-        console.log('Trainer Dashboard - getUpcomingWorkouts result:', result);
+        console.log('🏋️‍♂️ getUpcomingWorkouts API result:', result);
+        console.log('🏋️‍♂️ Result success:', result.success);
+        console.log('🏋️‍♂️ Result data type:', typeof result.data);
+        console.log('🏋️‍♂️ Result data length:', result.data?.length);
 
-        if (result.success && result.data) {
-          console.log('Trainer Dashboard - Raw workouts data:', result.data);
-          console.log('Trainer Dashboard - Raw workouts count:', result.data.length);
+        if (result.success && result.data && result.data.userSchedules) {
+          console.log('🏋️‍♂️ Raw workouts data from API:', JSON.stringify(result.data, null, 2));
+          console.log('🏋️‍♂️ User schedules object:', result.data.userSchedules);
+          
+          // Extract all workouts from userSchedules object
+          const allWorkouts: any[] = [];
+          Object.keys(result.data.userSchedules).forEach(userId => {
+            const userWorkouts = result.data.userSchedules[userId];
+            console.log(`🏋️‍♂️ User ${userId} has ${userWorkouts.length} workouts:`, userWorkouts);
+            // Add user ID to each workout for better tracking
+            const workoutsWithUserId = userWorkouts.map((workout: any) => ({
+              ...workout,
+              userId: userId
+            }));
+            allWorkouts.push(...workoutsWithUserId);
+          });
+          
+          console.log('🏋️‍♂️ Total workouts extracted:', allWorkouts.length);
+          console.log('🏋️‍♂️ All workouts array:', allWorkouts);
           
           // Map API data to WorkoutSession format
-          const formattedWorkouts = result.data.map((workout: any, index: number) => {
-            console.log(`Trainer Dashboard - Processing workout ${index}:`, workout);
-            const formattedWorkout = {
-              id: workout.id?.toString() || `workout-${index}`,
-              clientName: workout.clientName || workout.client_name || workout.userName || 'Unknown Client',
-              type: workout.type || workout.workoutType || workout.exerciseType || 'General Workout',
-              date: workout.date || workout.scheduledDate || new Date().toISOString().split('T')[0],
-              time: workout.time || workout.scheduledTime || '10:00 AM',
-              duration: workout.duration || workout.durationMinutes ? `${workout.durationMinutes} min` : '60 min',
-              status: workout.status === 'completed' ? 'completed' : (workout.status === 'cancelled' ? 'cancelled' : 'upcoming')
+          const formattedWorkouts = allWorkouts.map((workout: any, index: number) => {
+            console.log(`🏋️‍♂️ Processing workout ${index + 1}/${allWorkouts.length}:`, workout);
+            
+            // Calculate duration from start and end time
+            const startTime = workout.startTime || '06:00';
+            const endTime = workout.endTime || '07:00';
+            const duration = calculateDuration(startTime, endTime);
+            
+            // Convert day to date (simplified - you might want to improve this)
+            const workoutDate = getNextDateForDay(workout.day);
+            
+            const formattedWorkout: WorkoutSession = {
+              id: workout.userId + '-' + index || `workout-${index}`,
+              clientName: workout.userName || `User ${workout.userId}` || 'Unknown Client',
+              type: workout.workoutName || 'General Workout',
+              date: workoutDate,
+              time: formatTime(startTime),
+              duration: duration,
+              status: workout.status === 'COMPLETED' ? 'completed' : (workout.status === 'CANCELLED' ? 'cancelled' : 'upcoming')
             };
-            console.log(`Trainer Dashboard - Formatted workout ${index}:`, formattedWorkout);
+            
+            console.log('🏋️‍♂️ Mapped workout details:', {
+              original: workout,
+              formatted: formattedWorkout
+            });
+            
+            console.log('🏋️‍♂️ Final formatted workout for display:', formattedWorkout);
+            
+            console.log(`🏋️‍♂️ Formatted workout ${index + 1}:`, formattedWorkout);
             return formattedWorkout;
           });
 
-          console.log('Trainer Dashboard - Formatted workouts:', formattedWorkouts);
-          console.log('Trainer Dashboard - Formatted workouts count:', formattedWorkouts.length);
+          console.log('🏋️‍♂️ All formatted workouts:', JSON.stringify(formattedWorkouts, null, 2));
+          console.log('🏋️‍♂️ Total formatted workouts count:', formattedWorkouts.length);
+          
+          console.log('🏋️‍♂️ About to set upcomingSessions with:', formattedWorkouts);
+          console.log('🏋️‍♂️ Formatted workouts type:', typeof formattedWorkouts);
+          console.log('🏋️‍♂️ Formatted workouts is array:', Array.isArray(formattedWorkouts));
           setUpcomingSessions(formattedWorkouts);
+          console.log('🏋️‍♂️ Upcoming sessions state updated with', formattedWorkouts.length, 'workouts');
+          
+          // Verify the state was set
+          setTimeout(() => {
+            console.log('🏋️‍♂️ State after setting (delayed check):', upcomingSessions);
+          }, 100);
           
           // Update active workouts count in stats
           const activeWorkoutsCount = formattedWorkouts.filter((w: WorkoutSession) => w.status === 'upcoming').length;
-          setTrainerStats(prev => ({
-            ...prev,
-            activeWorkouts: activeWorkoutsCount
-          }));
+          console.log('🏋️‍♂️ Active workouts count (upcoming only):', activeWorkoutsCount);
+          
+          setTrainerStats(prev => {
+            const newStats = {
+              ...prev,
+              activeWorkouts: activeWorkoutsCount
+            };
+            console.log('🏋️‍♂️ Updated trainer stats:', newStats);
+            return newStats;
+          });
+          
+          console.log('🏋️‍♂️ ===== WORKOUTS FETCH COMPLETED SUCCESSFULLY =====');
         } else {
-          console.error('Failed to fetch upcoming workouts:', result.error);
+          console.error('🏋️‍♂️ ❌ Failed to fetch upcoming workouts:', result.error);
+          console.error('🏋️‍♂️ ❌ Result object:', result);
         }
       } catch (error) {
-        console.error('Error fetching upcoming workouts:', error);
+        console.error('🏋️‍♂️ ❌ Error fetching upcoming workouts:', error);
+        console.error('🏋️‍♂️ ❌ Error details:', error);
       } finally {
         setIsLoadingWorkouts(false);
+        console.log('🏋️‍♂️ Loading state set to false');
       }
     }
 
+    console.log('🏋️‍♂️ Starting workout fetch process...');
     fetchUpcomingWorkouts();
   }, []);
 

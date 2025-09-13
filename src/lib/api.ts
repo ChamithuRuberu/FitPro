@@ -968,16 +968,30 @@ export async function getUpcomingPayments(trainerId: string) {
 }
 
 export async function getUpcomingWorkouts(days: number = 7) {
-    console.log('🔍 getUpcomingWorkouts called with days:', days);
+    console.log('🏋️‍♂️ ===== API: getUpcomingWorkouts =====');
+    console.log('🏋️‍♂️ API called with days parameter:', days);
+    console.log('🏋️‍♂️ This is a test log to verify function is called');
     
     try {
         // Get JWT token from cookies
+        console.log('🏋️‍♂️ Getting JWT token from session cookie...');
         const token = await getCookie('session');
+        console.log('🏋️‍♂️ Token found:', token ? 'Yes' : 'No');
+        console.log('🏋️‍♂️ Token length:', token?.length || 0);
+        
         if (!token) {
+            console.error('🏋️‍♂️ ❌ No authentication token found');
             throw new Error('No authentication token found');
         }
 
-        const response = await fetch(`${API_BASE_URL}/workout/upcoming?days=${days}`, {
+        const apiUrl = `${API_BASE_URL}/workout/upcoming?days=${days}`;
+        console.log('🏋️‍♂️ Making API request to:', apiUrl);
+        console.log('🏋️‍♂️ Request headers:', {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token.substring(0, 20)}...` // Log only first 20 chars for security
+        });
+
+        const response = await fetch(apiUrl, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -985,25 +999,31 @@ export async function getUpcomingWorkouts(days: number = 7) {
             },
         });
 
-        console.log('📡 getUpcomingWorkouts API response status:', response.status);
+        console.log('🏋️‍♂️ API response status:', response.status);
+        console.log('🏋️‍♂️ API response ok:', response.ok);
+        console.log('🏋️‍♂️ API response headers:', Object.fromEntries(response.headers.entries()));
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ getUpcomingWorkouts API error:', response.status, errorText);
+            console.error('🏋️‍♂️ ❌ API error response:', response.status, errorText);
             throw new Error(`Failed to fetch upcoming workouts: ${response.status}`);
         }
 
         const result = await response.json();
-        console.log('📊 getUpcomingWorkouts full API response:', JSON.stringify(result, null, 2));
-        console.log('📊 getUpcomingWorkouts number of workouts:', result?.length || 0);
-        console.log('✅ getUpcomingWorkouts API call successful');
+        console.log('🏋️‍♂️ Raw API response:', JSON.stringify(result, null, 2));
+        console.log('🏋️‍♂️ Response type:', typeof result);
+        console.log('🏋️‍♂️ Response is array:', Array.isArray(result));
+        console.log('🏋️‍♂️ Number of workouts in response:', result?.length || 0);
+        console.log('🏋️‍♂️ ✅ API call successful');
         
         return {
             success: true,
             data: result || []
         };
     } catch (error) {
-        console.error('❌ getUpcomingWorkouts error:', error);
+        console.error('🏋️‍♂️ ❌ API error:', error);
+        console.error('🏋️‍♂️ ❌ Error type:', typeof error);
+        console.error('🏋️‍♂️ ❌ Error message:', error instanceof Error ? error.message : 'Unknown error');
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred'

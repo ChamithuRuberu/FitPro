@@ -50,6 +50,34 @@ export default function OverviewTab({
   upcomingPayments,
   clientSegments
 }: OverviewTabProps) {
+  console.log('🏋️‍♂️ ===== OVERVIEW TAB RENDERED =====');
+  console.log('🏋️‍♂️ OverviewTab received upcomingSessions:', upcomingSessions);
+  console.log('🏋️‍♂️ OverviewTab upcomingSessions length:', upcomingSessions?.length || 0);
+  console.log('🏋️‍♂️ OverviewTab upcomingSessions type:', typeof upcomingSessions);
+  console.log('🏋️‍♂️ OverviewTab upcomingSessions is array:', Array.isArray(upcomingSessions));
+  console.log('🏋️‍♂️ OverviewTab upcomingSessions content:', JSON.stringify(upcomingSessions, null, 2));
+  
+  // Debug: Check if we have data to display
+  const hasData = upcomingSessions && upcomingSessions.length > 0;
+  console.log('🏋️‍♂️ Has data to display:', hasData);
+  console.log('🏋️‍♂️ Will show workouts:', hasData ? 'YES' : 'NO');
+  
+  // Temporary: Force show some data for testing
+  const testData = [
+    {
+      id: 'test-1',
+      clientName: 'test user',
+      type: 'adad',
+      date: new Date().toISOString().split('T')[0],
+      time: '6:30 AM',
+      duration: '90 min',
+      status: 'upcoming' as const
+    }
+  ];
+  
+  const displayData = hasData ? upcomingSessions : testData;
+  console.log('🏋️‍♂️ Display data:', displayData);
+  
   return (
     <div className="space-y-8">
       {/* Quick Stats */}
@@ -110,7 +138,8 @@ export default function OverviewTab({
           </div>
           <div className="h-80 overflow-y-auto pr-2 custom-scrollbar">
             <div className="space-y-4">
-              {upcomingSessions.map((session) => (
+              {displayData && displayData.length > 0 ? (
+                displayData.map((session) => (
                 <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center space-x-4">
                     <div className={`p-2 rounded-full ${session.status === 'upcoming' ? 'bg-blue-100' : 'bg-green-100'}`}>
@@ -131,7 +160,14 @@ export default function OverviewTab({
                     <p className="text-sm text-gray-500">{session.date}</p>
                   </div>
                 </div>
-              ))}
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                  <FiClock className="w-12 h-12 mb-4 text-gray-300" />
+                  <p className="text-lg font-medium">No upcoming sessions</p>
+                  <p className="text-sm">Check back later for scheduled workouts</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

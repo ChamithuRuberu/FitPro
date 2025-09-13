@@ -53,21 +53,19 @@ export default function OverviewTab({
   console.log('🏋️‍♂️ ===== OVERVIEW TAB RENDERED =====');
   console.log('🏋️‍♂️ OverviewTab received upcomingSessions:', upcomingSessions);
   console.log('🏋️‍♂️ OverviewTab upcomingSessions length:', upcomingSessions?.length || 0);
-  console.log('🏋️‍♂️ OverviewTab upcomingSessions type:', typeof upcomingSessions);
-  console.log('🏋️‍♂️ OverviewTab upcomingSessions is array:', Array.isArray(upcomingSessions));
-  console.log('🏋️‍♂️ OverviewTab upcomingSessions content:', JSON.stringify(upcomingSessions, null, 2));
   
-  // Debug: Check if we have data to display
-  const hasData = upcomingSessions && upcomingSessions.length > 0;
-  console.log('🏋️‍♂️ Has data to display:', hasData);
-  console.log('🏋️‍♂️ Will show workouts:', hasData ? 'YES' : 'NO');
+  // Show all upcoming sessions in Today's Schedule (more useful for trainers)
+  const displayData = upcomingSessions || [];
   
-  // Temporary: Force show some data for testing
+  console.log('🏋️‍♂️ All upcoming sessions for display:', displayData);
+  console.log('🏋️‍♂️ Total sessions count:', displayData.length);
+  
+  // If no data, show a test session for debugging
   const testData = [
     {
       id: 'test-1',
-      clientName: 'test user',
-      type: 'adad',
+      clientName: 'Test User',
+      type: 'Strength Training',
       date: new Date().toISOString().split('T')[0],
       time: '6:30 AM',
       duration: '90 min',
@@ -75,8 +73,8 @@ export default function OverviewTab({
     }
   ];
   
-  const displayData = hasData ? upcomingSessions : testData;
-  console.log('🏋️‍♂️ Display data:', displayData);
+  const finalDisplayData = displayData.length > 0 ? displayData : testData;
+  console.log('🏋️‍♂️ Final display data:', finalDisplayData);
   
   return (
     <div className="space-y-8">
@@ -130,7 +128,12 @@ export default function OverviewTab({
         {/* Today's Schedule */}
         <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Today's Schedule</h2>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Upcoming Schedule</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {finalDisplayData.length} {finalDisplayData.length === 1 ? 'session' : 'sessions'} scheduled
+              </p>
+            </div>
             <button className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
               <FiCalendar className="w-4 h-4 mr-2" />
               View Full Calendar
@@ -138,8 +141,8 @@ export default function OverviewTab({
           </div>
           <div className="h-80 overflow-y-auto pr-2 custom-scrollbar">
             <div className="space-y-4">
-              {displayData && displayData.length > 0 ? (
-                displayData.map((session) => (
+              {finalDisplayData && finalDisplayData.length > 0 ? (
+                finalDisplayData.map((session) => (
                 <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center space-x-4">
                     <div className={`p-2 rounded-full ${session.status === 'upcoming' ? 'bg-blue-100' : 'bg-green-100'}`}>

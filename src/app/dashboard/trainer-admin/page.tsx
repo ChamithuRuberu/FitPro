@@ -117,7 +117,16 @@ function getNextDateForDay(day: string): string {
   const targetDate = new Date(today);
   targetDate.setDate(today.getDate() + daysUntilTarget);
   
-  return targetDate.toISOString().split('T')[0];
+  const resultDate = targetDate.toISOString().split('T')[0];
+  console.log('🏋️‍♂️ Date calculation:', {
+    day: day,
+    dayIndex: dayIndex,
+    currentDay: currentDay,
+    daysUntilTarget: daysUntilTarget,
+    resultDate: resultDate
+  });
+  
+  return resultDate;
 }
 
 export default function TrainerDashboard() {
@@ -160,6 +169,13 @@ export default function TrainerDashboard() {
     console.log('🏋️‍♂️ UpcomingSessions length:', upcomingSessions.length);
     console.log('🏋️‍♂️ UpcomingSessions is array:', Array.isArray(upcomingSessions));
     console.log('🏋️‍♂️ UpcomingSessions content:', JSON.stringify(upcomingSessions, null, 2));
+    
+    // Force re-render of OverviewTab by updating a dummy state
+    if (upcomingSessions.length > 0) {
+      console.log('🏋️‍♂️ ✅ Data available for OverviewTab');
+    } else {
+      console.log('🏋️‍♂️ ❌ No data available for OverviewTab');
+    }
   }, [upcomingSessions]);
 
   
@@ -320,15 +336,31 @@ export default function TrainerDashboard() {
             // Convert day to date (simplified - you might want to improve this)
             const workoutDate = getNextDateForDay(workout.day);
             
-            const formattedWorkout: WorkoutSession = {
-              id: workout.userId + '-' + index || `workout-${index}`,
-              clientName: workout.userName || `User ${workout.userId}` || 'Unknown Client',
-              type: workout.workoutName || 'General Workout',
-              date: workoutDate,
-              time: formatTime(startTime),
-              duration: duration,
-              status: workout.status === 'COMPLETED' ? 'completed' : (workout.status === 'CANCELLED' ? 'cancelled' : 'upcoming')
-            };
+              // Map status correctly - PLANNED should be upcoming
+              let mappedStatus: 'upcoming' | 'completed' | 'cancelled' = 'upcoming';
+              if (workout.status === 'COMPLETED') {
+                mappedStatus = 'completed';
+              } else if (workout.status === 'CANCELLED') {
+                mappedStatus = 'cancelled';
+              } else {
+                // PLANNED, PENDING, etc. -> upcoming
+                mappedStatus = 'upcoming';
+              }
+              
+              console.log('🏋️‍♂️ Status mapping:', {
+                original: workout.status,
+                mapped: mappedStatus
+              });
+              
+              const formattedWorkout: WorkoutSession = {
+                id: workout.userId + '-' + index || `workout-${index}`,
+                clientName: workout.userName || `User ${workout.userId}` || 'Unknown Client',
+                type: workout.workoutName || 'General Workout',
+                date: workoutDate,
+                time: formatTime(startTime),
+                duration: duration,
+                status: mappedStatus
+              };
             
             console.log('🏋️‍♂️ Mapped workout details:', {
               original: workout,
@@ -343,6 +375,13 @@ export default function TrainerDashboard() {
 
           console.log('🏋️‍♂️ All formatted workouts:', JSON.stringify(formattedWorkouts, null, 2));
           console.log('🏋️‍♂️ Total formatted workouts count:', formattedWorkouts.length);
+          
+          // Debug: Check what dates we have
+          const today = new Date().toISOString().split('T')[0];
+          const todaysWorkouts = formattedWorkouts.filter(workout => workout.date === today);
+          console.log('🏋️‍♂️ Today\'s date:', today);
+          console.log('🏋️‍♂️ Workouts for today:', todaysWorkouts.length);
+          console.log('🏋️‍♂️ All workout dates:', formattedWorkouts.map(w => w.date));
           
           console.log('🏋️‍♂️ About to set upcomingSessions with:', formattedWorkouts);
           console.log('🏋️‍♂️ Formatted workouts type:', typeof formattedWorkouts);
@@ -367,6 +406,11 @@ export default function TrainerDashboard() {
             console.log('🏋️‍♂️ Updated trainer stats:', newStats);
             return newStats;
           });
+          
+          // Debug: Verify data is being passed to OverviewTab
+          console.log('🏋️‍♂️ ===== DATA BEING PASSED TO OVERVIEW TAB =====');
+          console.log('🏋️‍♂️ upcomingSessions state:', upcomingSessions);
+          console.log('🏋️‍♂️ formattedWorkouts:', formattedWorkouts);
           
           console.log('🏋️‍♂️ ===== WORKOUTS FETCH COMPLETED SUCCESSFULLY =====');
         } else {

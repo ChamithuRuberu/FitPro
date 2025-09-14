@@ -1165,6 +1165,90 @@ export async function getUpcomingWorkouts(days: number = 7) {
     }
 }
 
+// ===== Trainer: Me (for client) =====
+export interface TrainerMeResponseData {
+    trainer: {
+        id: number;
+        name: string;
+        trainerId: string;
+        servicePeriod: string;
+        weight: string;
+        height: string;
+        profile: string;
+        mobile: string;
+        email: string;
+        location: string;
+        rating: string;
+    };
+    workoutHistoryId: string;
+}
+
+export async function getTrainerMe() {
+    try {
+        const token = await getCookie('session');
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required',
+                code: '0001'
+            } as const;
+        }
+
+        const headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+        } as Record<string, string>;
+
+        const primaryUrl = `${API_BASE_URL}/trainer/me`;
+        let response = await fetch(primaryUrl, { method: 'GET', headers });
+        let result: any = null;
+        let textBody = '';
+        try {
+            textBody = await response.text();
+            result = textBody ? JSON.parse(textBody) : {};
+        } catch {
+            // ignore parse error; will attempt fallback
+        }
+
+        if (!response.ok || !result?.data?.trainer) {
+            const fallbackUrl = `http://localhost:8080/trainer/me`;
+            const fbResp = await fetch(fallbackUrl, { method: 'GET', headers });
+            let fbJson: any = null;
+            let fbText = '';
+            try {
+                fbText = await fbResp.text();
+                fbJson = fbText ? JSON.parse(fbText) : {};
+            } catch {
+                // ignore parse error
+            }
+            response = fbResp;
+            result = fbJson;
+        }
+
+        if (!response.ok || !result || !result.data || !result.data.trainer) {
+            return {
+                success: false,
+                message: result?.message || `Failed to fetch trainer details: ${response.status}`,
+                code: result?.code || '0001'
+            } as const;
+        }
+
+        const data = result.data as TrainerMeResponseData;
+        return {
+            success: true,
+            data,
+            code: result.code || '0000',
+            message: result.message || 'Trainer details fetched'
+        } as const;
+    } catch (error) {
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to fetch trainer details',
+            code: '0001'
+        } as const;
+    }
+}
+
 // Activity Audit Types
 export interface ActivityAuditItem {
     id: string;

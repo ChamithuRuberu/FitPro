@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 import { ApexOptions } from 'apexcharts';
-import { getCookie, getWorkouts } from '@/lib/api';
+import { getCookie, getWorkouts, getTrainerMe } from '@/lib/api';
 
 // Extend Window interface to include ApexCharts
 declare global {
@@ -178,6 +178,21 @@ interface BodyMetrics {
   weight: number;
   height: number;
   bmi: number;
+}
+
+// Trainer details returned by GET /trainer/me
+interface TrainerMeTrainer {
+  id: number;
+  name: string;
+  trainerId: string;
+  servicePeriod: string;
+  weight: string;
+  height: string;
+  profile: string;
+  mobile: string;
+  email: string;
+  location: string;
+  rating: string;
 }
 
 // Add new interface for API workout data
@@ -517,6 +532,7 @@ export default function ClientDashboard() {
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
   const [trainerIdState, setTrainerIdState] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [trainerMe, setTrainerMe] = useState<TrainerMeTrainer | null>(null);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -561,6 +577,17 @@ export default function ClientDashboard() {
           console.error('ClientDashboard: getWorkouts error:', workoutsResult.message);
           setError(workoutsResult.message || 'Failed to fetch workouts');
           toast.error(workoutsResult.message || 'Failed to fetch workouts');
+        }
+
+        // Fetch trainer details for client
+        try {
+          const trainerRes = await getTrainerMe();
+          console.log('ClientDashboard: getTrainerMe result:', trainerRes);
+          if ((trainerRes as any).success && (trainerRes as any).data?.trainer) {
+            setTrainerMe((trainerRes as any).data.trainer);
+          }
+        } catch (e) {
+          console.error('ClientDashboard: getTrainerMe exception:', e);
         }
 
       } catch (error) {
@@ -622,6 +649,27 @@ export default function ClientDashboard() {
 
   const handleLogout = async () => {
 
+  };
+
+  // Choose avatar image based on detected gender hints
+  const getTrainerAvatarSrc = () => {
+    // Simple gender heuristic based on profile or name prefixes
+    const profile = trainerMe?.profile?.toLowerCase() || '';
+    const nameLower = (trainerMe?.name || '').toLowerCase();
+    const isFemale = profile.includes('female') || profile.includes('woman') || profile.includes('women') || nameLower.startsWith('ms ') || nameLower.startsWith('mrs ');
+    const maleSvg = "data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'>\
+  <rect width='160' height='160' rx='80' fill='%23e6f0ff'/>\
+  <circle cx='80' cy='60' r='32' fill='%234b6cb7'/>\
+  <rect x='35' y='100' width='90' height='42' rx='21' fill='%234b6cb7'/>\
+</svg>";
+    const femaleSvg = "data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'>\
+  <rect width='160' height='160' rx='80' fill='%fff0f6'/>\
+  <circle cx='80' cy='60' r='32' fill='%23d946ef'/>\
+  <rect x='35' y='100' width='90' height='42' rx='21' fill='%23d946ef'/>\
+</svg>";
+    return isFemale ? femaleSvg : maleSvg;
   };
 
   // Add filter functions
@@ -993,8 +1041,8 @@ export default function ClientDashboard() {
                   <div className="relative">
                     <div className="w-40 h-40 rounded-full overflow-hidden ring-4 ring-blue-100">
                       <img
-                        src={sampleTrainerData.image}
-                        alt={sampleTrainerData.name}
+                        src={getTrainerAvatarSrc()}
+                        alt={(trainerMe?.name || 'Trainer') as string}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -1004,24 +1052,27 @@ export default function ClientDashboard() {
                   </div>
                   <div className="flex-1 text-center md:text-left">
                     <div className="flex items-center justify-center md:justify-start space-x-3">
-                      <h3 className="text-2xl font-semibold text-gray-900">{sampleTrainerData.name}</h3>
+                      <h3 className="text-2xl font-semibold text-gray-900">{trainerMe?.name || '-'}</h3>
                       <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={i} className={`text-xl ${i < Math.floor(sampleTrainerData.rating) ? 'text-yellow-400' : 'text-gray-300'}`}>
-                            ★
-                          </span>
-                        ))}
+                        {(() => {
+                          const percentStr = trainerMe?.rating || '0%';
+                          const percent = parseInt(percentStr.replace(/[^0-9]/g, '')) || 0;
+                          const stars = Math.max(0, Math.min(5, Math.round((percent / 100) * 5)));
+                          return [...Array(5)].map((_, i) => (
+                            <span key={i} className={`text-xl ${i < stars ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
+                          ));
+                        })()}
                       </div>
-                      <span className="text-sm text-gray-600">({sampleTrainerData.rating})</span>
+                      <span className="text-sm text-gray-600">{trainerMe?.rating ? `(${trainerMe.rating})` : null}</span>
                     </div>
-                    <p className="text-lg text-gray-600 mt-2">{sampleTrainerData.specialization}</p>
-                    <p className="mt-4 text-gray-600">{sampleTrainerData.bio}</p>
+                    <p className="text-lg text-gray-600 mt-2">{trainerMe?.profile || '-'}</p>
+                    <p className="mt-4 text-gray-600">{trainerMe ? `Service: ${trainerMe.servicePeriod} • Location: ${trainerMe.location}` : '-'}</p>
                     <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
                       <span className="px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-                        {sampleTrainerData.experience} Experience
+                        {trainerMe?.servicePeriod ? `${trainerMe.servicePeriod} Service` : '-'}
                       </span>
                       <span className="px-4 py-2 bg-green-50 text-green-600 rounded-full text-sm font-medium">
-                        Certified Trainer
+                        {trainerMe?.location ? `Location: ${trainerMe.location}` : '-'}
                       </span>
                     </div>
                   </div>

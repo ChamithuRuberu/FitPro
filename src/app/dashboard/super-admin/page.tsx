@@ -1183,9 +1183,9 @@ export default function SuperAdminDashboard() {
                   <h3 className="text-lg font-semibold text-gray-900">Gyms</h3>
                   <span className="text-sm text-gray-500">{gymOptions.length} total</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                   {gymOptions.slice(0, 6).map((g) => (
-                    <div key={g.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition">
+                    <div key={g.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition">
                       <div className="flex items-center space-x-3">
                         <div className="p-2 rounded-md bg-blue-50 text-blue-600">
                           <FiMapPin className="w-4 h-4" />
@@ -1209,9 +1209,9 @@ export default function SuperAdminDashboard() {
                   <h3 className="text-lg font-semibold text-gray-900">Trainers</h3>
                   <span className="text-sm text-gray-500">{trainerOptions.length} total</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                   {trainerOptions.slice(0, 6).map((t) => (
-                    <div key={t.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition">
+                    <div key={t.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition">
                       <div className="flex items-center space-x-3">
                         <div className="p-2 rounded-md bg-green-50 text-green-600">
                           <FiActivity className="w-4 h-4" />
@@ -1235,9 +1235,9 @@ export default function SuperAdminDashboard() {
                   <h3 className="text-lg font-semibold text-gray-900">Users</h3>
                   <span className="text-sm text-gray-500">{userOptions.length} total</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                   {userOptions.slice(0, 6).map((u) => (
-                    <div key={u.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition">
+                    <div key={u.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition">
                       <div className="flex items-center space-x-3">
                         <div className="p-2 rounded-md bg-purple-50 text-purple-600">
                           <FiUsers className="w-4 h-4" />

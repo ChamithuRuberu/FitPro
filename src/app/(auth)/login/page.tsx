@@ -94,7 +94,7 @@ export default function ClientLoginPage() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 to-indigo-900/90 z-10" />
         <Image
-          src="/images/fitness-bg.jpg"
+          src=""
           alt="Fitness motivation"
           fill
           className="object-cover object-center transform scale-105 animate-subtle-zoom"

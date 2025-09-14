@@ -67,7 +67,7 @@ export default function ActivitySection({
       case 'client_action':
         return { icon: FiUsers, color: 'text-cyan-600', bgColor: 'bg-cyan-100' };
       case 'gym_registration':
-        return { icon: FiBuilding, color: 'text-orange-600', bgColor: 'bg-orange-100' };
+        return { icon: FiShield, color: 'text-orange-600', bgColor: 'bg-orange-100' };
       case 'admin_action':
         return { icon: FiShield, color: 'text-red-600', bgColor: 'bg-red-100' };
       case 'system_action':

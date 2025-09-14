@@ -261,6 +261,9 @@ export async function completeUserProfile(formData: {
         setCookie("status", result.data.user.status);
         setCookie("role_type", "ROLE_USER");
         setCookie("session", result.data.token);
+        setCookie("refresh_token", result.data.refresh_token);
+        setCookie("token", result.data.user.token);
+
         return {
             success: true,
             message: result.message,

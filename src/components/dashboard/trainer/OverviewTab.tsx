@@ -67,21 +67,7 @@ export default function OverviewTab({
   console.log('🏋️‍♂️ All upcoming sessions for display:', displayData);
   console.log('🏋️‍♂️ Total sessions count:', displayData.length);
   
-  // If no data, show a test session for debugging
-  const testData = [
-    {
-      id: 'test-1',
-      clientName: 'Test User',
-      type: 'Strength Training',
-      date: new Date().toISOString().split('T')[0],
-      time: '6:30 AM',
-      duration: '90 min',
-      status: 'upcoming' as const
-    }
-  ];
-  
-  const finalDisplayData = displayData.length > 0 ? displayData : testData;
-  console.log('🏋️‍♂️ Final display data:', finalDisplayData);
+  // Use only real data; no static fallbacks
   
   return (
     <div className="space-y-8">
@@ -90,7 +76,7 @@ export default function OverviewTab({
         <StatsCard
           title="Total Clients"
           value={trainerStats.totalClients}
-          trend={{ value: "12%", isPositive: true }}
+          trend={{ value: "100%", isPositive: true }}
           trendLabel="vs last month"
           icon={<FiUser className="w-8 h-8 text-blue-600" />}
           iconBgColor="bg-blue-50"
@@ -100,7 +86,7 @@ export default function OverviewTab({
         <StatsCard
           title="Active Workouts"
           value={trainerStats.activeWorkouts}
-          trend={{ value: "8%", isPositive: true }}
+          trend={{ value: "100%", isPositive: true }}
           trendLabel="vs last week"
           icon={<FiActivity className="w-8 h-8 text-green-600" />}
           iconBgColor="bg-green-50"
@@ -138,7 +124,7 @@ export default function OverviewTab({
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Upcoming Schedule</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {finalDisplayData.length} {finalDisplayData.length === 1 ? 'session' : 'sessions'} scheduled
+                {displayData.length} {displayData.length === 1 ? 'session' : 'sessions'} scheduled
               </p>
             </div>
             <button className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
@@ -148,8 +134,8 @@ export default function OverviewTab({
           </div>
           <div className="h-80 overflow-y-auto pr-2 custom-scrollbar">
             <div className="space-y-4">
-              {finalDisplayData && finalDisplayData.length > 0 ? (
-                finalDisplayData.map((session) => (
+              {displayData && displayData.length > 0 ? (
+                displayData.map((session) => (
                 <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center space-x-4">
                     <div className={`p-2 rounded-full ${session.status === 'upcoming' ? 'bg-blue-100' : 'bg-green-100'}`}>
@@ -171,13 +157,7 @@ export default function OverviewTab({
                   </div>
                 </div>
                 ))
-              ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                  <FiClock className="w-12 h-12 mb-4 text-gray-300" />
-                  <p className="text-lg font-medium">No upcoming sessions</p>
-                  <p className="text-sm">Check back later for scheduled workouts</p>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

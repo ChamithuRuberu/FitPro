@@ -901,6 +901,9 @@ export default function ClientDashboard() {
                   <FiUser className="w-5 h-5 text-white" />
                   <span className="text-white font-medium">{userData?.fullName}</span>
                 </div></span>
+                <span className="px-3 py-1 bg-white bg-opacity-30 text-white rounded-full text-sm font-medium">
+                  {userData?.city}
+                </span>
                 <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium">
                   {userData?.status}
                 </span>
@@ -937,6 +940,18 @@ export default function ClientDashboard() {
                       <FiTrendingUp className="w-5 h-5 text-green-600" />
                     </div>
                     <span className="text-gray-600">On Track</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="p-2 bg-purple-100 rounded-full">
+                      <FiUser className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <span className="text-gray-600">{userData?.city || '-'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="p-2 bg-yellow-100 rounded-full">
+                      <FiPackage className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <span className="text-gray-600">ID: {userData?.govId || '-'}</span>
                   </div>
                 </div>
               </div>
@@ -1052,27 +1067,32 @@ export default function ClientDashboard() {
                   </div>
                   <div className="flex-1 text-center md:text-left">
                     <div className="flex items-center justify-center md:justify-start space-x-3">
-                      <h3 className="text-2xl font-semibold text-gray-900">{trainerMe?.name || '-'}</h3>
+                      <h3 className="text-2xl font-semibold text-gray-900">{trainerMe?.name || sampleTrainerData.name}</h3>
                       <div className="flex">
                         {(() => {
-                          const percentStr = trainerMe?.rating || '0%';
-                          const percent = parseInt(percentStr.replace(/[^0-9]/g, '')) || 0;
-                          const stars = Math.max(0, Math.min(5, Math.round((percent / 100) * 5)));
+                          if (trainerMe?.rating) {
+                            const percent = parseInt(trainerMe.rating.replace(/[^0-9]/g, '')) || 0;
+                            const stars = Math.max(0, Math.min(5, Math.round((percent / 100) * 5)));
+                            return [...Array(5)].map((_, i) => (
+                              <span key={i} className={`text-xl ${i < stars ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
+                            ));
+                          }
+                          const stars = Math.floor(sampleTrainerData.rating);
                           return [...Array(5)].map((_, i) => (
                             <span key={i} className={`text-xl ${i < stars ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
                           ));
                         })()}
                       </div>
-                      <span className="text-sm text-gray-600">{trainerMe?.rating ? `(${trainerMe.rating})` : null}</span>
+                      <span className="text-sm text-gray-600">({trainerMe?.rating || sampleTrainerData.rating})</span>
                     </div>
-                    <p className="text-lg text-gray-600 mt-2">{trainerMe?.profile || '-'}</p>
-                    <p className="mt-4 text-gray-600">{trainerMe ? `Service: ${trainerMe.servicePeriod} • Location: ${trainerMe.location}` : '-'}</p>
+                    <p className="text-lg text-gray-600 mt-2">{trainerMe?.profile || sampleTrainerData.specialization}</p>
+                    <p className="mt-4 text-gray-600">{trainerMe ? `Service: ${trainerMe.servicePeriod} • Location: ${trainerMe.location}` : sampleTrainerData.bio}</p>
                     <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
                       <span className="px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-                        {trainerMe?.servicePeriod ? `${trainerMe.servicePeriod} Service` : '-'}
+                        {trainerMe?.servicePeriod ? `${trainerMe.servicePeriod} Service` : `${sampleTrainerData.experience} Experience`}
                       </span>
                       <span className="px-4 py-2 bg-green-50 text-green-600 rounded-full text-sm font-medium">
-                        {trainerMe?.location ? `Location: ${trainerMe.location}` : '-'}
+                        {trainerMe?.location ? `Location: ${trainerMe.location}` : 'Certified Trainer'}
                       </span>
                     </div>
                   </div>

@@ -676,6 +676,77 @@ export async function getWorkouts(trainerId?: string) {
                 error: finalResult || finalTextBody,
                 requestBody
             });
+            // Fallback 2: try upcoming endpoint to keep UI working
+            try {
+                const upcomingUrl = `${API_BASE_URL}/workout/upcoming?days=7`;
+                console.warn('getWorkouts: falling back to upcoming schedules:', upcomingUrl);
+                const upResp = await fetch(upcomingUrl, {
+                    method: 'GET',
+                    headers: requestHeaders,
+                });
+                if (upResp.ok) {
+                    const upJson = await upResp.json();
+                    const schedules = upJson?.data?.userSchedules || {};
+                    const flat: any[] = [];
+                    Object.values(schedules).forEach((arr: any) => {
+                        if (Array.isArray(arr)) flat.push(...arr);
+                    });
+                    const mappedWorkouts = (flat as any[]).map((w: any, idx: number) => ({
+                        id: idx + 1,
+                        intensity: 'MEDIUM',
+                        exerciseDetails: {
+                            isDropSet: false,
+                            reps: '-',
+                            notes: '',
+                            sets: '-',
+                            targetMuscles: '',
+                            restBetweenSets: '',
+                            name: w.workoutName || 'Workout',
+                            weight: '-',
+                            equipment: '',
+                            tempo: '',
+                            isSuperSet: false,
+                            superSetGroup: null,
+                        },
+                        notes: {
+                            general: null,
+                            cooldown: null,
+                            warmup: null,
+                        },
+                        historyInfo: {
+                            historyId: String(idx + 1),
+                            programName: 'Upcoming Workouts',
+                            currentWeek: Number(w.weekNumber || 1),
+                            status: w.status || 'PLANNED',
+                        },
+                        scheduleInfo: {
+                            duration: '60',
+                            startDateTime: (() => {
+                                const t = (w.startTime || '00:00').padStart(5, '0');
+                                return new Date().toISOString().slice(0, 10) + 'T' + t + ':00';
+                            })(),
+                            isRestDay: false,
+                            endDateTime: (() => {
+                                const t = (w.endTime || '01:00').padStart(5, '0');
+                                return new Date().toISOString().slice(0, 10) + 'T' + t + ':00';
+                            })(),
+                        },
+                        type: 'WORKOUT',
+                        day: String(w.day || '').toUpperCase(),
+                        weekNumber: Number(w.weekNumber || 1),
+                        status: w.status || 'PLANNED',
+                        focusArea: '',
+                    }));
+                    return {
+                        success: true,
+                        data: { workouts: mappedWorkouts },
+                        code: upJson?.code || '0000',
+                        message: 'Using upcoming schedules as fallback'
+                    };
+                }
+            } catch (e) {
+                console.error('getWorkouts: fallback to upcoming failed:', e);
+            }
             return {
                 success: false,
                 message: finalResult?.message || `Failed to fetch workouts: ${finalResponse.status}`,

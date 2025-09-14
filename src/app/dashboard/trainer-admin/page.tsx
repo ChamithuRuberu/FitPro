@@ -9,6 +9,7 @@ import ClientsTab from '@/components/dashboard/trainer/ClientsTab';
 import ClientPlanModal from '@/components/dashboard/trainer/ClientPlanModal';
 import { getTrainerClients, getUpcomingPayments, getUpcomingWorkouts } from '@/lib/api';
 import toast from 'react-hot-toast';
+import ActivitySection from '@/components/dashboard/shared/ActivitySection';
 
 interface ClientSummary {
   id: string;
@@ -546,12 +547,21 @@ export default function TrainerDashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {activeTab === 'overview' && (
-          <OverviewTab 
-            trainerStats={trainerStats}
-            upcomingSessions={upcomingSessions}
-            upcomingPayments={upcomingPayments}
-            clientSegments={clientSegments}
-          />
+          <div className="space-y-8">
+            <OverviewTab 
+              trainerStats={trainerStats}
+              upcomingSessions={upcomingSessions}
+              upcomingPayments={upcomingPayments}
+              clientSegments={clientSegments}
+            />
+            
+            {/* Recent Activity Section */}
+            <ActivitySection 
+              title="Trainer Activity" 
+              adminType="trainer"
+              maxItems={7}
+            />
+          </div>
         )}
 
         {activeTab === 'clients' && (

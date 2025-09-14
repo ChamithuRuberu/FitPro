@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { FiUsers, FiActivity, FiDollarSign, FiStar, FiPlus, FiCalendar } from 'react-icons/fi';
 import type { TrainerData, ClientData } from '@/types/dashboard';
+import ActivitySection from '@/components/dashboard/shared/ActivitySection';
 
 const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 
@@ -263,6 +264,13 @@ export default function GymAdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Recent Activity Section */}
+        <ActivitySection 
+          title="Gym Activity" 
+          adminType="gym-admin"
+          maxItems={7}
+        />
       </main>
     </div>
   );

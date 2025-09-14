@@ -13,6 +13,7 @@ import type { GymData, TrainerData, ClientData, DashboardStats } from '@/types/d
 import { useRouter } from 'next/navigation';
 import { registerGym } from '@/lib/api';
 import toast from 'react-hot-toast';
+import ActivitySection from '@/components/dashboard/shared/ActivitySection';
 
 
 // Sample data
@@ -988,6 +989,13 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
             </div>
+
+            {/* Recent Activity Section */}
+            <ActivitySection 
+              title="System Activity" 
+              adminType="super-admin"
+              maxItems={7}
+            />
           </div>
         )}
 

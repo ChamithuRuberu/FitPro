@@ -1034,7 +1034,7 @@ export async function getUpcomingWorkouts(days: number = 7) {
 // Activity Audit Types
 export interface ActivityAuditItem {
     id: string;
-    type: 'client_registration' | 'workout_completed' | 'payment_received' | 'program_created' | 'session_scheduled' | 'goal_achieved' | 'api_request' | 'client_action';
+    type: 'client_registration' | 'workout_completed' | 'payment_received' | 'program_created' | 'session_scheduled' | 'goal_achieved' | 'api_request' | 'client_action' | 'gym_registration' | 'admin_action' | 'system_action';
     title: string;
     description: string;
     timestamp: string;
@@ -1153,6 +1153,118 @@ function transformActivityData(rawActivities: RawActivityItem[]): ActivityAuditI
                 metadata: {
                     endpoint: rawActivity.description,
                     method: 'GET'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/gym/register/gym')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'gym_registration',
+                title: 'New Gym Registered',
+                description: 'Registered a new gym to the platform',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'POST'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/user/trainer-activate')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'admin_action',
+                title: 'Trainer Activated',
+                description: 'Activated a trainer account',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'POST'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/user/gov-user/register')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'client_registration',
+                title: 'User Profile Completed',
+                description: 'Completed user profile registration',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'POST'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/user/client-register')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'client_registration',
+                title: 'Client Profile Completed',
+                description: 'Completed client profile registration',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'POST'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/user/register-init')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'client_registration',
+                title: 'Registration Initiated',
+                description: 'Started registration process',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'POST'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/user/register-verify')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'client_registration',
+                title: 'Registration Verified',
+                description: 'Verified registration with OTP',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'POST'
+                }
+            };
+        } else if (rawActivity.description.includes('/api/user/login')) {
+            activityItem = {
+                id: `activity-${index}-${rawActivity.occurredAt}`,
+                type: 'system_action',
+                title: 'User Login',
+                description: 'User logged into the system',
+                timestamp: rawActivity.occurredAt,
+                actorType: rawActivity.actorType,
+                actorId: rawActivity.actorId,
+                actorName: rawActivity.actorName,
+                activityType: rawActivity.activityType,
+                metadata: {
+                    endpoint: rawActivity.description,
+                    method: 'POST'
                 }
             };
         } else {

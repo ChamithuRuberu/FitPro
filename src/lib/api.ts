@@ -229,6 +229,9 @@ export async function completeUserProfile(formData: {
     servicePeriod: string;
     weight: string;
     height: string;
+    chest?: string;
+    waist?: string;
+    neck?: string;
     injuries: string;
     trainerId: string;
 }) {
@@ -1233,6 +1236,74 @@ export async function getUpcomingWorkouts(days: number = 7) {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred'
         };
+    }
+}
+
+// ===== User: Health (me) =====
+export interface UserHealthData {
+    height: string; // e.g., "178cm"
+    weight: string; // e.g., "82kg"
+    injuries: string;
+}
+
+export async function getUserHealth() {
+    try {
+        const token = await getCookie('session');
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required',
+                code: '0001'
+            } as const;
+        }
+
+        const headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+        } as Record<string, string>;
+
+        const primaryUrl = `${API_BASE_URL}/user/me/health`;
+        let response = await fetch(primaryUrl, { method: 'GET', headers });
+        let result: any = null;
+        try {
+            result = await response.json();
+        } catch {
+            result = null;
+        }
+
+        if (!response.ok || !result?.data) {
+            const fallbackUrl = `http://localhost:8080/user/me/health`;
+            const fbResp = await fetch(fallbackUrl, { method: 'GET', headers });
+            let fbJson: any = null;
+            try {
+                fbJson = await fbResp.json();
+            } catch {
+                fbJson = null;
+            }
+            response = fbResp;
+            result = fbJson;
+        }
+
+        if (!response.ok || !result?.data) {
+            return {
+                success: false,
+                message: result?.message || `Failed to fetch user health: ${response.status}`,
+                code: result?.code || '0001'
+            } as const;
+        }
+
+        return {
+            success: true,
+            data: result.data as UserHealthData,
+            code: result.code || '0000',
+            message: result.message || 'Health details fetched'
+        } as const;
+    } catch (error) {
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to fetch user health',
+            code: '0001'
+        } as const;
     }
 }
 

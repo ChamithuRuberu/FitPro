@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 import { ApexOptions } from 'apexcharts';
-import { getCookie, getWorkouts, getTrainerMe } from '@/lib/api';
+import { getCookie, getWorkouts, getTrainerMe, getUserHealth } from '@/lib/api';
 
 // Extend Window interface to include ApexCharts
 declare global {
@@ -492,6 +492,7 @@ export default function ClientDashboard() {
   const [trainerIdState, setTrainerIdState] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [trainerMe, setTrainerMe] = useState<TrainerMeTrainer | null>(null);
+  const [health, setHealth] = useState<{ heightCm?: number; weightKg?: number; injuries?: string } | null>(null);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -547,6 +548,20 @@ export default function ClientDashboard() {
           }
         } catch (e) {
           console.error('ClientDashboard: getTrainerMe exception:', e);
+        }
+
+        // Fetch user health (height, weight, injuries)
+        try {
+          const healthRes = await getUserHealth();
+          console.log('ClientDashboard: getUserHealth result:', healthRes);
+          if ((healthRes as any).success && (healthRes as any).data) {
+            const h = (healthRes as any).data as { height: string; weight: string; injuries: string };
+            const heightCm = parseInt(h.height.replace(/[^0-9]/g, '')) || undefined;
+            const weightKg = parseInt(h.weight.replace(/[^0-9]/g, '')) || undefined;
+            setHealth({ heightCm, weightKg, injuries: h.injuries });
+          }
+        } catch (e) {
+          console.error('ClientDashboard: getUserHealth exception:', e);
         }
 
       } catch (error) {
@@ -944,7 +959,7 @@ export default function ClientDashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Weight Progress</p>
                     <div className="flex items-baseline mt-1">
-                      <p className="text-3xl font-bold text-gray-900">{sampleBodyMetrics[0].weight} kg</p>
+                      <p className="text-3xl font-bold text-gray-900">{health?.weightKg ?? sampleBodyMetrics[0].weight} kg</p>
                       <p className="ml-2 text-sm text-green-600">↓ 2.5 kg this month</p>
                     </div>
                   </div>
@@ -956,7 +971,7 @@ export default function ClientDashboard() {
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
                       className="bg-green-600 h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${(sampleBodyMetrics[0].weight / sampleBodyMetrics[sampleBodyMetrics.length - 1].weight) * 100}%` }}
+                      style={{ width: `${((health?.weightKg ?? sampleBodyMetrics[0].weight) / sampleBodyMetrics[sampleBodyMetrics.length - 1].weight) * 100}%` }}
                     ></div>
                   </div>
                 </div>
@@ -1073,7 +1088,7 @@ export default function ClientDashboard() {
                         width={400}
                         series={[{
                           name: 'Weight',
-                          data: sampleBodyMetrics.map(m => m.weight)
+                          data: (health?.weightKg ? [health.weightKg, health.weightKg] : sampleBodyMetrics.map(m => m.weight))
                         }]}
                         options={{
                           chart: {
@@ -1082,7 +1097,7 @@ export default function ClientDashboard() {
                             }
                           },
                           xaxis: {
-                            categories: sampleBodyMetrics.map(m => m.date)
+                            categories: (health?.weightKg ? [new Date(Date.now() - 86400000).toISOString().slice(0,10), new Date().toISOString().slice(0,10)] : sampleBodyMetrics.map(m => m.date))
                           },
                           yaxis: {
                             title: {
@@ -1099,7 +1114,7 @@ export default function ClientDashboard() {
                       </div>
                       <div className="bg-white p-4 rounded-xl shadow-sm">
                         <p className="text-sm text-gray-600">Current Weight</p>
-                        <p className="text-2xl font-bold text-gray-900">{sampleBodyMetrics[0].weight} kg</p>
+                        <p className="text-2xl font-bold text-gray-900">{health?.weightKg ?? sampleBodyMetrics[0].weight} kg</p>
                       </div>
                     </div>
                   </div>
@@ -1111,7 +1126,14 @@ export default function ClientDashboard() {
                         width={400}
                         series={[{
                           name: 'BMI',
-                          data: sampleBodyMetrics.map(m => m.bmi)
+                          data: (() => {
+                            if (health?.heightCm && health?.weightKg) {
+                              const h = health.heightCm / 100;
+                              const bmi = Number((health.weightKg / (h * h)).toFixed(1));
+                              return [bmi, bmi];
+                            }
+                            return sampleBodyMetrics.map(m => m.bmi);
+                          })()
                         }]}
                         options={{
                           chart: {
@@ -1120,7 +1142,7 @@ export default function ClientDashboard() {
                             }
                           },
                           xaxis: {
-                            categories: sampleBodyMetrics.map(m => m.date)
+                            categories: (health?.heightCm && health?.weightKg ? [new Date(Date.now() - 86400000).toISOString().slice(0,10), new Date().toISOString().slice(0,10)] : sampleBodyMetrics.map(m => m.date))
                           },
                           yaxis: {
                             title: {
@@ -1137,7 +1159,14 @@ export default function ClientDashboard() {
                       </div>
                       <div className="bg-white p-4 rounded-xl shadow-sm">
                         <p className="text-sm text-gray-600">Current BMI</p>
-                        <p className="text-2xl font-bold text-gray-900">{sampleBodyMetrics[0].bmi}</p>
+                        <p className="text-2xl font-bold text-gray-900">{(() => {
+                          if (health?.heightCm && health?.weightKg) {
+                            const h = health.heightCm / 100;
+                            const bmi = health.weightKg / (h * h);
+                            return Number(bmi.toFixed(1));
+                          }
+                          return sampleBodyMetrics[0].bmi;
+                        })()}</p>
                       </div>
                     </div>
                   </div>
@@ -1447,7 +1476,7 @@ export default function ClientDashboard() {
                       </div>
                       <div className="bg-white p-4 rounded-xl shadow-sm">
                         <p className="text-sm text-gray-600">Current Weight</p>
-                        <p className="text-2xl font-bold text-gray-900">{progressData.weightProgress.current} kg</p>
+                        <p className="text-2xl font-bold text-gray-900">{health?.weightKg ?? progressData.weightProgress.current} kg</p>
                       </div>
                     </div>
                   </div>

@@ -22,6 +22,9 @@ interface RegisterUserFormData {
   servicePeriod: string;
   weight: string;
   height: string;
+  chest?: string;
+  waist?: string;
+  neck?: string;
   injuries: string;
   trainerId: string;
 }
@@ -43,6 +46,9 @@ export default function RegisterPage() {
     servicePeriod: "",
     weight: "",
     height: "",
+    chest: "",
+    waist: "",
+    neck: "",
     injuries: "",
     trainerId: "",
   });
@@ -317,6 +323,72 @@ export default function RegisterPage() {
                           className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                           placeholder="Height"
                           value={formData.height}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label htmlFor="chest" className="block text-sm font-medium text-gray-700 mb-1">
+                        Chest (cm)
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FiActivity className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          id="chest"
+                          name="chest"
+                          type="number"
+                          min="50"
+                          max="200"
+                          className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                          placeholder="Chest circumference"
+                          value={formData.chest || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="waist" className="block text-sm font-medium text-gray-700 mb-1">
+                        Waist (cm)
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FiActivity className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          id="waist"
+                          name="waist"
+                          type="number"
+                          min="40"
+                          max="180"
+                          className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                          placeholder="Waist circumference"
+                          value={formData.waist || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="neck" className="block text-sm font-medium text-gray-700 mb-1">
+                        Neck (cm)
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FiActivity className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          id="neck"
+                          name="neck"
+                          type="number"
+                          min="20"
+                          max="70"
+                          className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                          placeholder="Neck circumference"
+                          value={formData.neck || ''}
                           onChange={handleInputChange}
                         />
                       </div>

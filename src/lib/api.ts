@@ -255,14 +255,14 @@ export async function completeUserProfile(formData: {
         if (!response.ok) {
             throw new Error(result.message || 'Profile completion failed');
         }
-        setCookie("trainerId", result.data.user.trainer_id);
+        setCookie("trainerId", result.data.trainer_obj.trainerId);
         setCookie("fullName", result.data.user.full_name);
         setCookie("city", result.data.user.city);
         setCookie("status", result.data.user.status);
         setCookie("role_type", "ROLE_USER");
         setCookie("session", result.data.token);
         setCookie("refresh_token", result.data.refresh_token);
-        setCookie("token", result.data.user.token);
+        setCookie("token", result.data.token);
 
         return {
             success: true,

@@ -217,47 +217,6 @@ interface APIWorkout {
   }[];
 }
 
-// Add sample data
-const sampleSchedule: ScheduleDay[] = [
-  {
-    id: 1,
-    day: 'Monday',
-    workouts: [
-      { time: '08:00 AM', type: 'Cardio', duration: '45 mins', completed: true },
-      { time: '06:00 PM', type: 'Strength Training', duration: '60 mins', completed: false },
-    ],
-  },
-  {
-    id: 2,
-    day: 'Tuesday',
-    workouts: [
-      { time: '07:00 AM', type: 'Yoga', duration: '30 mins', completed: true },
-      { time: '05:30 PM', type: 'HIIT', duration: '45 mins', completed: true },
-    ],
-  },
-  {
-    id: 3,
-    day: 'Wednesday',
-    workouts: [
-      { time: '08:30 AM', type: 'Strength Training', duration: '75 mins', completed: false },
-    ],
-  },
-  {
-    id: 4,
-    day: 'Thursday',
-    workouts: [
-      { time: '07:30 AM', type: 'Cardio', duration: '40 mins', completed: true },
-      { time: '06:00 PM', type: 'Flexibility', duration: '30 mins', completed: false },
-    ],
-  },
-  {
-    id: 5,
-    day: 'Friday',
-    workouts: [
-      { time: '08:00 AM', type: 'Full Body Workout', duration: '60 mins', completed: false },
-    ],
-  },
-];
 
 const sampleSupplements: Supplement[] = [
   {
@@ -510,9 +469,9 @@ interface GroupedWorkouts {
 
 export default function ClientDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'supplements' | 'workouts' | 'progress' | 'mealplan'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'supplements' | 'progress' | 'mealplan'>('overview');
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [schedule, setSchedule] = useState<ScheduleDay[]>(sampleSchedule);
+  // const [schedule, setSchedule] = useState<ScheduleDay[]>(sampleSchedule);
   const [supplements, setSupplements] = useState<Supplement[]>(sampleSupplements);
   const [progressData, setProgressData] = useState<ProgressData | null>(sampleProgressData);
   const [mealPlan, setMealPlan] = useState<MealPlan[]>(sampleMealPlan);
@@ -630,9 +589,6 @@ export default function ClientDashboard() {
           break;
         case 'supplements':
           // Fetch supplements data
-          break;
-        case 'workouts':
-          // Fetch workout program data
           break;
         case 'progress':
           // Fetch progress data
@@ -883,7 +839,7 @@ export default function ClientDashboard() {
           <div className="mt-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
               <div className="flex space-x-2 overflow-x-auto pb-2 w-full md:w-auto">
-                {['overview', 'schedule', 'supplements', 'workouts', 'progress', 'mealplan'].map((tab) => (
+                {['overview', 'schedule', 'supplements', 'progress', 'mealplan'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab as any)}
@@ -901,9 +857,6 @@ export default function ClientDashboard() {
                   <FiUser className="w-5 h-5 text-white" />
                   <span className="text-white font-medium">{userData?.fullName}</span>
                 </div></span>
-                <span className="px-3 py-1 bg-white bg-opacity-30 text-white rounded-full text-sm font-medium">
-                  {userData?.city}
-                </span>
                 <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium">
                   {userData?.status}
                 </span>
@@ -935,12 +888,7 @@ export default function ClientDashboard() {
                     </div>
                     <span className="text-gray-600">Active Member</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="p-2 bg-green-100 rounded-full">
-                      <FiTrendingUp className="w-5 h-5 text-green-600" />
-                    </div>
-                    <span className="text-gray-600">On Track</span>
-                  </div>
+                 
                   <div className="flex items-center space-x-2">
                     <div className="p-2 bg-purple-100 rounded-full">
                       <FiUser className="w-5 h-5 text-purple-600" />

@@ -65,6 +65,7 @@ export default function SuperAdminDashboard() {
     membership: string;
     password: string;
     roleType: string;
+    amount?: string;
   }
 
   // Form states
@@ -78,6 +79,7 @@ export default function SuperAdminDashboard() {
     membership: '',
     password: '',
     roleType: 'ROLE_GYM',
+    amount: '',
   });
 
   const [trainerForm, setTrainerForm] = useState({
@@ -89,6 +91,7 @@ export default function SuperAdminDashboard() {
     certifications: '',
     gym: '',
     monthlyFee: '',
+    amount: '',
     image: null as File | null
   });
 
@@ -106,6 +109,7 @@ export default function SuperAdminDashboard() {
     weight: '',
     injuries: '',
     gymId: '',
+    amount: '',
     image: null as File | null
   });
 
@@ -228,6 +232,7 @@ export default function SuperAdminDashboard() {
         membership: gymForm.membership,
         password: gymForm.password,
         roleType: "ROLE_GYM",
+        amount: Number(gymForm.amount) || 0,
 
       })
 
@@ -243,6 +248,7 @@ export default function SuperAdminDashboard() {
           membership: '',
           password: '',
           roleType: 'ROLE_GYM',
+          amount: '',
         });
       } else {
         toast.error(result.message || "Gym registration failed");
@@ -272,6 +278,7 @@ export default function SuperAdminDashboard() {
         servicePeriod: '',
         trainerGovId: 0,
         gymId: Number(trainerForm.gym) || 0,
+        amount: Number(trainerForm.amount) || 0,
       } as const;
 
       const result = await adminCreateTrainer(payload);
@@ -286,6 +293,7 @@ export default function SuperAdminDashboard() {
           certifications: '',
           gym: '',
           monthlyFee: '',
+          amount: '',
           image: null
         });
       } else {
@@ -315,6 +323,7 @@ export default function SuperAdminDashboard() {
         injuries: clientForm.injuries,
         trainerGovId: Number(clientForm.trainer) || 0,
         gymId: Number(clientForm.gymId) || 0,
+        amount: Number(clientForm.amount) || 0,
       } as const;
 
       const result = await adminCreateUser(payload);
@@ -334,6 +343,7 @@ export default function SuperAdminDashboard() {
           weight: '',
           injuries: '',
           gymId: '',
+          amount: '',
           image: null
         });
       } else {
@@ -440,6 +450,17 @@ export default function SuperAdminDashboard() {
                     type="number"
                     value={gymForm.membership}
                     onChange={(e) => setGymForm(prev => ({ ...prev, membership: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Amount</label>
+                <div className="mt-1 relative">
+                  <input
+                    type="number"
+                    value={gymForm.amount}
+                    onChange={(e) => setGymForm(prev => ({ ...prev, amount: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -575,7 +596,17 @@ export default function SuperAdminDashboard() {
                   />
                 </div>
               </div>
-
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Amount</label>
+                <div className="mt-1">
+                  <input
+                    type="number"
+                    value={trainerForm.amount}
+                    onChange={(e) => setTrainerForm(prev => ({ ...prev, amount: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
     
             </div>
 
@@ -765,6 +796,17 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Amount</label>
+                <div className="mt-1">
+                  <input
+                    type="number"
+                    value={clientForm.amount}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, amount: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
               
             </div>
 

@@ -285,6 +285,7 @@ export async function registerGym(gymForm: {
     membership: string;
     password: string;
     roleType: string;
+    amount?: number | string;
 }) {
     try {
         console.log("Register gym request ->", gymForm);

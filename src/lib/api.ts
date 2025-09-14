@@ -695,6 +695,47 @@ export async function getGymList() {
         return { success: false, message: error instanceof Error ? error.message : 'Failed to fetch gyms' } as const;
     }
 }
+
+// ===== Super Admin: Get all users (clients) =====
+export async function getAdminUsers() {
+    try {
+        const primaryUrl = `${API_BASE_URL}/user/admin/users`;
+        let response = await fetch(primaryUrl, {
+            method: 'GET',
+            headers: { 'accept': 'application/json' }
+        });
+        let textBody = '';
+        let result: any = null;
+        try {
+            textBody = await response.text();
+            result = textBody ? JSON.parse(textBody) : {};
+        } catch {
+            result = {};
+        }
+        if (!response.ok) {
+            const fallbackUrl = `http://localhost:8080/user/admin/users`;
+            const fbResp = await fetch(fallbackUrl, { method: 'GET', headers: { 'accept': 'application/json' } });
+            let fbText = '';
+            let fbJson: any = null;
+            try {
+                fbText = await fbResp.text();
+                fbJson = fbText ? JSON.parse(fbText) : {};
+            } catch {
+                fbJson = {};
+            }
+            if (!fbResp.ok) {
+                return { success: false, message: fbJson?.message || result?.message || `Failed to fetch users: ${fbResp.status}` } as const;
+            }
+            result = fbJson;
+        }
+        const data = result?.data;
+        const users = Array.isArray(data) ? data : Array.isArray(result) ? result : [];
+        return { success: true, data: users } as const;
+    } catch (error) {
+        console.error('Get admin users error:', error);
+        return { success: false, message: error instanceof Error ? error.message : 'Failed to fetch users' } as const;
+    }
+}
 export interface Exercise {
     name: string;
     sets: number;

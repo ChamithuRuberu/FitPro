@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fi';
 import type { GymData, TrainerData, ClientData, DashboardStats } from '@/types/dashboard';
 import { useRouter } from 'next/navigation';
-import { registerGym, adminCreateTrainer, adminCreateUser, getTrainerList, getGymList } from '@/lib/api';
+import { registerGym, adminCreateTrainer, adminCreateUser, getTrainerList, getGymList, getAdminUsers } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ActivitySection from '@/components/dashboard/shared/ActivitySection';
 
@@ -41,7 +41,7 @@ const latestClients: ClientData[] = [
 ];
 
 export default function SuperAdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'register' | 'latest' | 'payments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'register' | 'payments'>('overview');
   const [registerType, setRegisterType] = useState<'gym' | 'trainer' | 'client'>('gym');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,6 +52,7 @@ export default function SuperAdminDashboard() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
+  
 
   interface GymForm {
     gymName: string;
@@ -110,6 +111,7 @@ export default function SuperAdminDashboard() {
   // Trainer options for Assigned Trainer dropdown (loaded from API)
   const [trainerOptions, setTrainerOptions] = useState<Array<{ id: number; name: string; govId?: number }>>([]);
   const [gymOptions, setGymOptions] = useState<Array<{ id: number; name: string }>>([]);
+  const [userOptions, setUserOptions] = useState<Array<{ id: number; name: string; email?: string }>>([]);
 
   useEffect(() => {
     (async () => {
@@ -158,6 +160,28 @@ export default function SuperAdminDashboard() {
         }
       } catch (e) {
         toast.error('Failed to load gyms');
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getAdminUsers();
+        console.log('getAdminUsers result:', res);
+        if ((res as any)?.success) {
+          const raw = ((res as any).data as any[]) || [];
+          const mapped = raw.map((u: any) => ({
+            id: Number(u.id ?? u.userId ?? 0),
+            name: String(u.full_name ?? u.fullName ?? u.name ?? u.email ?? 'User'),
+            email: String(u.email ?? '')
+          })).filter((u: any) => !!u.id);
+          setUserOptions(mapped);
+        } else {
+          toast.error((res as any)?.message || 'Failed to load users');
+        }
+      } catch (e) {
+        toast.error('Failed to load users');
       }
     })();
   }, []);
@@ -862,7 +886,6 @@ export default function SuperAdminDashboard() {
               {[
                 { id: 'overview', label: 'Overview', icon: FiPieChart },
                 { id: 'register', label: 'Register', icon: FiPlus },
-                { id: 'latest', label: 'Latest', icon: FiTrendingUp },
                 { id: 'payments', label: 'Payments', icon: FiDollarSign }
               ].map((item) => (
                 <button
@@ -1074,7 +1097,7 @@ export default function SuperAdminDashboard() {
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium" onClick={() => setActiveTab('overview')}>
                   View All
                 </button>
               </div>
@@ -1152,6 +1175,87 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
 
+            {/* Gyms & Trainers (Overview) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Gyms */}
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Gyms</h3>
+                  <span className="text-sm text-gray-500">{gymOptions.length} total</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {gymOptions.slice(0, 6).map((g) => (
+                    <div key={g.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-md bg-blue-50 text-blue-600">
+                          <FiMapPin className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{g.name}</p>
+                          <p className="text-xs text-gray-500">ID: {g.id}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {gymOptions.length === 0 && (
+                    <div className="col-span-full text-sm text-gray-500">No gyms found.</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Trainers */}
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Trainers</h3>
+                  <span className="text-sm text-gray-500">{trainerOptions.length} total</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {trainerOptions.slice(0, 6).map((t) => (
+                    <div key={t.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-md bg-green-50 text-green-600">
+                          <FiActivity className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{t.name}</p>
+                          <p className="text-xs text-gray-500">GovID: {String(t.govId ?? t.id)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {trainerOptions.length === 0 && (
+                    <div className="col-span-full text-sm text-gray-500">No trainers found.</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Users */}
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Users</h3>
+                  <span className="text-sm text-gray-500">{userOptions.length} total</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {userOptions.slice(0, 6).map((u) => (
+                    <div key={u.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-md bg-purple-50 text-purple-600">
+                          <FiUsers className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{u.name}</p>
+                          <p className="text-xs text-gray-500">{u.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {userOptions.length === 0 && (
+                    <div className="col-span-full text-sm text-gray-500">No users found.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Recent Activity Section */}
             <ActivitySection 
               title="System Activity" 
@@ -1161,7 +1265,6 @@ export default function SuperAdminDashboard() {
           </div>
         )}
 
-        {/* Enhanced Register Tab */}
         {activeTab === 'register' && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200">

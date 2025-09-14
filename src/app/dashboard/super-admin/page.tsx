@@ -11,14 +11,14 @@ import {
 } from 'react-icons/fi';
 import type { GymData, TrainerData, ClientData, DashboardStats } from '@/types/dashboard';
 import { useRouter } from 'next/navigation';
-import { registerGym, adminCreateTrainer, adminCreateUser, getTrainerList, getGymList, getAdminUsers } from '@/lib/api';
+import { registerGym, adminCreateTrainer, adminCreateUser, getTrainerList, getGymList, getAdminUsers, getTotalRevenue } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ActivitySection from '@/components/dashboard/shared/ActivitySection';
 
 
 // Sample data
 const stats: DashboardStats = {
-  totalRevenue: 150000,
+  totalRevenue: 0,
   activeMembers: 1200,
   totalTrainers: 45,
   totalGyms: 8,
@@ -52,6 +52,7 @@ export default function SuperAdminDashboard() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
   
 
   interface GymForm {
@@ -112,6 +113,15 @@ export default function SuperAdminDashboard() {
   const [trainerOptions, setTrainerOptions] = useState<Array<{ id: number; name: string; govId?: number }>>([]);
   const [gymOptions, setGymOptions] = useState<Array<{ id: number; name: string }>>([]);
   const [userOptions, setUserOptions] = useState<Array<{ id: number; name: string; email?: string }>>([]);
+
+  useEffect(() => {
+    (async () => {
+      const res = await getTotalRevenue();
+      if ((res as any)?.success) {
+        setTotalRevenue((res as any).data.total);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -1026,7 +1036,7 @@ export default function SuperAdminDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                    <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</p>
                     <p className="mt-1 text-sm text-green-600 flex items-center">
                       <FiTrendingUp className="w-4 h-4 mr-1" />
                       +12.5% from last month
@@ -1095,12 +1105,6 @@ export default function SuperAdminDashboard() {
 
             {/* Activity Timeline */}
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium" onClick={() => setActiveTab('overview')}>
-                  View All
-                </button>
-              </div>
               <div className="space-y-4">
                 {[...latestGyms, ...latestTrainers, ...latestClients]
                   .sort((a, b) => new Date(b.registeredDate).getTime() - new Date(a.registeredDate).getTime())

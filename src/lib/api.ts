@@ -1721,6 +1721,37 @@ export async function getUserPayments() {
     }
 }
 
+// ===== Payments: Total Revenue (for admin overview) =====
+export async function getTotalRevenue() {
+    try {
+        const token = await getCookie('session');
+        if (!token) {
+            return { success: false, message: 'Authentication required', code: '0001' } as const;
+        }
+        const headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+        } as Record<string, string>;
+        const primaryUrl = `${API_BASE_URL}/user/me/payments/total`;
+        let response = await fetch(primaryUrl, { method: 'GET', headers });
+        let result: any = null;
+        try { result = await response.json(); } catch { result = {}; }
+        if (!response.ok) {
+            const fallbackUrl = `http://localhost:8080/user/me/payments/total`;
+            const fbResp = await fetch(fallbackUrl, { method: 'GET', headers });
+            let fbJson: any = null; try { fbJson = await fbResp.json(); } catch { fbJson = {}; }
+            response = fbResp; result = fbJson;
+        }
+        if (!response.ok) {
+            return { success: false, message: result?.message || `Failed: ${response.status}` } as const;
+        }
+        const amount = Number(result?.data?.total ?? result?.total ?? result?.amount ?? 0);
+        return { success: true, data: { total: isNaN(amount) ? 0 : amount } } as const;
+    } catch (e) {
+        return { success: false, message: e instanceof Error ? e.message : 'Failed to fetch total revenue' } as const;
+    }
+}
+
 // ===== Trainer: Me (for client) =====
 export interface TrainerMeResponseData {
     trainer: {

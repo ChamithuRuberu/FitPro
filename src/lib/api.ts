@@ -1141,6 +1141,73 @@ export async function activateTrainer(activationData: {
     }
 }
 
+// ===== Auth: Logout =====
+export async function userLogout() {
+    try {
+        const token = await getCookie('session');
+        const headers = {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+        } as Record<string, string>;
+
+        const body = JSON.stringify({ token: token || '' });
+
+        const primaryUrl = `${API_BASE_URL}/user/logout`;
+        let response = await fetch(primaryUrl, { method: 'POST', headers, body });
+        let result: any = null;
+        try {
+            result = await response.json();
+        } catch {
+            result = null;
+        }
+
+        if (!response.ok) {
+            const fallbackUrl = `http://localhost:8080/user/logout`;
+            const fbResp = await fetch(fallbackUrl, { method: 'POST', headers, body });
+            let fbJson: any = null;
+            try {
+                fbJson = await fbResp.json();
+            } catch {
+                fbJson = null;
+            }
+            response = fbResp;
+            result = fbJson;
+        }
+
+        // Clear cookies regardless of API response to ensure local logout
+        try {
+            await removeCookie('session');
+            await removeCookie('refresh_token');
+            await removeCookie('trainerId');
+            await removeCookie('fullName');
+            await removeCookie('city');
+            await removeCookie('status');
+            await removeCookie('role_type');
+            await removeCookie('token');
+            await removeCookie('username');
+        } catch (e) {
+            // ignore cookie removal errors
+        }
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result?.message || `Logout failed: ${response.status}`,
+            } as const;
+        }
+
+        return {
+            success: true,
+            message: result?.message || 'Logged out successfully'
+        } as const;
+    } catch (error) {
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Logout failed'
+        } as const;
+    }
+}
+
 export async function getUpcomingPayments(trainerId: string) {
     console.log('🔍 getUpcomingPayments called with trainerId:', trainerId);
     
@@ -1305,6 +1372,78 @@ export async function getUserHealth() {
         return {
             success: false,
             message: error instanceof Error ? error.message : 'Failed to fetch user health',
+            code: '0001'
+        } as const;
+    }
+}
+
+// ===== User: Payments (me) =====
+export interface UserPaymentItem {
+    id: number;
+    trainerId: number;
+    userEmail: string;
+    month: number;
+    lastPaymentDate: string; // ISO date string, e.g., "2025-09-01"
+    nextPaymentDate: string; // ISO date string, e.g., "2025-10-01"
+    amount: number;
+}
+
+export async function getUserPayments() {
+    try {
+        const token = await getCookie('session');
+        if (!token) {
+            return {
+                success: false,
+                message: 'Authentication required',
+                code: '0001'
+            } as const;
+        }
+
+        const headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+        } as Record<string, string>;
+
+        const primaryUrl = `${API_BASE_URL}/user/me/payments`;
+        let response = await fetch(primaryUrl, { method: 'GET', headers });
+        let result: any = null;
+        try {
+            result = await response.json();
+        } catch {
+            result = null;
+        }
+
+        if (!response.ok || !result?.data) {
+            const fallbackUrl = `http://localhost:8080/user/me/payments`;
+            const fbResp = await fetch(fallbackUrl, { method: 'GET', headers });
+            let fbJson: any = null;
+            try {
+                fbJson = await fbResp.json();
+            } catch {
+                fbJson = null;
+            }
+            response = fbResp;
+            result = fbJson;
+        }
+
+        if (!response.ok || !Array.isArray(result?.data)) {
+            return {
+                success: false,
+                message: result?.message || `Failed to fetch user payments: ${response.status}`,
+                code: result?.code || '0001'
+            } as const;
+        }
+
+        return {
+            success: true,
+            data: result.data as UserPaymentItem[],
+            code: result.code || '0000',
+            message: result.message || 'Payment history fetched'
+        } as const;
+    } catch (error) {
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to fetch user payments',
             code: '0001'
         } as const;
     }

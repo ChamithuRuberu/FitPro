@@ -7,7 +7,9 @@ import { useRouter } from 'next/navigation';
 import { FiCalendar, FiActivity, FiTrendingUp, FiPackage, FiDollarSign, FiUser, FiPlus, FiLogOut, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 import { ApexOptions } from 'apexcharts';
-import { getCookie, getWorkouts, getTrainerMe, getUserHealth } from '@/lib/api';
+import { getCookie, getWorkouts, getTrainerMe, getUserHealth, getUserPayments, userLogout } from '@/lib/api';
+import type { UserPaymentItem } from '@/lib/api';
+import PaymentHistory from '@/components/dashboard/shared/PaymentHistory';
 
 // Extend Window interface to include ApexCharts
 declare global {
@@ -165,13 +167,7 @@ interface TrainerData {
   bio: string;
 }
 
-interface PaymentHistory {
-  id: string;
-  date: string;
-  amount: number;
-  status: 'paid' | 'pending' | 'failed';
-  description: string;
-}
+// removed local PaymentHistory type in favor of API type
 
 interface BodyMetrics {
   date: string;
@@ -365,29 +361,7 @@ const sampleTrainerData: TrainerData = {
   bio: 'Certified personal trainer specializing in strength training and weight loss programs.',
 };
 
-const samplePaymentHistory: PaymentHistory[] = [
-  {
-    id: '1',
-    date: '2024-02-15',
-    amount: 150,
-    status: 'paid',
-    description: 'Monthly Training Fee',
-  },
-  {
-    id: '2',
-    date: '2024-01-15',
-    amount: 150,
-    status: 'paid',
-    description: 'Monthly Training Fee',
-  },
-  {
-    id: '3',
-    date: '2023-12-15',
-    amount: 150,
-    status: 'paid',
-    description: 'Monthly Training Fee',
-  },
-];
+// removed samplePaymentHistory; using live data
 
 const sampleBodyMetrics: BodyMetrics[] = [
   {
@@ -493,6 +467,9 @@ export default function ClientDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [trainerMe, setTrainerMe] = useState<TrainerMeTrainer | null>(null);
   const [health, setHealth] = useState<{ heightCm?: number; weightKg?: number; injuries?: string } | null>(null);
+  const [payments, setPayments] = useState<UserPaymentItem[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState<boolean>(false);
+  const [paymentsError, setPaymentsError] = useState<string | null>(null);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -563,6 +540,22 @@ export default function ClientDashboard() {
         } catch (e) {
           console.error('ClientDashboard: getUserHealth exception:', e);
         }
+        
+        // Fetch payment history
+        try {
+          setPaymentsLoading(true);
+          setPaymentsError(null);
+          const payRes = await getUserPayments();
+          if ((payRes as any).success && Array.isArray((payRes as any).data)) {
+            setPayments((payRes as any).data as UserPaymentItem[]);
+          } else {
+            setPaymentsError((payRes as any).message || 'Failed to fetch payments');
+          }
+        } catch (e: any) {
+          setPaymentsError(e?.message || 'Failed to fetch payments');
+        } finally {
+          setPaymentsLoading(false);
+        }
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -619,7 +612,18 @@ export default function ClientDashboard() {
   };
 
   const handleLogout = async () => {
-
+    try {
+      const result = await userLogout();
+      if ((result as any).success) {
+        toast.success((result as any).message || 'Logged out');
+      } else {
+        toast.error((result as any).message || 'Logout failed');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Logout failed');
+    } finally {
+      router.push('/login');
+    }
   };
 
   // Choose avatar image based on detected gender hints
@@ -987,8 +991,28 @@ export default function ClientDashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Next Payment</p>
                     <div className="flex items-baseline mt-1">
-                      <p className="text-3xl font-bold text-gray-900">$150</p>
-                      <p className="ml-2 text-sm text-gray-600">Due in 5 days</p>
+                      {(() => {
+                        if (paymentsLoading) {
+                          return <p className="text-gray-600">Loading...</p>;
+                        }
+                        const next = payments && payments.length > 0
+                          ? [...payments].sort((a, b) => new Date(a.nextPaymentDate).getTime() - new Date(b.nextPaymentDate).getTime())[0]
+                          : null;
+                        const amount = next?.amount ?? 0;
+                        const daysLeft = (() => {
+                          if (!next?.nextPaymentDate) return null;
+                          const now = new Date();
+                          const due = new Date(next.nextPaymentDate);
+                          const diff = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                          return diff;
+                        })();
+                        return (
+                          <>
+                            <p className="text-3xl font-bold text-gray-900">LKR {amount.toFixed(2)}</p>
+                            <p className="ml-2 text-sm text-gray-600">{daysLeft !== null ? (daysLeft >= 0 ? `Due in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : `Overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft) === 1 ? '' : 's'}`) : '-'}</p>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="p-3 bg-purple-100 rounded-full">
@@ -1185,27 +1209,7 @@ export default function ClientDashboard() {
                   </button>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {samplePaymentHistory.map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                      <div>
-                        <p className="font-medium text-gray-900">{payment.description}</p>
-                        <p className="text-sm text-gray-600">{new Date(payment.date).toLocaleDateString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-gray-900">${payment.amount}</p>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${payment.status === 'paid' ? 'bg-green-100 text-green-800' :
-                          payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                          {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <PaymentHistory payments={payments} loading={paymentsLoading} error={paymentsError} />
             </div>
           </div>
         )}

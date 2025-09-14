@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fi';
 import type { GymData, TrainerData, ClientData, DashboardStats } from '@/types/dashboard';
 import { useRouter } from 'next/navigation';
-import { registerGym, adminCreateTrainer, adminCreateUser, getTrainerList } from '@/lib/api';
+import { registerGym, adminCreateTrainer, adminCreateUser, getTrainerList, getGymList } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ActivitySection from '@/components/dashboard/shared/ActivitySection';
 
@@ -109,6 +109,7 @@ export default function SuperAdminDashboard() {
 
   // Trainer options for Assigned Trainer dropdown (loaded from API)
   const [trainerOptions, setTrainerOptions] = useState<Array<{ id: number; name: string; govId?: number }>>([]);
+  const [gymOptions, setGymOptions] = useState<Array<{ id: number; name: string }>>([]);
 
   useEffect(() => {
     (async () => {
@@ -133,6 +134,30 @@ export default function SuperAdminDashboard() {
         }
       } catch (e) {
         toast.error('Failed to load trainers');
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getGymList();
+        console.log('getGymList result:', res);
+        if ((res as any)?.success) {
+          const raw = ((res as any).data as any[]) || [];
+          const mapped = raw
+            .map((g: any) => ({
+              id: Number(g.id ?? g.gymId ?? g.gym_id ?? 0),
+              name: String(g.name ?? g.gymName ?? g.gym_name ?? 'Gym')
+            }))
+            .filter((g: any) => !!g.id);
+          setGymOptions(mapped);
+          console.log('mapped gym options:', mapped);
+        } else {
+          toast.error((res as any)?.message || 'Failed to load gyms');
+        }
+      } catch (e) {
+        toast.error('Failed to load gyms');
       }
     })();
   }, []);
@@ -498,8 +523,8 @@ export default function SuperAdminDashboard() {
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select Gym</option>
-                    {latestGyms.map(gym => (
-                      <option key={gym.id} value={gym.id}>{gym.name}</option>
+                    {gymOptions.map(gym => (
+                      <option key={gym.id} value={String(gym.id)}>{gym.name}</option>
                     ))}
                   </select>
                 </div>
@@ -691,28 +716,22 @@ export default function SuperAdminDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Assigned Gym ID</label>
+                <label className="block text-sm font-medium text-gray-700">Assigned Gym</label>
                 <div className="mt-1">
-                  <input
-                    type="number"
+                  <select
                     value={clientForm.gymId}
                     onChange={(e) => setClientForm(prev => ({ ...prev, gymId: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  >
+                    <option value="">Select Gym</option>
+                    {gymOptions.map(gym => (
+                      <option key={gym.id} value={String(gym.id)}>{gym.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Profile Image</label>
-                <div className="mt-1">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files && handleImageUpload(e.target.files[0], 'client')}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
+              
             </div>
 
             <div className="flex justify-end">

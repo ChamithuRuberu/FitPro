@@ -636,6 +636,65 @@ export async function getTrainerList() {
     }
 }
 
+// ===== Super Admin: Get all gyms =====
+export async function getGymList() {
+    try {
+        const primaryUrl = `${API_BASE_URL}/gym/all`;
+        let response = await fetch(primaryUrl, {
+            method: 'GET',
+            headers: {
+                'accept': 'application/json'
+            }
+        });
+
+        let textBody = '';
+        let result: any = null;
+        try {
+            textBody = await response.text();
+            result = textBody ? JSON.parse(textBody) : {};
+        } catch {
+            result = {};
+        }
+
+        if (!response.ok) {
+            const fallbackUrl = `http://localhost:8080/gym/all`;
+            const fbResp = await fetch(fallbackUrl, { method: 'GET', headers: { 'accept': 'application/json' } });
+            let fbText = '';
+            let fbJson: any = null;
+            try {
+                fbText = await fbResp.text();
+                fbJson = fbText ? JSON.parse(fbText) : {};
+            } catch {
+                fbJson = {};
+            }
+            if (!fbResp.ok) {
+                return {
+                    success: false,
+                    message: fbJson?.message || result?.message || `Failed to fetch gyms: ${fbResp.status}`
+                } as const;
+            }
+            result = fbJson;
+        }
+
+        const data = result?.data;
+        const gyms = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.gyms)
+                ? data.gyms
+                : Array.isArray(result?.gyms)
+                    ? result.gyms
+                    : Array.isArray(result?.content)
+                        ? result.content
+                        : Array.isArray(result)
+                            ? result
+                            : [];
+
+        return { success: true, data: gyms } as const;
+    } catch (error) {
+        console.error('Get gym list error:', error);
+        return { success: false, message: error instanceof Error ? error.message : 'Failed to fetch gyms' } as const;
+    }
+}
 export interface Exercise {
     name: string;
     sets: number;

@@ -565,7 +565,7 @@ export interface ScheduleInfo {
     endDateTime: string;
 }
 
-export async function getWorkouts(trainerId: string) {
+export async function getWorkouts(trainerId?: string) {
     try {
         const token = await getCookie('session');
         if (!token) {
@@ -581,54 +581,188 @@ export async function getWorkouts(trainerId: string) {
         console.log("TrainerId:", trainerId);
         console.log("Token:", token ? "Present" : "Missing");
 
-        const response = await fetch(`${API_BASE_URL}/workout/get-workouts`, {
+        // Primary: use configured API base (usually includes /api), empty body
+        const primaryUrl = `${API_BASE_URL}/workout/get-workouts`;
+        console.log("getWorkouts: primary URL:", primaryUrl);
+        // Endpoint accepts empty JSON body
+        const requestBody = {};
+        const requestHeaders = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'accept': 'application/json'
+        } as Record<string, string>;
+
+        const response = await fetch(primaryUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                trainId: trainerId  // Fixed parameter name here
-            })
+            headers: requestHeaders,
+            body: JSON.stringify(requestBody)
         });
-
-        const result = await response.json();
         
-        console.log("=== Full API Response ===");
-        console.log(JSON.stringify(result, null, 2));
+        let textBody = '';
+        let result: any = null;
+        const safeParseJson = (text: string) => {
+            try {
+                const trimmed = (text || '').trim();
+                const start = trimmed.indexOf('{');
+                const end = trimmed.lastIndexOf('}');
+                if (start !== -1 && end !== -1 && end > start) {
+                    return JSON.parse(trimmed.slice(start, end + 1));
+                }
+                return null;
+            } catch {
+                return null;
+            }
+        };
+        try {
+            textBody = await response.text();
+            result = safeParseJson(textBody) ?? {};
+        } catch (parseErr) {
+            console.error('getWorkouts: JSON parse error on primary URL. Raw body preview:', textBody?.slice(0, 500));
+        }
 
-        if (!response.ok) {
+        // Fallback: if not ok or failed to parse JSON, retry without trailing /api
+        let finalResponse = response;
+        let finalResult: any = result;
+        let finalTextBody = textBody;
+        if (!response.ok || !result || !result.data) {
+            // Fallback: try without /api prefix
+            const fallbackUrl = `http://localhost:8080/workout/get-workouts`;
+            console.warn('getWorkouts: retrying with explicit localhost URL:', fallbackUrl);
+            const fallbackResp = await fetch(fallbackUrl, {
+                method: 'POST',
+                headers: requestHeaders,
+                body: JSON.stringify(requestBody)
+            });
+            let fbText = '';
+            let fbJson: any = null;
+            try {
+                fbText = await fallbackResp.text();
+                fbJson = safeParseJson(fbText) ?? {};
+            } catch (e) {
+                console.error('getWorkouts: JSON parse error on fallback URL. Raw body preview:', fbText?.slice(0, 500));
+            }
+            finalResponse = fallbackResp;
+            finalResult = fbJson;
+            finalTextBody = fbText;
+        }
+
+        console.log("=== Full API Response (final) ===");
+        if (finalResult && finalResult.data) {
+            // Avoid flooding logs; print only keys and first item
+            console.log({
+                code: finalResult.code,
+                title: finalResult.title,
+                message: finalResult.message,
+                hasData: !!finalResult.data,
+                workoutsCount: Array.isArray(finalResult.data?.workouts) ? finalResult.data.workouts.length : 0,
+                firstWorkoutPreview: Array.isArray(finalResult.data?.workouts) ? {
+                    id: finalResult.data.workouts[0]?.id,
+                    name: finalResult.data.workouts[0]?.name,
+                    day: finalResult.data.workouts[0]?.day,
+                    startDateTime: finalResult.data.workouts[0]?.startDateTime,
+                    endDateTime: finalResult.data.workouts[0]?.endDateTime,
+                    status: finalResult.data.workouts[0]?.status
+                } : null
+            });
+        } else {
+            console.log('(non-JSON body)\n' + (finalTextBody || '(empty)'));
+        }
+
+        if (!finalResponse.ok || !finalResult || !finalResult.data) {
             console.error("API Error Response:", {
-                status: response.status,
-                statusText: response.statusText,
-                url: response.url,
-                error: result,
-                requestBody: { trainId: trainerId }
+                status: finalResponse.status,
+                statusText: finalResponse.statusText,
+                url: finalResponse.url,
+                error: finalResult || finalTextBody,
+                requestBody
             });
             return {
                 success: false,
-                message: result?.message || `Failed to fetch workouts: ${response.status}`,
-                code: result?.code || "0001"
+                message: finalResult?.message || `Failed to fetch workouts: ${finalResponse.status}`,
+                code: finalResult?.code || "0001"
             };
         }
 
         // Handle response data
-        const workouts = Array.isArray(result.data?.workouts) ? result.data.workouts : [];
-        
-        console.log("=== Processed Workouts ===");
-        console.log(`Found ${workouts.length} workouts`);
-        
-        if (workouts.length > 0) {
-            console.log("First 3 workouts:", workouts.slice(0, 3));
+        const rawWorkouts = Array.isArray(finalResult.data?.workouts) ? finalResult.data.workouts : [];
+
+        // Map backend response to UI-expected WorkoutResponse structure
+        const toMinutes = (timeStr: string) => {
+            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return '0';
+            const [h, m] = timeStr.split(':').map((n: string) => parseInt(n, 10) || 0);
+            return String(h * 60 + m);
+        };
+
+        const durationBetween = (start: string, end: string) => {
+            const startMin = parseInt(toMinutes(start), 10) || 0;
+            const endMin = parseInt(toMinutes(end), 10) || 0;
+            const diff = Math.max(0, endMin - startMin);
+            return String(diff || (parseInt(toMinutes(start), 10) ? 60 : 0));
+        };
+
+        const toIsoDateTime = (timeStr: string) => {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const safeTime = timeStr && /\d{2}:\d{2}/.test(timeStr) ? `${timeStr}:00` : '00:00:00';
+            return `${yyyy}-${mm}-${dd}T${safeTime}`;
+        };
+
+        const mappedWorkouts = rawWorkouts.map((w: any) => ({
+            id: w.id,
+            intensity: w.intensity || 'MEDIUM',
+            exerciseDetails: {
+                isDropSet: Boolean(w.isDropSet),
+                reps: String(w.reps ?? '-'),
+                notes: w.exerciseNotes || '',
+                sets: String(w.sets ?? '-'),
+                targetMuscles: w.targetMuscles || '',
+                restBetweenSets: w.restBetweenSets || '',
+                name: w.name || 'Workout',
+                weight: w.weight || '-',
+                equipment: w.equipment || '',
+                tempo: w.tempo || '',
+                isSuperSet: Boolean(w.isSuperSet),
+                superSetGroup: w.superSetGroup ?? null,
+            },
+            notes: {
+                general: w.generalNotes ?? null,
+                cooldown: w.cooldownNotes ?? null,
+                warmup: w.warmupNotes ?? null,
+            },
+            historyInfo: {
+                historyId: String(w.workoutHistory?.historyId ?? w.id ?? ''),
+                programName: w.workoutHistory?.programName || 'My Workouts',
+                currentWeek: Number(w.workoutHistory?.currentWeek ?? w.weekNumber ?? 1),
+                status: w.workoutHistory?.status || w.status || 'PLANNED',
+            },
+            scheduleInfo: {
+                duration: String(w.duration ?? durationBetween(w.startDateTime, w.endDateTime)),
+                startDateTime: toIsoDateTime(w.startDateTime),
+                isRestDay: Boolean(w.isRestDay),
+                endDateTime: toIsoDateTime(w.endDateTime),
+            },
+            type: w.type || 'WORKOUT',
+            day: (w.day || '').toUpperCase(),
+            weekNumber: Number(w.weekNumber ?? w.workoutHistory?.currentWeek ?? 1),
+            status: w.status || 'PLANNED',
+            focusArea: (w.focusArea || '').toString(),
+        }));
+
+        console.log("=== Processed Workouts (mapped) ===");
+        console.log(`Found ${mappedWorkouts.length} workouts`);
+        if (mappedWorkouts.length > 0) {
+            console.log("First 3 mapped:", mappedWorkouts.slice(0, 3));
         }
 
         return {
             success: true,
             data: {
-                workouts: workouts
+                workouts: mappedWorkouts
             },
-            code: result.code || "0000",
-            message: result.message || "Workouts retrieved successfully"
+            code: finalResult.code || "0000",
+            message: finalResult.message || "Workouts retrieved successfully"
         };
     } catch (error) {
         console.error('=== Workout Fetch Error ===');

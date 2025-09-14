@@ -515,6 +515,7 @@ export default function ClientDashboard() {
     sortBy: 'date',
   });
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
+  const [trainerIdState, setTrainerIdState] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const getGreeting = () => {
@@ -530,6 +531,7 @@ export default function ClientDashboard() {
     const fetchUserData = async () => {
       try {
         const trainerId = await getCookie('trainerId');
+        setTrainerIdState(trainerId);
         const fullName = await getCookie('fullName');
         const city = await getCookie('city');
         const status = await getCookie('status');
@@ -548,11 +550,15 @@ export default function ClientDashboard() {
           status: status || ''
         });
 
-        // Fetch workouts for the client
-        const workoutsResult = await getWorkouts(trainerId);
+        // Fetch workouts (empty body per backend contract)
+        const workoutsResult = await getWorkouts();
+        console.log('ClientDashboard: getWorkouts result (initial load):', workoutsResult);
         if (workoutsResult.success && workoutsResult.data) {
+          console.log('ClientDashboard: workouts count:', (workoutsResult.data.workouts || []).length);
+          console.log('ClientDashboard: first 3 workouts:', (workoutsResult.data.workouts || []).slice(0, 3));
           setWorkouts(workoutsResult.data.workouts || []);
         } else {
+          console.error('ClientDashboard: getWorkouts error:', workoutsResult.message);
           setError(workoutsResult.message || 'Failed to fetch workouts');
           toast.error(workoutsResult.message || 'Failed to fetch workouts');
         }
@@ -568,11 +574,32 @@ export default function ClientDashboard() {
     fetchUserData();
   }, [router]);
 
+  // Refetch data when switching tabs (ensures Schedule tab pulls fresh workouts)
+  useEffect(() => {
+    fetchTabData(activeTab);
+  }, [activeTab]);
+
   const fetchTabData = async (tab: string) => {
     try {
       switch (tab) {
         case 'schedule':
-          // Fetch schedule data
+          // Fetch schedule/workouts fresh when entering Schedule tab
+          setLoading(true);
+          setError(null);
+          {
+            const result = await getWorkouts();
+            console.log('ClientDashboard: getWorkouts result (schedule tab):', result);
+            if (result.success && result.data) {
+              console.log('ClientDashboard: workouts count:', (result.data.workouts || []).length);
+              console.log('ClientDashboard: first 3 workouts:', (result.data.workouts || []).slice(0, 3));
+              setWorkouts(result.data.workouts || []);
+            } else {
+              console.error('ClientDashboard: getWorkouts error:', result.message);
+              setError(result.message || 'Failed to fetch workouts');
+              toast.error(result.message || 'Failed to fetch workouts');
+            }
+          }
+          setLoading(false);
           break;
         case 'supplements':
           // Fetch supplements data
@@ -1139,31 +1166,9 @@ export default function ClientDashboard() {
         {activeTab === 'schedule' && (
           <div className="space-y-8">
             {/* Monthly Calendar View */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900">Monthly Calendar</h2>
-                  <div className="flex items-center space-x-4">
-                    <button className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors">
-                      Previous Month
-                    </button>
-                    <button className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors">
-                      Next Month
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6">
-                {/* Calendar grid would go here */}
-                <div className="text-center text-gray-500 py-8">
-                  Calendar view coming soon
-                </div>
-              </div>
-              
-            </div>
+            
                 {/* Add this where you want to display the workouts */}
         <div className="mt-6">
-          <h2 className="text-2xl font-semibold mb-4">My Workouts</h2>
           {renderWorkouts()}
         </div>
           </div>

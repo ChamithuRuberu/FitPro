@@ -97,6 +97,13 @@ export default function SuperAdminDashboard() {
     dateOfBirth: '',
     trainer: '',
     program: '',
+    nic: '',
+    password: '',
+    city: '',
+    height: '',
+    weight: '',
+    injuries: '',
+    gymId: '',
     image: null as File | null
   });
 
@@ -240,15 +247,15 @@ export default function SuperAdminDashboard() {
       const payload = {
         email: clientForm.email,
         mobile: clientForm.phone,
-        nic: '',
+        nic: clientForm.nic,
         fullName: clientForm.name,
-        password: '',
-        city: '',
-        height: '',
-        weight: '',
-        injuries: '',
+        password: clientForm.password,
+        city: clientForm.city,
+        height: clientForm.height,
+        weight: clientForm.weight,
+        injuries: clientForm.injuries,
         trainerGovId: Number(clientForm.trainer) || 0,
-        gymId: 0,
+        gymId: Number(clientForm.gymId) || 0,
       } as const;
 
       const result = await adminCreateUser(payload);
@@ -261,6 +268,13 @@ export default function SuperAdminDashboard() {
           dateOfBirth: '',
           trainer: '',
           program: '',
+          nic: '',
+          password: '',
+          city: '',
+          height: '',
+          weight: '',
+          injuries: '',
+          gymId: '',
           image: null
         });
       } else {
@@ -601,6 +615,90 @@ export default function SuperAdminDashboard() {
                     <option value="cardio">Cardio Fitness</option>
                     <option value="flexibility">Flexibility & Yoga</option>
                   </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">NIC</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    value={clientForm.nic}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, nic: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <div className="mt-1">
+                  <input
+                    type="password"
+                    value={clientForm.password}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">City</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    value={clientForm.city}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, city: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Height (e.g., 165cm)</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    value={clientForm.height}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, height: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Weight (e.g., 60kg)</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    value={clientForm.weight}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, weight: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Injuries</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    value={clientForm.injuries}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, injuries: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Assigned Gym ID</label>
+                <div className="mt-1">
+                  <input
+                    type="number"
+                    value={clientForm.gymId}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, gymId: e.target.value }))}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
                 </div>
               </div>
 

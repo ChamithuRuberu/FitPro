@@ -302,17 +302,32 @@ export async function registerGym(gymForm: {
 
         if (!response.ok) {
             console.log("Register gym error ->", result);
-            throw new Error(result.message || 'Gym registration failed');
+            return {
+                success: false,
+                message: result?.message || result?.title || `Gym registration failed (${response.status})`,
+                data: result?.data
+            };
+        }
+
+        // Some backends return 200 with a failure code; handle that
+        if (result && typeof result === 'object' && 'code' in result) {
+            if (result.code !== '0000') {
+                return {
+                    success: false,
+                    message: result.message || result.title || 'Gym registration failed',
+                    data: result.data
+                };
+            }
         }
 
         return {
             success: true,
-            message: result.message,
-            data: result.data
+            message: result?.message || result?.title || 'Gym registered successfully',
+            data: result?.data
         };
     } catch (error) {
         console.error('Gym registration error:', error);
-        return { success: false, message: 'Gym registration failed' };
+        return { success: false, message: error instanceof Error ? error.message : 'Gym registration failed' };
     }
 }
 

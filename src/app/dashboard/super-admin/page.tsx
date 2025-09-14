@@ -12,7 +12,7 @@ import {
 import type { GymData, TrainerData, ClientData, DashboardStats } from '@/types/dashboard';
 import { useRouter } from 'next/navigation';
 import { registerGym } from '@/lib/api';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import ActivitySection from '@/components/dashboard/shared/ActivitySection';
 
 
@@ -135,10 +135,21 @@ export default function SuperAdminDashboard() {
 
       })
 
-      if (result.success && result.data) {
-        toast.success("Gym registered successfully");
+      if (result.success) {
+        toast.success(result.message || "Gym registered successfully");
+        setGymForm({
+          gymName: '',
+          location: '',
+          email: '',
+          phone: '',
+          desc: '',
+          monthlyFee: '',
+          membership: '',
+          password: '',
+          roleType: 'ROLE_GYM',
+        });
       } else {
-        toast.error(result.message);
+        toast.error(result.message || "Gym registration failed");
       }
     } catch (error) {
       console.error('Error registering gym:', error);
@@ -220,14 +231,13 @@ export default function SuperAdminDashboard() {
     switch (registerType) {
       case 'gym':
         return (
-          <form onSubmit={handleGymSubmit} className="space-y-6">
+          <form onSubmit={handleGymSubmit} noValidate className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Gym Name</label>
                 <div className="mt-1 relative">
                   <input
                     type="text"
-                    required
                     value={gymForm.gymName}
                     onChange={(e) => setGymForm(prev => ({ ...prev, gymName: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -240,7 +250,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1 relative">
                   <input
                     type="text"
-                    required
                     value={gymForm.location}
                     onChange={(e) => setGymForm(prev => ({ ...prev, location: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -253,7 +262,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1 relative">
                   <input
                     type="email"
-                    required
                     value={gymForm.email}
                     onChange={(e) => setGymForm(prev => ({ ...prev, email: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -266,7 +274,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1 relative">
                   <input
                     type="tel"
-                    required
                     value={gymForm.phone}
                     onChange={(e) => setGymForm(prev => ({ ...prev, phone: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -278,7 +285,6 @@ export default function SuperAdminDashboard() {
                 <label className="block text-sm font-medium text-gray-700">Package Type</label>
                 <div className="mt-1 relative">
                   <select
-                    required
                     value={gymForm.monthlyFee} // Bind the selected value to the state
                     onChange={(e) => setGymForm(prev => ({ ...prev, monthlyFee: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -296,7 +302,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1 relative">
                   <input
                     type="number"
-                    required
                     value={gymForm.membership}
                     onChange={(e) => setGymForm(prev => ({ ...prev, membership: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -308,7 +313,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1 relative">
                   <input
                     type="password"
-                    required
                     value={gymForm.password}
                     onChange={(e) => setGymForm(prev => ({ ...prev, password: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -332,14 +336,13 @@ export default function SuperAdminDashboard() {
 
       case 'trainer':
         return (
-          <form onSubmit={handleTrainerSubmit} className="space-y-6">
+          <form onSubmit={handleTrainerSubmit} noValidate className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Full Name</label>
                 <div className="mt-1">
                   <input
                     type="text"
-                    required
                     value={trainerForm.name}
                     onChange={(e) => setTrainerForm(prev => ({ ...prev, name: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -352,7 +355,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1">
                   <input
                     type="email"
-                    required
                     value={trainerForm.email}
                     onChange={(e) => setTrainerForm(prev => ({ ...prev, email: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -365,7 +367,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1">
                   <input
                     type="tel"
-                    required
                     value={trainerForm.phone}
                     onChange={(e) => setTrainerForm(prev => ({ ...prev, phone: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -378,7 +379,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1">
                   <input
                     type="text"
-                    required
                     value={trainerForm.specializations}
                     onChange={(e) => setTrainerForm(prev => ({ ...prev, specializations: e.target.value }))}
                     placeholder="e.g., Weight Loss, Strength Training"
@@ -392,7 +392,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1">
                   <input
                     type="number"
-                    required
                     value={trainerForm.experience}
                     onChange={(e) => setTrainerForm(prev => ({ ...prev, experience: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -417,7 +416,6 @@ export default function SuperAdminDashboard() {
                 <label className="block text-sm font-medium text-gray-700">Assigned Gym</label>
                 <div className="mt-1">
                   <select
-                    required
                     value={trainerForm.gym}
                     onChange={(e) => setTrainerForm(prev => ({ ...prev, gym: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -435,7 +433,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1">
                   <input
                     type="number"
-                    required
                     value={trainerForm.monthlyFee}
                     onChange={(e) => setTrainerForm(prev => ({ ...prev, monthlyFee: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -443,17 +440,7 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Profile Image</label>
-                <div className="mt-1">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files && handleImageUpload(e.target.files[0], 'trainer')}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
+    
             </div>
 
             <div className="flex justify-end">
@@ -471,14 +458,13 @@ export default function SuperAdminDashboard() {
 
       case 'client':
         return (
-          <form onSubmit={handleClientSubmit} className="space-y-6">
+          <form onSubmit={handleClientSubmit} noValidate className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Full Name</label>
                 <div className="mt-1">
                   <input
                     type="text"
-                    required
                     value={clientForm.name}
                     onChange={(e) => setClientForm(prev => ({ ...prev, name: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -491,7 +477,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1">
                   <input
                     type="email"
-                    required
                     value={clientForm.email}
                     onChange={(e) => setClientForm(prev => ({ ...prev, email: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -504,7 +489,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1">
                   <input
                     type="tel"
-                    required
                     value={clientForm.phone}
                     onChange={(e) => setClientForm(prev => ({ ...prev, phone: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -517,7 +501,6 @@ export default function SuperAdminDashboard() {
                 <div className="mt-1">
                   <input
                     type="date"
-                    required
                     value={clientForm.dateOfBirth}
                     onChange={(e) => setClientForm(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -529,7 +512,6 @@ export default function SuperAdminDashboard() {
                 <label className="block text-sm font-medium text-gray-700">Assigned Trainer</label>
                 <div className="mt-1">
                   <select
-                    required
                     value={clientForm.trainer}
                     onChange={(e) => setClientForm(prev => ({ ...prev, trainer: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -546,7 +528,6 @@ export default function SuperAdminDashboard() {
                 <label className="block text-sm font-medium text-gray-700">Program</label>
                 <div className="mt-1">
                   <select
-                    required
                     value={clientForm.program}
                     onChange={(e) => setClientForm(prev => ({ ...prev, program: e.target.value }))}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -614,6 +595,7 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Toaster position="top-right" />
       {/* Main Header */}
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

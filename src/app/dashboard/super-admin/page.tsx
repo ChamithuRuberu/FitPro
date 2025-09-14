@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   FiUsers, FiActivity, FiDollarSign, FiStar, FiMapPin, FiPlus,
@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fi';
 import type { GymData, TrainerData, ClientData, DashboardStats } from '@/types/dashboard';
 import { useRouter } from 'next/navigation';
-import { registerGym } from '@/lib/api';
+import { registerGym, adminCreateTrainer, adminCreateUser, getTrainerList } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ActivitySection from '@/components/dashboard/shared/ActivitySection';
 
@@ -100,6 +100,36 @@ export default function SuperAdminDashboard() {
     image: null as File | null
   });
 
+  // Trainer options for Assigned Trainer dropdown (loaded from API)
+  const [trainerOptions, setTrainerOptions] = useState<Array<{ id: number; name: string; govId?: number }>>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getTrainerList();
+        console.log('getTrainerList result:', res);
+        if (res && (res as any).success) {
+          const rawList = ((res as any).data as any[]) || [];
+          console.log('raw trainer list:', rawList);
+          const mapped = rawList
+            .map((t: any) => ({
+              id: Number(t.gov_id ?? t.trainerId ?? t.id ?? t.govId ?? 0),
+              govId: Number(t.gov_id ?? t.trainerId ?? t.id ?? t.govId ?? 0),
+              name: String(t.full_name ?? t.name ?? t.trainerName ?? t.fullName ?? 'Trainer')
+            }))
+            .filter((t: any) => !!t.id);
+          console.log('mapped trainer options:', mapped);
+          setTrainerOptions(mapped);
+        } else {
+          const message = (res as any)?.message || 'Failed to load trainers';
+          toast.error(message);
+        }
+      } catch (e) {
+        toast.error('Failed to load trainers');
+      }
+    })();
+  }, []);
+
   const toggleStatus = async (type: string, id: string, currentStatus: string) => {
     try {
       setLoading(true);
@@ -163,24 +193,41 @@ export default function SuperAdminDashboard() {
     e.preventDefault();
     try {
       setLoading(true);
-      // TODO: Implement trainer registration API call
-      console.log('Submitting trainer data:', trainerForm);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setTrainerForm({
-        name: '',
-        email: '',
-        phone: '',
-        specializations: '',
-        experience: '',
-        certifications: '',
-        gym: '',
-        monthlyFee: '',
-        image: null
-      });
-      // Show success message
+      const payload = {
+        email: trainerForm.email,
+        mobile: trainerForm.phone,
+        nic: '',
+        fullName: trainerForm.name,
+        password: '',
+        city: '',
+        height: '',
+        weight: '',
+        profile: trainerForm.specializations,
+        servicePeriod: '',
+        trainerGovId: 0,
+        gymId: Number(trainerForm.gym) || 0,
+      } as const;
+
+      const result = await adminCreateTrainer(payload);
+      if (result.success) {
+        toast.success(result.message || 'Trainer created successfully');
+        setTrainerForm({
+          name: '',
+          email: '',
+          phone: '',
+          specializations: '',
+          experience: '',
+          certifications: '',
+          gym: '',
+          monthlyFee: '',
+          image: null
+        });
+      } else {
+        toast.error(result.message || 'Trainer creation failed');
+      }
     } catch (error) {
       console.error('Error registering trainer:', error);
-      // Show error message
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -190,22 +237,38 @@ export default function SuperAdminDashboard() {
     e.preventDefault();
     try {
       setLoading(true);
-      // TODO: Implement client registration API call
-      console.log('Submitting client data:', clientForm);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setClientForm({
-        name: '',
-        email: '',
-        phone: '',
-        dateOfBirth: '',
-        trainer: '',
-        program: '',
-        image: null
-      });
-      // Show success message
+      const payload = {
+        email: clientForm.email,
+        mobile: clientForm.phone,
+        nic: '',
+        fullName: clientForm.name,
+        password: '',
+        city: '',
+        height: '',
+        weight: '',
+        injuries: '',
+        trainerGovId: Number(clientForm.trainer) || 0,
+        gymId: 0,
+      } as const;
+
+      const result = await adminCreateUser(payload);
+      if (result.success) {
+        toast.success(result.message || 'User created successfully');
+        setClientForm({
+          name: '',
+          email: '',
+          phone: '',
+          dateOfBirth: '',
+          trainer: '',
+          program: '',
+          image: null
+        });
+      } else {
+        toast.error(result.message || 'User creation failed');
+      }
     } catch (error) {
       console.error('Error registering client:', error);
-      // Show error message
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -517,8 +580,8 @@ export default function SuperAdminDashboard() {
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select Trainer</option>
-                    {latestTrainers.map(trainer => (
-                      <option key={trainer.id} value={trainer.id}>{trainer.name}</option>
+                    {trainerOptions.map((t) => (
+                      <option key={t.id} value={String(t.govId ?? t.id)}>{t.name}</option>
                     ))}
                   </select>
                 </div>

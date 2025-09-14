@@ -331,6 +331,126 @@ export async function registerGym(gymForm: {
     }
 }
 
+// ===== Super Admin: Create Trainer =====
+export interface AdminCreateTrainerRequest {
+    email: string;
+    mobile: string;
+    nic: string;
+    fullName: string;
+    password: string;
+    city: string;
+    height: string;
+    weight: string;
+    profile: string;
+    servicePeriod: string;
+    trainerGovId: number;
+    gymId: number;
+}
+
+export async function adminCreateTrainer(payload: AdminCreateTrainerRequest) {
+    try {
+        const token = await getCookie('session');
+        if (!token) {
+            return { success: false, message: 'Authentication required' } as const;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/user/admin/create-trainer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result?.message || result?.title || `Create trainer failed (${response.status})`,
+                data: result?.data
+            } as const;
+        }
+
+        if (result && typeof result === 'object' && 'code' in result && result.code !== '0000') {
+            return {
+                success: false,
+                message: result.message || result.title || 'Create trainer failed',
+                data: result.data
+            } as const;
+        }
+
+        return {
+            success: true,
+            message: result?.message || result?.title || 'Trainer created successfully',
+            data: result?.data
+        } as const;
+    } catch (error) {
+        console.error('Admin create trainer error:', error);
+        return { success: false, message: error instanceof Error ? error.message : 'Create trainer failed' } as const;
+    }
+}
+
+// ===== Super Admin: Create User (Client) =====
+export interface AdminCreateUserRequest {
+    email: string;
+    mobile: string;
+    nic: string;
+    fullName: string;
+    password: string;
+    city: string;
+    height: string;
+    weight: string;
+    injuries: string;
+    trainerGovId: number;
+    gymId: number;
+}
+
+export async function adminCreateUser(payload: AdminCreateUserRequest) {
+    try {
+        const token = await getCookie('session');
+        if (!token) {
+            return { success: false, message: 'Authentication required' } as const;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/user/admin/create-user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: result?.message || result?.title || `Create user failed (${response.status})`,
+                data: result?.data
+            } as const;
+        }
+
+        if (result && typeof result === 'object' && 'code' in result && result.code !== '0000') {
+            return {
+                success: false,
+                message: result.message || result.title || 'Create user failed',
+                data: result.data
+            } as const;
+        }
+
+        return {
+            success: true,
+            message: result?.message || result?.title || 'User created successfully',
+            data: result?.data
+        } as const;
+    } catch (error) {
+        console.error('Admin create user error:', error);
+        return { success: false, message: error instanceof Error ? error.message : 'Create user failed' } as const;
+    }
+}
 export async function getTrainerClients() {
     try {
         const token = await getCookie('session');
@@ -449,8 +569,8 @@ export async function addClientToTrainer(clientData: {
 
 export async function getTrainerList() {
     try {
-
-        const response = await fetch(`${API_BASE_URL}/trainer/get-all-trainers`, {
+        const primaryUrl = `${API_BASE_URL}/trainer/get-all-trainers`;
+        const response = await fetch(primaryUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -458,17 +578,54 @@ export async function getTrainerList() {
             body: JSON.stringify({})
         });
 
-        const result = await response.json();
+        let textBody = '';
+        let result: any = null;
+        try {
+            textBody = await response.text();
+            result = textBody ? JSON.parse(textBody) : {};
+        } catch {
+            result = {};
+        }
 
         if (!response.ok) {
-            return {
-                success: false,
-                message: result.message || 'Failed to fetch trainers'
-            };
+            const fallbackUrl = `http://localhost:8080/trainer/get-all-trainers`;
+            const fbResp = await fetch(fallbackUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            });
+            let fbText = '';
+            let fbJson: any = null;
+            try {
+                fbText = await fbResp.text();
+                fbJson = fbText ? JSON.parse(fbText) : {};
+            } catch {
+                fbJson = {};
+            }
+            if (!fbResp.ok) {
+                return {
+                    success: false,
+                    message: fbJson?.message || result?.message || `Failed to fetch trainers: ${fbResp.status}`
+                };
+            }
+            result = fbJson;
         }
+
+        // Normalize possible shapes
+        const data = result?.data;
+        const trainers = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.trainers)
+                ? data.trainers
+                : Array.isArray(result)
+                    ? result
+                    : [];
+
         return {
             success: true,
-            data: result.data
+            data: trainers
         };
     } catch (error) {
         console.error('Get trainer list error:', error);

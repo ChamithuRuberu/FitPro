@@ -599,17 +599,7 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Fee</label>
-                <div className="mt-1 relative">
-                  <input
-                    type="number"
-                    value={gymForm.membership}
-                    onChange={(e) => setGymForm(prev => ({ ...prev, membership: e.target.value }))}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
+            
               <div>
                 <label className="block text-sm font-medium text-gray-700">Amount</label>
                 <div className="mt-1 relative">
@@ -741,17 +731,7 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Monthly Fee</label>
-                <div className="mt-1">
-                  <input
-                    type="number"
-                    value={trainerForm.monthlyFee}
-                    onChange={(e) => setTrainerForm(prev => ({ ...prev, monthlyFee: e.target.value }))}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700">Amount</label>
                 <div className="mt-1">

@@ -51,11 +51,15 @@ export default function TrainersPage() {
           return;
         }
         
-        // Check if result has the expected format with trainers nested under data
-        if (result.data && result.data.trainers) {
-          setTrainers(result.data.trainers);
-        } else {
-          setError('Invalid response format');
+        // Normalize response: support { data: Trainer[] } or { data: { trainers: Trainer[] } }
+        const trainersData = Array.isArray((result as any).data)
+          ? (result as any).data
+          : Array.isArray((result as any).data?.trainers)
+            ? (result as any).data.trainers
+            : [];
+        setTrainers(trainersData);
+        if (trainersData.length === 0) {
+          console.warn('getTrainerList returned no trainers or unexpected format:', result);
         }
       } catch (err) {
         setError('Error fetching trainers');

@@ -20,7 +20,7 @@ export const nutritionItems: NutritionItem[] = [
     servingSize: '30g scoop',
     price: {
       amount: 29.99,
-      currency: 'USD',
+      currency: 'LKR',
     },
   },
   {
@@ -35,7 +35,7 @@ export const nutritionItems: NutritionItem[] = [
     servingSize: '5g scoop',
     price: {
       amount: 19.99,
-      currency: 'USD',
+      currency: 'LKR',
     },
   },
   {
@@ -50,7 +50,7 @@ export const nutritionItems: NutritionItem[] = [
     servingSize: '7g scoop',
     price: {
       amount: 24.99,
-      currency: 'USD',
+      currency: 'LKR',
     },
   },
   {
@@ -65,7 +65,7 @@ export const nutritionItems: NutritionItem[] = [
     servingSize: '1 tablet',
     price: {
       amount: 34.99,
-      currency: 'USD',
+      currency: 'LKR',
     },
   },
 

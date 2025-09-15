@@ -1746,8 +1746,19 @@ export async function getTotalRevenue() {
         if (!response.ok) {
             return { success: false, message: result?.message || `Failed: ${response.status}` } as const;
         }
-        const amount = Number(result?.data?.total ?? result?.total ?? result?.amount ?? 0);
-        return { success: true, data: { total: isNaN(amount) ? 0 : amount } } as const;
+        // Handle multiple possible shapes:
+        // { data: 450.00 } OR { data: { total: 450 } } OR { total: 450 } OR { amount: 450 }
+        const rawData = result?.data;
+        let amount: number = 0;
+        if (typeof rawData === 'number' || typeof rawData === 'string') {
+            amount = Number(rawData);
+        } else if (rawData && typeof rawData === 'object') {
+            amount = Number(rawData.total ?? rawData.amount ?? rawData.value ?? 0);
+        } else {
+            amount = Number(result?.total ?? result?.amount ?? 0);
+        }
+        const safeAmount = Number.isFinite(amount) && !isNaN(amount) ? amount : 0;
+        return { success: true, data: { total: safeAmount } } as const;
     } catch (e) {
         return { success: false, message: e instanceof Error ? e.message : 'Failed to fetch total revenue' } as const;
     }

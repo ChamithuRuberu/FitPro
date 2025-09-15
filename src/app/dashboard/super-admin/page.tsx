@@ -1078,7 +1078,7 @@ export default function SuperAdminDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                    <p className="text-2xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-gray-900">LKR {totalRevenue.toLocaleString()}</p>
                     <p className="mt-1 text-sm text-green-600 flex items-center">
                       <FiTrendingUp className="w-4 h-4 mr-1" />
                       +12.5% from last month

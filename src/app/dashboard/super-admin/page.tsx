@@ -150,17 +150,19 @@ export default function SuperAdminDashboard() {
         const rawList = ((trainersRes as any).data as any[]) || [];
         const mappedT = rawList
           .map((t: any) => ({
-            id: Number(t.gov_id ?? t.trainerId ?? t.id ?? t.govId ?? 0),
+            id: Number(t.id ?? t.gov_id ?? t.trainerId ?? t.govId ?? 0),
             name: String(t.full_name ?? t.name ?? t.trainerName ?? t.fullName ?? 'Trainer')
           }))
           .filter((t: any) => !!t.id);
+        setTrainerOptions(mappedT);
         setTrainersCount(mappedT.length);
       }
       if ((gymsRes as any)?.success) {
         const rawG = ((gymsRes as any).data as any[]) || [];
         const mappedG = rawG
-          .map((g: any) => ({ id: Number(g.id ?? g.gymId ?? g.gym_id ?? 0) }))
+          .map((g: any) => ({ id: Number(g.id ?? g.gymId ?? g.gym_id ?? 0), name: String(g.name ?? g.gymName ?? g.gym_name ?? 'Gym') }))
           .filter((g: any) => !!g.id);
+        setGymOptions(mappedG);
         setGymsCount(mappedG.length);
       }
     } catch (e) {
@@ -238,7 +240,7 @@ export default function SuperAdminDashboard() {
           console.log('raw trainer list:', rawList);
           const mapped = rawList
             .map((t: any) => ({
-              id: Number(t.gov_id ?? t.trainerId ?? t.id ?? t.govId ?? 0),
+              id: Number(t.id ?? t.gov_id ?? t.trainerId ?? t.govId ?? 0),
               govId: Number(t.gov_id ?? t.trainerId ?? t.id ?? t.govId ?? 0),
               name: String(t.full_name ?? t.name ?? t.trainerName ?? t.fullName ?? 'Trainer')
             }))
@@ -1062,27 +1064,17 @@ export default function SuperAdminDashboard() {
                     <span className="text-sm font-medium text-white">SA</span>
                   </div>
                   <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-gray-900">Super Admin</p>
-                    <p className="text-xs text-gray-500">admin@fitpro.com</p>
+                    <p className="text-sm font-medium text-gray-900">admin@example.com</p>
                   </div>
                   <FiChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${showProfileMenu ? 'transform rotate-180' : ''
                     }`} />
                 </button>
 
                 {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                    <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      <FiUser className="w-4 h-4 mr-3" />
-                      Your Profile
-                    </button>
-                    <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      <FiSettings className="w-4 h-4 mr-3" />
-                      Settings
-                    </button>
-                    <div className="border-t border-gray-200 my-1"></div>
+                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-3 z-50">
                     <button
                       onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      className="flex items-center w-full px-4 py-1 text-sm text-red-600 hover:bg-red-50"
                     >
                       <FiLogOut className="w-4 h-4 mr-3" />
                       Logout
@@ -1442,7 +1434,7 @@ export default function SuperAdminDashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
                       <p className="text-gray-500">No distribution data</p>
                     </div>
                   )}
